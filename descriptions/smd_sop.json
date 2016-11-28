@@ -1,0 +1,103 @@
+{
+  "parts": [
+    {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO8N",
+      "body": {"length": 4.8, "width": 3.9, "height": 1.35},
+      "pins": {"count": 8, "pitch": 1.27, "margin": 0.05},
+      "pads": {"length": 1.3, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO14N",
+      "body": {"length": 8.55, "width": 3.9, "height": 1.35},
+      "pins": {"count": 14, "pitch": 1.27, "margin": 0.05},
+      "pads": {"length": 1.3, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO16N",
+      "body": {"length": 9.8, "width": 3.9, "height": 1.35},
+      "pins": {"count": 16, "pitch": 1.27, "margin": 0.05},
+      "pads": {"length": 1.3, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO16W",
+      "body": {"length": 10.1, "width": 7.5, "height": 2.35},
+      "pins": {"count": 16, "pitch": 1.27, "margin": 0.25},
+      "pads": {"length": 1.5, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO18W",
+      "body": {"length": 11.35, "width": 7.5, "height": 2.35},
+      "pins": {"count": 18, "pitch": 1.27, "margin": 0.25},
+      "pads": {"length": 1.5, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO20W",
+      "body": {"length": 12.6, "width": 7.5, "height": 2.35},
+      "pins": {"count": 20, "pitch": 1.27, "margin": 0.25},
+      "pads": {"length": 1.5, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO24W",
+      "body": {"length": 15.2, "width": 7.5, "height": 2.35},
+      "pins": {"count": 24, "pitch": 1.27, "margin": 0.25},
+      "pads": {"length": 1.5, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "SO28W",
+      "body": {"length": 17.7, "width": 7.5, "height": 2.35},
+      "pins": {"count": 28, "pitch": 1.27, "margin": 0.25},
+      "pads": {"length": 1.5, "width": 0.6, "sideWidth": 0.6},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "TSSOP8",
+      "body": {"length": 2.9, "width": 4.4, "height": 0.875},
+      "pins": {"count": 8, "pitch": 0.65, "margin": 0.1},
+      "pads": {"length": 1.1, "width": 0.4, "sideWidth": 0.5},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "TSSOP14",
+      "body": {"length": 4.9, "width": 4.4, "height": 0.875},
+      "pins": {"count": 14, "pitch": 0.65, "margin": 0.1},
+      "pads": {"length": 1.1, "width": 0.4, "sideWidth": 0.4},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "TSSOP16",
+      "body": {"length": 4.9, "width": 4.4, "height": 0.875},
+      "pins": {"count": 16, "pitch": 0.65, "margin": 0.1},
+      "pads": {"length": 1.1, "width": 0.4, "sideWidth": 0.4},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "TSSOP20",
+      "body": {"length": 6.4, "width": 4.4, "height": 0.875},
+      "pins": {"count": 20, "pitch": 0.65, "margin": 0.1},
+      "pads": {"length": 1.1, "width": 0.4, "sideWidth": 0.4},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "TSSOP24",
+      "body": {"length": 7.7, "width": 4.4, "height": 0.875},
+      "pins": {"count": 24, "pitch": 0.65, "margin": 0.1},
+      "pads": {"length": 1.1, "width": 0.4, "sideWidth": 0.4},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "footprint": {"group": "SmallOutlinePackage", "spec": "thick"},
+      "title": "TSSOP28",
+      "body": {"length": 9.6, "width": 4.4, "height": 0.875},
+      "pins": {"count": 28, "pitch": 0.65, "margin": 0.1},
+      "pads": {"length": 1.1, "width": 0.4, "sideWidth": 0.4},
+      "source": "NXP specifications for reflow soldering"
+    }
+  ]
+}
