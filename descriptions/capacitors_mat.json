@@ -1,0 +1,39 @@
+{
+  "materials": [
+    {
+      "title": "Body",
+      "shininess": 0.039,
+      "diffuse": [0.073, 0.062, 0.326],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.073, 0.062, 0.326]
+    },
+    {
+      "title": "Mark",
+      "shininess": 0.039,
+      "diffuse": [0.5, 0.5, 0.8],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.5, 0.5, 0.8]
+    },
+    {
+      "title": "Top",
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.83, 0.83, 0.83]
+    },
+    {
+      "title": "Bottom",
+      "shininess": 0.059,
+      "diffuse": [0.15, 0.15, 0.15],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.15, 0.15, 0.15]
+    },
+    {
+      "title": "Pin",
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.83, 0.83, 0.83]
+    }
+  ]
+}
