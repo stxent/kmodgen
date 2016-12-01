@@ -6,20 +6,22 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import argparse
+import inspect
 import json
 import os
+import sys
 
 import exporter_kicad
 import exporter_kicad_pretty
-import fp_qfp
-import fp_sop
+
+from footprints import *
 
 
 class Autogen:
     MODE_KICAD, MODE_KICAD_PRETTY = range(0, 2)
 
     def __init__(self, parts, specs, mode, models, name, path=None):
-        self.groups = Autogen.loadGroups()
+        self.types = Autogen.load()
         self.parts = []
 
         if mode == Autogen.MODE_KICAD:
@@ -30,9 +32,9 @@ class Autogen:
             raise Exception()
 
         for part in parts:
-            for group in self.groups:
-                if group.__name__ == part["footprint"]["group"]:
-                    self.parts.append(group(specs[part["footprint"]["spec"]], part))
+            for group in self.types:
+                if group.__name__ == part["package"]["type"]:
+                    self.parts.append(group(specs[part["package"]["spec"]], part))
 
         self.parts.sort(key=lambda x: x.name)
 
@@ -40,11 +42,12 @@ class Autogen:
         return self.converter.generateDocument(self.parts)
 
     @staticmethod
-    def loadGroups():
-        result = []
-        result.extend(fp_qfp.groups)
-        result.extend(fp_sop.groups)
-        return result
+    def load():
+        builders = [entry[1] for entry in inspect.getmembers(sys.modules["footprints"])
+                if inspect.ismodule(entry[1]) and entry[1].__name__.startswith("footprints.")]
+        types = []
+        [types.extend(entry.__dict__["types"]) for entry in builders]
+        return types
 
 
 parser = argparse.ArgumentParser()
