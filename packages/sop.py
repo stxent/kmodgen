@@ -27,22 +27,21 @@ def metricToImperial(value):
 
 class SmallOutlinePackage:
     @staticmethod
-    def buildPackageBody(modelBody, modelHole, modelPin, holeOffset, size, pitch, count, name):
+    def buildPackageBody(modelBody, modelMark, modelPin, markOffset, count, size, pitch, name):
         DEFAULT_WIDTH = metricToImperial(2.0)
 
-        bodyDelta = ((size[0] - DEFAULT_WIDTH) / 2., (size[1] - DEFAULT_WIDTH) / 2.)
+        halfCount = count / 2
+        offset = pitch / 2. if halfCount % 2 == 0 else pitch
+        dot = (-(size[0] / 2. - markOffset[0]), -(size[1] / 2. - markOffset[1]))
 
-        sideCount = count / 2
-        offset = pitch / 2. if sideCount % 2 == 0 else pitch
-        dot = (-(size[0] / 2. - holeOffset[0]), -(size[1] / 2. - holeOffset[1]))
-    
+        cornerTranslation = ((size[0] - DEFAULT_WIDTH) / 2., (size[1] - DEFAULT_WIDTH) / 2.)
         corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
         center = model.Transform()
         center.translate([dot[0], dot[1], 0.])
-        corners[0].translate([ bodyDelta[0],  bodyDelta[1], 0.])
-        corners[1].translate([-bodyDelta[0],  bodyDelta[1], 0.])
-        corners[2].translate([ bodyDelta[0], -bodyDelta[1], 0.])
-        corners[3].translate([-bodyDelta[0], -bodyDelta[1], 0.])
+        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.])
+        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.])
+        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.])
+        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.])
         transforms = [model.Transform()] + [center] + corners
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
@@ -50,10 +49,10 @@ class SmallOutlinePackage:
 #         body.appearance().normals = debugNormals
 #         body.appearance().smooth = debugSmoothShading
         
-        hole = copy.deepcopy(modelHole)
-        hole.translate([dot[0], dot[1], 0.001])
-        hole.appearance().normals = debugNormals
-        hole.appearance().smooth = debugSmoothShading
+        mark = copy.deepcopy(modelMark)
+        mark.translate([dot[0], dot[1], 0.001])
+        mark.appearance().normals = debugNormals
+        mark.appearance().smooth = debugSmoothShading
     
         def makePin(x, y, angle, number):
             pin = model.Mesh(parent=modelPin, name="%s%uPin%u" % (name, count, number))
@@ -64,14 +63,14 @@ class SmallOutlinePackage:
             return pin
     
         pins = []
-        for i in range(0, sideCount):
-            x = (i - sideCount / 2 + 1) * pitch - offset
+        for i in range(0, halfCount):
+            x = (i - halfCount / 2 + 1) * pitch - offset
             y = size[1] / 2.
     
-            pins.append(makePin(x, y, 180., i + 1 + sideCount))
+            pins.append(makePin(x, y, 180., i + 1 + halfCount))
             pins.append(makePin(-x, -y, 0., i + 1))
     
-        return [body, hole] + pins
+        return [body, mark] + pins
 
     @staticmethod
     def build(materials, patterns, descriptor):
@@ -86,7 +85,7 @@ class SmallOutlinePackage:
 
         if descriptor["package"]["subtype"] == "SO":
             soBody = lookup(patterns, "PatSOBody")[0].parent
-            soBodyHole = lookup(patterns, "PatSOBody")[1].parent
+            soBodyMark = lookup(patterns, "PatSOBody")[1].parent
             soPin = lookup(patterns, "PatSOPin")[0].parent
             
             #Modified SO models
@@ -94,10 +93,10 @@ class SmallOutlinePackage:
             soAttributedBody.append(soBody)
             soAttributedBody.visualAppearance = soBody.appearance()
             
-            referenceObject = (soAttributedBody, soBodyHole, soPin, (0.75, 0.5))
+            referenceObject = (soAttributedBody, soBodyMark, soPin, (0.75, 0.5))
         elif descriptor["package"]["subtype"] == "TSSOP":
             tssopBody = lookup(patterns, "PatTSSOPBody")[0].parent
-            tssopBodyHole = lookup(patterns, "PatTSSOPBody")[1].parent
+            tssopBodyMark = lookup(patterns, "PatTSSOPBody")[1].parent
             tssopPin = lookup(patterns, "PatTSSOPPin")[0].parent
             
             #TSSOP model uses same regions
@@ -105,16 +104,16 @@ class SmallOutlinePackage:
             tssopAttributedBody.append(tssopBody)
             tssopAttributedBody.visualAppearance = tssopBody.appearance()
             
-            referenceObject = (tssopAttributedBody, tssopBodyHole, tssopPin, (0.75, 0.75))
+            referenceObject = (tssopAttributedBody, tssopBodyMark, tssopPin, (0.75, 0.75))
         else:
             raise Exception()
 
         return SmallOutlinePackage.buildPackageBody(
                 referenceObject[0], referenceObject[1], referenceObject[2],
                 (metricToImperial(referenceObject[3][0]), metricToImperial(referenceObject[3][1])),
+                descriptor["pins"]["count"],
                 (metricToImperial(descriptor["body"]["length"]), metricToImperial(descriptor["body"]["width"])),
                 metricToImperial(descriptor["pins"]["pitch"]),
-                descriptor["pins"]["count"],
                 descriptor["title"])
 
 
