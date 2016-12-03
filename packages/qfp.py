@@ -77,20 +77,20 @@ class QuadFlatPackage:
         return [body, mark] + pins
 
     @staticmethod
-    def build(materials, patterns, descriptor):
-        qfpBody = lookup(patterns, "PatQFPBody")[0].parent
-        qfpBodyMark = lookup(patterns, "PatQFPBody")[1].parent
+    def build(materials, templates, descriptor):
+        qfpBody = lookup(templates, "PatQFPBody")[0].parent
+        qfpBodyMark = lookup(templates, "PatQFPBody")[1].parent
 
-        qfpNarrowPin = lookup(patterns, "PatQFPNarrowPin")[0].parent
-        qfpWidePin = lookup(patterns, "PatQFPWidePin")[0].parent
+        qfpNarrowPin = lookup(templates, "PatQFPNarrowPin")[0].parent
+        qfpWidePin = lookup(templates, "PatQFPWidePin")[0].parent
 
-        qfpRegions = [
-                (((0.5, 0.5, 1.0), (-0.5, -0.5, -1.0)), 1),
-                (((1.5, 1.5, 1.0), (0.5, 0.5, -1.0)), 2),
-                (((-1.5, 1.5, 1.0), (-0.5, 0.5, -1.0)), 3),
-                (((1.5, -1.5, 1.0), (0.5, -0.5, -1.0)), 4),
+        regions = [
+                ((( 0.5,  0.5, 1.0), (-0.5, -0.5, -1.0)), 1),
+                ((( 1.5,  1.5, 1.0), ( 0.5,  0.5, -1.0)), 2),
+                (((-1.5,  1.5, 1.0), (-0.5,  0.5, -1.0)), 3),
+                ((( 1.5, -1.5, 1.0), ( 0.5, -0.5, -1.0)), 4),
                 (((-1.5, -1.5, 1.0), (-0.5, -0.5, -1.0)), 5)]
-        qfpAttributedBody = model.AttributedMesh(name="QFPBody", regions=qfpRegions)
+        qfpAttributedBody = model.AttributedMesh(name="QFPBody", regions=regions)
         qfpAttributedBody.append(qfpBody)
         qfpAttributedBody.visualAppearance = qfpBody.appearance()
 
@@ -99,7 +99,8 @@ class QuadFlatPackage:
         else:
             modelPin = qfpNarrowPin
 
-        return QuadFlatPackage.buildPackageBody(qfpAttributedBody, qfpBodyMark, modelPin,
+        return QuadFlatPackage.buildPackageBody(
+                qfpAttributedBody, qfpBodyMark, modelPin,
                 (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
                 (metricToImperial(descriptor["body"]["width"]), metricToImperial(descriptor["body"]["length"])),
                 metricToImperial(descriptor["pins"]["pitch"]),

@@ -3,73 +3,73 @@
     {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-4x5",
-      "body": {"radius": 2.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 1.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 1.5},
-      "pads": {"drill": 0.5, "size": 1.0}
+      "body": {"diameter": 4.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 3.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 1.5},
+      "pads": {"diameter": 1.0, "drill": 0.5}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-4x8",
-      "body": {"radius": 2.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 1.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 1.5},
-      "pads": {"drill": 0.5, "size": 1.0}
+      "body": {"diameter": 4.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 3.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 1.5},
+      "pads": {"diameter": 1.0, "drill": 0.5}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-5x5",
-      "body": {"radius": 2.5, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 2.1, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 5.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 4.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-5x8",
-      "body": {"radius": 2.5, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 2.1, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 5.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 4.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-5x11",
-      "body": {"radius": 2.5, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 2.1, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 5.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 4.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
       "title": "CP-R-6x5",
-      "body": {"radius": 3.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 2.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 6.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 5.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
       "title": "CP-R-6x8",
-      "body": {"radius": 3.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 2.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 6.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 5.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
       "title": "CP-R-6x11",
-      "body": {"radius": 3.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 2.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 6.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 5.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
       "title": "CP-R-8x5",
-      "body": {"radius": 4.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 3.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 3.5},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 8.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 7.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 3.5},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
       "title": "CP-R-8x11",
-      "body": {"radius": 4.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"radius": 3.6, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"radius": 0.225, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 3.5},
-      "pads": {"drill": 0.6, "size": 1.2}
+      "body": {"diameter": 8.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 7.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 3.5},
+      "pads": {"diameter": 1.2, "drill": 0.6}
     }
   ]
 }

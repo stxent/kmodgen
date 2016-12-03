@@ -12,10 +12,11 @@ import exporter
 class RadialCapacitor(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor["title"], description=RadialCapacitor.describe(descriptor))
-        self.diameter = descriptor["body"]["radius"] * 2.
-        self.drill = descriptor["pads"]["drill"]
+        self.bodyDiameter = descriptor["body"]["diameter"]
+        self.padDrill = descriptor["pads"]["drill"]
+        self.padSize = (descriptor["pads"]["diameter"], descriptor["pads"]["diameter"])
         self.spacing = descriptor["pins"]["spacing"]
-        self.size = (descriptor["pads"]["size"], descriptor["pads"]["size"])
+
         self.thickness = spec["thickness"]
         self.font = spec["font"]
         self.gap = spec["gap"]
@@ -26,16 +27,19 @@ class RadialCapacitor(exporter.Footprint):
         self.generate()
 
     def generate(self):
-        markX = -self.diameter / 2. - self.thickness - self.gap - self.font / 2.
-        self.objects.append(exporter.String(value="+", position=(markX, 0.0), thickness=self.thickness, font=self.font))
+        markOffsetX = -self.bodyDiameter / 2. - self.thickness - self.gap - self.font / 2.
+        self.objects.append(exporter.String(value="+", position=(markOffsetX, 0.0), thickness=self.thickness,
+                font=self.font))
 
-        radius = self.diameter / 2. + self.thickness / 2.
-        self.objects.append(exporter.Circle((0.0, 0.0), radius, self.thickness, (0.0, 360.0)))
+        circleRadius = self.bodyDiameter / 2. + self.thickness / 2.
+        self.objects.append(exporter.Circle((0.0, 0.0), circleRadius, self.thickness, (0.0, 360.0)))
 
-        pinX = self.spacing / 2.
-        self.objects.append(exporter.HolePad(1, self.size, (-pinX, 0.0), self.drill, exporter.AbstractPad.STYLE_RECT))
-        self.objects.append(exporter.HolePad(2, self.size, (pinX, 0.0), self.drill, exporter.AbstractPad.STYLE_CIRCLE))
-        
+        pinOffsetX = self.spacing / 2.
+        self.objects.append(exporter.HolePad(1, self.padSize, (-pinOffsetX, 0.0), self.padDrill,
+                exporter.AbstractPad.STYLE_RECT))
+        self.objects.append(exporter.HolePad(2, self.padSize, (pinOffsetX, 0.0), self.padDrill,
+                exporter.AbstractPad.STYLE_CIRCLE))
+
     @staticmethod
     def describe(descriptor):
         description = ""
@@ -46,7 +50,7 @@ class RadialCapacitor(exporter.Footprint):
         if re.search("CP-", descriptor["title"], re.S) is not None:
             description += "polarized "
         description += "capacitor, pin spacing %.1f mm, diameter %u mm, height %u mm" % (descriptor["pins"]["spacing"],
-                int(descriptor["body"]["radius"] * 2.), int(descriptor["body"]["height"]))
+                int(descriptor["body"]["diameter"]), int(descriptor["body"]["height"]))
         description = description[0].upper() + description[1:]
         return description
 

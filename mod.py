@@ -78,13 +78,13 @@ for entry in builders:
     entry.debugNormals = options.normals
     entry.debugSmoothShading = options.smooth
 
-patterns = []
+templates = []
 for filename in options.files:
     extension = os.path.splitext(filename)[1][1:].lower()
     if extension == "wrl":
-        patterns.extend(vrml_import.load(filename))
+        templates.extend(vrml_import.load(filename))
     elif extension == "x3d":
-        patterns.extend(x3d_import.load(filename))
+        templates.extend(x3d_import.load(filename))
 
 materials = loadMaterials(options.materials) if options.materials != "" else {} 
 models = []
@@ -97,7 +97,7 @@ if options.input != "":
     for descriptor in content["parts"]:
         for package in types:
             if package.__name__ == descriptor["package"]["type"]:
-                models.append((package.build(materials, patterns, descriptor), descriptor["title"].lower()))
+                models.append((package.build(materials, templates, descriptor), descriptor["title"].lower()))
                 break
 
 if options.output != "":

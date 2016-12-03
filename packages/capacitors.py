@@ -122,7 +122,7 @@ def metricToImperial(value):
 
 class RadialCapacitor:
     @staticmethod
-    def build(materials, patterns, descriptor):
+    def build(materials, templates, descriptor):
         for matGroup in ["Body", "Mark", "Top", "Bottom", "Pin"]:
             if matGroup not in materials.keys():
                 materials[matGroup] = model.Material()
@@ -132,18 +132,18 @@ class RadialCapacitor:
     
         meshes = []
         bodyCurve = buildCapacitorCurve(
-                metricToImperial(descriptor["body"]["radius"]),
+                metricToImperial(descriptor["body"]["diameter"]) / 2.,
                 metricToImperial(descriptor["body"]["height"]),
                 metricToImperial(descriptor["body"]["curvature"]),
                 metricToImperial(descriptor["body"]["band"]),
-                metricToImperial(descriptor["caps"]["radius"]),
+                metricToImperial(descriptor["caps"]["diameter"]) / 2.,
                 metricToImperial(descriptor["caps"]["depth"]),
                 metricToImperial(descriptor["caps"]["chamfer"]))
         meshes.extend(buildCapacitorBody(bodyCurve, descriptor["body"]["edges"], descriptor["body"]["stripe"],
                 materials, title))
     
         pinCurve = buildPinCurve(
-                metricToImperial(descriptor["pins"]["radius"]),
+                metricToImperial(descriptor["pins"]["diameter"]) / 2.,
                 metricToImperial(descriptor["pins"]["height"]),
                 metricToImperial(descriptor["pins"]["curvature"]))
     

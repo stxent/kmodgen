@@ -73,34 +73,34 @@ class SmallOutlinePackage:
         return [body, mark] + pins
 
     @staticmethod
-    def build(materials, patterns, descriptor):
-        soRegions = [
-                (((0.15, 0.15, 1.0), (-0.15, -0.15, -1.0)), 1),
-                (((1.0, 1.0, 1.0), (0.15, 0.15, -1.0)), 2),
-                (((-1.0, 1.0, 1.0), (-0.15, 0.15, -1.0)), 3),
-                (((1.0, -1.0, 1.0), (0.15, -0.15, -1.0)), 4),
-                (((-1.0, -1.0, 1.0), (-0.15, -0.15, -1.0)), 5)]
+    def build(materials, templates, descriptor):
+        regions = [
+                ((( 0.15,  0.15, 1.0), (-0.15, -0.15, -1.0)), 1),
+                ((( 1.0,   1.0,  1.0), ( 0.15,  0.15, -1.0)), 2),
+                (((-1.0,   1.0,  1.0), (-0.15,  0.15, -1.0)), 3),
+                ((( 1.0,  -1.0,  1.0), ( 0.15, -0.15, -1.0)), 4),
+                (((-1.0,  -1.0,  1.0), (-0.15, -0.15, -1.0)), 5)]
         
         referenceObject = None
 
         if descriptor["package"]["subtype"] == "SO":
-            soBody = lookup(patterns, "PatSOBody")[0].parent
-            soBodyMark = lookup(patterns, "PatSOBody")[1].parent
-            soPin = lookup(patterns, "PatSOPin")[0].parent
+            soBody = lookup(templates, "PatSOBody")[0].parent
+            soBodyMark = lookup(templates, "PatSOBody")[1].parent
+            soPin = lookup(templates, "PatSOPin")[0].parent
             
             #Modified SO models
-            soAttributedBody = model.AttributedMesh(name="SOBody", regions=soRegions)
+            soAttributedBody = model.AttributedMesh(name="SOBody", regions=regions)
             soAttributedBody.append(soBody)
             soAttributedBody.visualAppearance = soBody.appearance()
             
             referenceObject = (soAttributedBody, soBodyMark, soPin, (0.75, 0.5))
         elif descriptor["package"]["subtype"] == "TSSOP":
-            tssopBody = lookup(patterns, "PatTSSOPBody")[0].parent
-            tssopBodyMark = lookup(patterns, "PatTSSOPBody")[1].parent
-            tssopPin = lookup(patterns, "PatTSSOPPin")[0].parent
+            tssopBody = lookup(templates, "PatTSSOPBody")[0].parent
+            tssopBodyMark = lookup(templates, "PatTSSOPBody")[1].parent
+            tssopPin = lookup(templates, "PatTSSOPPin")[0].parent
             
             #TSSOP model uses same regions
-            tssopAttributedBody = model.AttributedMesh(name="TSSOPBody", regions=soRegions)
+            tssopAttributedBody = model.AttributedMesh(name="TSSOPBody", regions=regions)
             tssopAttributedBody.append(tssopBody)
             tssopAttributedBody.visualAppearance = tssopBody.appearance()
             
