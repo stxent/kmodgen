@@ -117,7 +117,6 @@ class Poly:
 
 class Footprint:
     def __init__(self, name, description, model=None):
-        self.objects = []
         self.name = name
         self.description = None if description is None or description == "" else description
         self.model = name.lower() if model is None else model

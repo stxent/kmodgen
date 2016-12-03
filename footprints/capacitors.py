@@ -17,28 +17,28 @@ class RadialCapacitor(exporter.Footprint):
         self.padSize = (descriptor["pads"]["diameter"], descriptor["pads"]["diameter"])
         self.spacing = descriptor["pins"]["spacing"]
 
-        self.thickness = spec["thickness"]
         self.font = spec["font"]
         self.gap = spec["gap"]
-
-        self.objects.append(exporter.Label(name=descriptor["title"], position=(0.0, 0.0), thickness=self.thickness,
-                font=self.font))
-
-        self.generate()
+        self.thickness = spec["thickness"]
 
     def generate(self):
+        objects = []
+        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+
         markOffsetX = -self.bodyDiameter / 2. - self.thickness - self.gap - self.font / 2.
-        self.objects.append(exporter.String(value="+", position=(markOffsetX, 0.0), thickness=self.thickness,
+        objects.append(exporter.String(value="+", position=(markOffsetX, 0.0), thickness=self.thickness,
                 font=self.font))
 
         circleRadius = self.bodyDiameter / 2. + self.thickness / 2.
-        self.objects.append(exporter.Circle((0.0, 0.0), circleRadius, self.thickness, (0.0, 360.0)))
+        objects.append(exporter.Circle((0.0, 0.0), circleRadius, self.thickness, (0.0, 360.0)))
 
         pinOffsetX = self.spacing / 2.
-        self.objects.append(exporter.HolePad(1, self.padSize, (-pinOffsetX, 0.0), self.padDrill,
+        objects.append(exporter.HolePad(1, self.padSize, (-pinOffsetX, 0.0), self.padDrill,
                 exporter.AbstractPad.STYLE_RECT))
-        self.objects.append(exporter.HolePad(2, self.padSize, (pinOffsetX, 0.0), self.padDrill,
+        objects.append(exporter.HolePad(2, self.padSize, (pinOffsetX, 0.0), self.padDrill,
                 exporter.AbstractPad.STYLE_CIRCLE))
+
+        return objects
 
     @staticmethod
     def describe(descriptor):

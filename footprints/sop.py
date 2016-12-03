@@ -21,15 +21,12 @@ class SmallOutlinePackage(exporter.Footprint):
         self.pitch = descriptor["pins"]["pitch"]
         self.sidePitch = self.pitch + (self.sidePadWidth - self.padSize[0]) / 2.
 
-        self.thickness = spec["thickness"]
+        self.font = spec["font"]
         self.gap = spec["gap"]
+        self.thickness = spec["thickness"]
+
         self.dotRadius = self.thickness / 2.
         self.markOffset = 1.0
-
-        self.objects.append(exporter.Label(name=descriptor["title"], position=(0.0, 0.0), thickness=self.thickness,
-                font=spec["font"]))
-
-        self.generate()
 
     def delta(self, position, count):
         res = 0.0
@@ -42,6 +39,9 @@ class SmallOutlinePackage(exporter.Footprint):
         return res
 
     def generate(self):
+        objects = []
+        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+
         #Borders
         outlineMargin = (self.margin - self.gap - self.thickness / 2.) * 2.
         outline = (self.body[0], min(self.body[1], self.body[1] + outlineMargin))
@@ -50,21 +50,21 @@ class SmallOutlinePackage(exporter.Footprint):
         count = self.count / 2
         offset = self.pitch / 2. if count % 2 == 0 else self.pitch
 
-        self.objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
-        self.objects.append(exporter.Line((borders[0], borders[1]), (borders[0], -borders[1]), self.thickness))
-        self.objects.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
-        self.objects.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
+        objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
+        objects.append(exporter.Line((borders[0], borders[1]), (borders[0], -borders[1]), self.thickness))
+        objects.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
+        objects.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
 
         #Outer polarity mark
         dotMarkOffset = ((count / 2 - 1) * self.pitch + (self.sidePitch - self.pitch) + offset
                 + self.sidePadWidth / 2. + self.gap + self.dotRadius + self.thickness / 2.)
-        self.objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.margin + self.padSize[1] / 2.),
+        objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.margin + self.padSize[1] / 2.),
                 self.dotRadius, self.thickness))
 
         #Inner polarity mark
         points = [(-borders[0], borders[1] - self.markOffset), (-borders[0], borders[1]),
                 (-borders[0] + self.markOffset, borders[1])]
-        self.objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))
+        objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))
 
         pads = []
         for i in range(0, count):
@@ -78,7 +78,9 @@ class SmallOutlinePackage(exporter.Footprint):
             pads.append(exporter.SmdPad(i + 1,         (w, h), ( x + self.delta(i, count),  y)))
 
         pads.sort(key=lambda x: x.number)
-        self.objects.extend(pads)
+        objects.extend(pads)
+
+        return objects
 
     @staticmethod
     def describe(descriptor):

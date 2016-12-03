@@ -146,17 +146,19 @@ class Converter:
         if footprint.description is not None:
             out += "  (descr \"%s\")\n" % footprint.description
 
-        for obj in filter(lambda x: isinstance(x, exporter.Label), footprint.objects):
+        objects = footprint.generate()
+
+        for obj in filter(lambda x: isinstance(x, exporter.Label), objects):
             out += self.labelToText(obj)
-        for obj in filter(lambda x: isinstance(x, exporter.String), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.String), objects):
             out += self.stringToText(obj)
-        for obj in filter(lambda x: isinstance(x, exporter.Circle), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.Circle), objects):
             out += self.circleToText(obj)
-        for obj in filter(lambda x: isinstance(x, exporter.Line), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.Line), objects):
             out += self.lineToText(obj)
-        for obj in filter(lambda x: isinstance(x, exporter.Poly), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.Poly), objects):
             out += self.polyToText(obj)
-        for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):
             out += self.padToText(obj)
 
         out += "  (model %s%s.%s\n" % (self.pathToModels, footprint.model, self.modelType)

@@ -88,18 +88,20 @@ class Converter:
         out += "AR\n"
         out += "Op 0 0 0\n"
         out += "At SMD\n"
-        
-        for obj in filter(lambda x: isinstance(x, exporter.Label), footprint.objects):
+
+        objects = footprint.generate()
+
+        for obj in filter(lambda x: isinstance(x, exporter.Label), objects):
             out += self.labelToText(obj) + "\n"
-        for obj in filter(lambda x: isinstance(x, exporter.String), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.String), objects):
             out += self.stringToText(obj) + "\n"
-        for obj in filter(lambda x: isinstance(x, exporter.Circle), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.Circle), objects):
             out += self.circleToText(obj) + "\n"
-        for obj in filter(lambda x: isinstance(x, exporter.Line), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.Line), objects):
             out += self.lineToText(obj) + "\n"
-        for obj in filter(lambda x: isinstance(x, exporter.Poly), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.Poly), objects):
             out += self.polyToText(obj) + "\n"
-        for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), footprint.objects):
+        for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):
             out += self.padToText(obj) + "\n"
 
         out += "$SHAPE3D\n"

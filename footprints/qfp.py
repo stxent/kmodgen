@@ -21,15 +21,12 @@ class QuadFlatPackage(exporter.Footprint):
         self.pitch = descriptor["pins"]["pitch"]
         self.sidePitch = self.pitch + (self.sidePadWidth - self.padSize[0]) / 2.
 
-        self.thickness = spec["thickness"]
+        self.font = spec["font"]
         self.gap = spec["gap"]
+        self.thickness = spec["thickness"]
+
         self.dotRadius = self.thickness / 2.
         self.markOffset = 1.0
-
-        self.objects.append(exporter.Label(name=descriptor["title"], position=(0.0, 0.0), thickness=self.thickness,
-                font=spec["font"]))
-
-        self.generate()
 
     def delta(self, position, count):
         res = 0.0
@@ -42,28 +39,31 @@ class QuadFlatPackage(exporter.Footprint):
         return res
 
     def generate(self):
+        objects = []
+        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+
         #Borders
         outlineMargin = (self.margin - self.gap - self.thickness / 2.) * 2.
         outline = (min(self.body[0], self.body[0] + outlineMargin), min(self.body[1], self.body[1] + outlineMargin))
         borders = (outline[0] / 2., outline[1] / 2.)
 
-        self.objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
-        self.objects.append(exporter.Line((borders[0], borders[1]), (borders[0], -borders[1]), self.thickness))
-        self.objects.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
-        self.objects.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
+        objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
+        objects.append(exporter.Line((borders[0], borders[1]), (borders[0], -borders[1]), self.thickness))
+        objects.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
+        objects.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
 
         offset = lambda count: self.pitch / 2. if count % 2 == 0 else self.pitch
 
         #Outer polarity mark
         dotMarkOffset = ((self.count[0] / 2 - 1) * self.pitch + (self.sidePitch - self.pitch)
                 + offset(self.count[0]) + self.sidePadWidth / 2. + self.gap + self.dotRadius + self.thickness / 2.)
-        self.objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.padSize[1] / 2. + self.margin),
+        objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.padSize[1] / 2. + self.margin),
                 self.dotRadius, self.thickness))
 
         #Inner polarity mark
         points = [(-borders[0], borders[1] - self.markOffset), (-borders[0], borders[1]),
                 (-borders[0] + self.markOffset, borders[1])]
-        self.objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))
+        objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))
 
         width = lambda count, i: self.sidePadWidth if i == 0 or i == count - 1 else self.padSize[0]
 
@@ -90,7 +90,9 @@ class QuadFlatPackage(exporter.Footprint):
             pads.append(exporter.SmdPad(numbers[1], (h, w), (-x,  y + self.delta(i, self.count[1]))))
 
         pads.sort(key=lambda x: x.number)
-        self.objects.extend(pads)
+        objects.extend(pads)
+
+        return objects
 
     @staticmethod
     def describe(descriptor):
