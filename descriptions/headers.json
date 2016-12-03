@@ -153,55 +153,55 @@
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-10",
-      "body": {"length": 20.34, "width": 7.09},
+      "body": {"length": 20.36, "width": 9.1},
       "pins": {"columns": 5, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-14",
-      "body": {"length": 25.48, "width": 7.09},
+      "body": {"length": 25.44, "width": 9.1},
       "pins": {"columns": 7, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-16",
-      "body": {"length": 27.90, "width": 7.09},
+      "body": {"length": 27.98, "width": 9.1},
       "pins": {"columns": 8, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-20",
-      "body": {"length": 33.05, "width": 7.09},
+      "body": {"length": 33.06, "width": 9.1},
       "pins": {"columns": 10, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-24",
-      "body": {"length": 38.08, "width": 7.09},
+      "body": {"length": 38.14, "width": 9.1},
       "pins": {"columns": 12, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-26",
-      "body": {"length": 40.68, "width": 7.09},
+      "body": {"length": 40.68, "width": 9.1},
       "pins": {"columns": 13, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-30",
-      "body": {"length": 45.70, "width": 7.09},
+      "body": {"length": 45.76, "width": 9.1},
       "pins": {"columns": 15, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-34",
-      "body": {"length": 50.80, "width": 7.09},
+      "body": {"length": 50.84, "width": 9.1},
       "pins": {"columns": 17, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
       "package": {"type": "BoxHeader", "spec": "thick"},
       "title": "BH-40",
-      "body": {"length": 58.46, "width": 7.09},
+      "body": {"length": 58.46, "width": 9.1},
       "pins": {"columns": 20, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }
