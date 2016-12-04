@@ -147,12 +147,13 @@ class Chip(exporter.Footprint):
         
     @staticmethod
     def describe(descriptor):
-        return descriptor["description"] if "description" in descriptor.keys() else ""
+        return descriptor["description"] if "description" in descriptor.keys() else None
 
 
 class SmallOutlineTransistor23(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"], description=Chip.describe(descriptor),
+        exporter.Footprint.__init__(self, name=descriptor["title"],
+                description=SmallOutlineTransistor23.describe(descriptor),
                 model=descriptor["body"]["model"] if "model" in descriptor["body"].keys() else None)
 
         self.size = (descriptor["pads"]["width"], descriptor["pads"]["height"])
@@ -218,6 +219,10 @@ class SmallOutlineTransistor23(exporter.Footprint):
 
         return objects
 
+    @staticmethod
+    def describe(descriptor):
+        return descriptor["description"] if "description" in descriptor.keys() else None
+
 
 class SmallOutlineTransistor223(exporter.Footprint):
     def __init__(self, spec, descriptor):
@@ -272,7 +277,7 @@ class SmallOutlineTransistor223(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor["description"] if "description" in descriptor.keys() else ""
+        return descriptor["description"] if "description" in descriptor.keys() else None
 
 
 types = [Chip, SmallOutlineTransistor23, SmallOutlineTransistor223]

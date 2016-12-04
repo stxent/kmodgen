@@ -7,6 +7,7 @@
 
 import math
 import os
+import re
 import time
 
 import exporter
@@ -170,19 +171,33 @@ class Converter:
         out += ")\n"
         return out
 
-    def generateDocument(self, parts):
+    @staticmethod
+    def isFileOutdated(path, newContent):
+        oldContent = open(path, "rb").read()
+        return not re.sub("\(tedit [0-9A-F]+\)", "", oldContent) == re.sub("\(tedit [0-9A-F]+\)", "", newContent)
+
+    def generateLibrary(self, parts):
         toConsole = self.libraryPath is None or self.libraryName is None
-        if not toConsole:
+
+        if toConsole:
+            out = ""
+            for entry in parts:
+                out += self.footprintToText(entry)
+            return out
+        else:
             libraryPath = "%s%s.pretty" % (self.libraryPath, self.libraryName)
             if not os.path.exists(libraryPath):
                 os.makedirs(libraryPath)
 
-        out = ""
-        for entry in parts:
-            if toConsole:
-                out += self.footprintToText(entry)
-            else:
-                outputFile = open("%s/%s.kicad_mod" % (libraryPath, entry.name), "wb")
-                outputFile.write(self.footprintToText(entry))
-                outputFile.close()
-        return out
+            for entry in parts:
+                footprintData = self.footprintToText(entry)
+
+                filename = "%s/%s.kicad_mod" % (libraryPath, entry.name)
+                if Converter.isFileOutdated(filename, footprintData):
+                    outputFile = open(filename, "wb")
+                    outputFile.write(footprintData)
+                    outputFile.close()
+                    print("Footprint %s:%s is written" % (self.libraryName, entry.name))
+                else:
+                    print("Footprint %s:%s is left untouched" % (self.libraryName, entry.name))
+            return None

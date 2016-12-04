@@ -65,10 +65,7 @@ class PinHeader(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if "description" in descriptor.keys():
-            return descriptor["description"]
-        else:
-            return ""
+        return descriptor["description"] if "description" in descriptor.keys() else None
 
 
 class BoxHeader(PinHeader):

@@ -113,7 +113,7 @@ class Converter:
         out += "$EndMODULE %s" % (footprint.name)
         return out
 
-    def generateDocument(self, parts):
+    def generateLibrary(self, parts):
         timestring = datetime.datetime.fromtimestamp(time.time()).strftime('%d.%m.%Y %H:%M:%S')
 
         out = ""
@@ -127,4 +127,5 @@ class Converter:
         for entry in parts:
             out += self.footprintToText(entry) + "\n"
         out += "$EndLIBRARY"
+
         return out

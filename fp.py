@@ -38,8 +38,10 @@ class Autogen:
 
         self.parts.sort(key=lambda x: x.name)
 
-    def text(self):
-        return self.converter.generateDocument(self.parts)
+    def generate(self):
+        out = self.converter.generateLibrary(self.parts)
+        if out is not None:
+            print out
 
     @staticmethod
     def load():
@@ -51,20 +53,20 @@ class Autogen:
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", dest="input", help="input file with descriptors", default="")
-parser.add_argument("-f", dest="models", help="model file format", default="wrl")
-parser.add_argument("-l", dest="library", help="library name", default="")
+parser.add_argument("-i", dest="input", help="input file with descriptors", default=None)
+parser.add_argument("-f", dest="models", help="model file format", default="x3d")
+parser.add_argument("-l", dest="library", help="library name", default=None)
 parser.add_argument("-o", dest="output", help="write footprints to specified directory", default=None)
 parser.add_argument("-p", dest="pretty", help="use S-Expression format", default=False, action="store_true")
-parser.add_argument("-s", dest="specs", help="silkscreen specifications", default="")
+parser.add_argument("-s", dest="specs", help="silkscreen specifications", default=None)
 options = parser.parse_args()
 
-if options.input == "":
+if options.input is None:
     raise Exception()
-if options.library == "":
+if options.library is None:
     raise Exception()
 
-if options.specs != "":
+if options.specs is not None:
     specsFile = options.specs
 else:
     specsFile = os.path.dirname(os.path.realpath(__file__)) + "/descriptions/specs.json"
@@ -73,4 +75,4 @@ specs = json.loads(open(specsFile, "rb").read())
 parts = json.loads(open(options.input, "rb").read())["parts"]
 mode = Autogen.MODE_KICAD_PRETTY if options.pretty else Autogen.MODE_KICAD
 
-print Autogen(parts, specs, mode, options.models, options.library, options.output).text()
+Autogen(parts, specs, mode, options.models, options.library, options.output).generate()
