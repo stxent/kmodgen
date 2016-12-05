@@ -27,7 +27,7 @@ def metricToImperial(value):
 
 class QuadFlatPackage:
     @staticmethod
-    def buildPackageBody(modelBody, modelMark, modelPin, count, size, pitch, name):
+    def buildPackageBody(materials, modelBody, modelMark, modelPin, count, size, pitch, name):
         DEFAULT_WIDTH = metricToImperial(5.0)
         margin = (size[0] / 2., size[1] / 2.)
 
@@ -46,11 +46,17 @@ class QuadFlatPackage:
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
         body.translate([0., 0., 0.001])
+        body.appearance().normals = debugNormals
+        body.appearance().smooth = debugSmoothShading
+        if "Body" in materials.keys():
+            body.appearance().material = materials["Body"]
 
         mark = copy.deepcopy(modelMark)
         mark.translate([dot[0], dot[1], 0.001])
         mark.appearance().normals = debugNormals
         mark.appearance().smooth = debugSmoothShading
+        if "Mark" in materials.keys():
+            mark.appearance().material = materials["Mark"]
 
         def makePin(x, y, angle, number):
             pin = model.Mesh(parent=modelPin, name="%s%uPin%u" % (name, count[0] * 2 + count[1] * 2, number))
@@ -58,6 +64,8 @@ class QuadFlatPackage:
             pin.rotate([0., 0., 1.], angle * math.pi / 180.)
             pin.appearance().normals = debugNormals
             pin.appearance().smooth = debugSmoothShading
+            if "Pin" in materials.keys():
+                pin.appearance().material = materials["Pin"]
             return pin
 
         pins = []
@@ -100,6 +108,7 @@ class QuadFlatPackage:
             modelPin = qfpNarrowPin
 
         return QuadFlatPackage.buildPackageBody(
+                materials,
                 qfpAttributedBody, qfpBodyMark, modelPin,
                 (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
                 (metricToImperial(descriptor["body"]["width"]), metricToImperial(descriptor["body"]["length"])),

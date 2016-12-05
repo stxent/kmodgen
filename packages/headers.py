@@ -26,7 +26,7 @@ def metricToImperial(value):
 
 class PinHeader:
     @staticmethod
-    def buildHeaderBody(modelBody, modelEdge, modelPin, count, pitch, name):
+    def buildHeaderBody(materials, modelBody, modelEdge, modelPin, count, pitch, name):
         shift = pitch / 2. if count[1] > 1 else 0.
 
         body = model.Mesh(name="%s_%uBody" % (name, count[0] * count[1]))
@@ -49,12 +49,16 @@ class PinHeader:
             pin.translate([float(i) * pitch, shift, 0.001])
             pin.appearance().normals = debugNormals
             pin.appearance().smooth = debugSmoothShading
+            if "Pin" in materials.keys():
+                pin.appearance().material = materials["Pin"]
             pins.append(pin)
 
         body.translate([0., 0., 0.001])
         body.optimize()
         body.appearance().normals = debugNormals
         body.appearance().smooth = debugSmoothShading
+        if "Body" in materials.keys():
+            body.appearance().material = materials["Body"]
 
         return [body] + pins
 
@@ -98,6 +102,7 @@ class PinHeader:
             raise Exception()
 
         return PinHeader.buildHeaderBody(
+                materials,
                 referenceObject[0], referenceObject[1], referenceObject[2],
                 (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
                 metricToImperial(descriptor["pins"]["pitch"]),
@@ -106,7 +111,7 @@ class PinHeader:
 
 class BoxHeader:
     @staticmethod
-    def buildHeaderBody(modelBody, modelPin, count, length, pitch, name):
+    def buildHeaderBody(materials, modelBody, modelPin, count, length, pitch, name):
         DEFAULT_WIDTH = metricToImperial(20.34)
         delta = (length - DEFAULT_WIDTH) / 2.
 
@@ -119,6 +124,8 @@ class BoxHeader:
         body.translate([delta, pitch / 2., 0.001])
         body.appearance().normals = debugNormals
         body.appearance().smooth = debugSmoothShading
+        if "Body" in materials.keys():
+            body.appearance().material = materials["Body"]
 
         pins = []
         for i in range(0, count[0]):
@@ -126,6 +133,8 @@ class BoxHeader:
             pin.translate([float(i) * pitch, pitch / 2., 0.001])
             pin.appearance().normals = debugNormals
             pin.appearance().smooth = debugSmoothShading
+            if "Pin" in materials.keys():
+                pin.appearance().material = materials["Pin"]
             pins.append(pin)
 
         return [body] + pins
@@ -153,6 +162,7 @@ class BoxHeader:
         bhAttributedBody.visualAppearance = bhBody.appearance()
 
         return BoxHeader.buildHeaderBody(
+                materials,
                 bhAttributedBody, bhPin,
                 (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
                 metricToImperial(descriptor["body"]["length"]),
