@@ -26,7 +26,7 @@ def metricToImperial(value):
 
 class PinHeader:
     @staticmethod
-    def buildHeaderBody(materials, modelBody, modelEdge, modelPin, count, pitch, name):
+    def buildHeaderBody(materials, modelBody, modelEdge, modelPin, bodyTransform, count, pitch, name):
         shift = pitch / 2. if count[1] > 1 else 0.
 
         body = model.Mesh(name="%s_%uBody" % (name, count[0] * count[1]))
@@ -53,6 +53,7 @@ class PinHeader:
                 pin.appearance().material = materials["Pin"]
             pins.append(pin)
 
+        body.transform = copy.deepcopy(bodyTransform)
         body.translate([0., 0., 0.001])
         body.optimize()
         body.appearance().normals = debugNormals
@@ -68,42 +69,41 @@ class PinHeader:
             TOLERANCE = 0.001
             return a - TOLERANCE <= b <= a + TOLERANCE
 
+        transform = model.Transform()
+        angular = "angular" in descriptor["pins"].keys() and descriptor["pins"]["angular"]
+        pitch200 = eq(descriptor["pins"]["pitch"], 2.0)
+        pitch254 = eq(descriptor["pins"]["pitch"], 2.54)
+
+        if angular:
+            if pitch200:
+                transform.translate([0., -0.391, 0.3937])
+                transform.rotate([1., 0., 0.], math.pi / 2.)
+            elif pitch254:
+                transform.translate([0., -0.557, 0.5])
+                transform.rotate([1., 0., 0.], math.pi / 2.)
+
         if descriptor["pins"]["rows"] == 1:
-            if eq(descriptor["pins"]["pitch"], 2.0):
-                pls2Body = lookup(templates, "PatPLS2Body").parent
-                pls2EdgeBody = lookup(templates, "PatPLS2EdgeBody").parent
-                pls2Pin = lookup(templates, "PatPLS2Pin").parent
-
-                referenceObject = (pls2Body, pls2EdgeBody, pls2Pin)
-            elif eq(descriptor["pins"]["pitch"], 2.54):
-                plsBody = lookup(templates, "PatPLSBody").parent
-                plsEdgeBody = lookup(templates, "PatPLSEdgeBody").parent
-                plsPin = lookup(templates, "PatPLSPin").parent
-
-                referenceObject = (plsBody, plsEdgeBody, plsPin)
+            if pitch200:
+                objectNames = ["PatPLS2Body", "PatPLS2EdgeBody", "PatPLS2RPin" if angular else "PatPLS2Pin"]
+            elif pitch254:
+                objectNames = ["PatPLSBody", "PatPLSEdgeBody", "PatPLSRPin" if angular else "PatPLSPin"]
             else:
                 raise Exception()
         elif descriptor["pins"]["rows"] == 2:
-            if eq(descriptor["pins"]["pitch"], 2.0):
-                pld2Body = lookup(templates, "PatPLD2Body").parent
-                pld2EdgeBody = lookup(templates, "PatPLD2EdgeBody").parent
-                pld2Pin = lookup(templates, "PatPLD2Pin").parent
-
-                referenceObject = (pld2Body, pld2EdgeBody, pld2Pin)
-            elif eq(descriptor["pins"]["pitch"], 2.54):
-                pldBody = lookup(templates, "PatPLDBody").parent
-                pldEdgeBody = lookup(templates, "PatPLDEdgeBody").parent
-                pldPin = lookup(templates, "PatPLDPin").parent
-
-                referenceObject = (pldBody, pldEdgeBody, pldPin)
+            if pitch200:
+                objectNames = ["PatPLD2Body", "PatPLD2EdgeBody", "PatPLD2RPin" if angular else "PatPLD2Pin"]
+            elif pitch254:
+                objectNames = ["PatPLDBody", "PatPLDEdgeBody", "PatPLDRPin" if angular else "PatPLDPin"]
             else:
                 raise Exception()
         else:
             raise Exception()
 
+        referenceObject = map(lambda name: lookup(templates, name).parent, objectNames)
+
         return PinHeader.buildHeaderBody(
                 materials,
-                referenceObject[0], referenceObject[1], referenceObject[2],
+                referenceObject[0], referenceObject[1], referenceObject[2], transform,
                 (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
                 metricToImperial(descriptor["pins"]["pitch"]),
                 descriptor["title"])
