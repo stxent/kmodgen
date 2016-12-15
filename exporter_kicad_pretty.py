@@ -173,8 +173,11 @@ class Converter:
 
     @staticmethod
     def isFileOutdated(path, newContent):
-        oldContent = open(path, "rb").read()
-        return not re.sub("\(tedit [0-9A-F]+\)", "", oldContent) == re.sub("\(tedit [0-9A-F]+\)", "", newContent)
+        try:
+            oldContent = open(path, "rb").read()
+            return not re.sub("\(tedit [0-9A-F]+\)", "", oldContent) == re.sub("\(tedit [0-9A-F]+\)", "", newContent)
+        except IOError:
+            return True
 
     def generateLibrary(self, parts):
         toConsole = self.libraryPath is None or self.libraryName is None
@@ -197,7 +200,7 @@ class Converter:
                     outputFile = open(filename, "wb")
                     outputFile.write(footprintData)
                     outputFile.close()
-                    print("Footprint %s:%s is written" % (self.libraryName, entry.name))
+                    print("Footprint %s:%s was written" % (self.libraryName, entry.name))
                 else:
-                    print("Footprint %s:%s is left untouched" % (self.libraryName, entry.name))
+                    print("Footprint %s:%s was left untouched" % (self.libraryName, entry.name))
             return None
