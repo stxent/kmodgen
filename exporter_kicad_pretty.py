@@ -200,7 +200,7 @@ class Converter:
                     outputFile = open(filename, "wb")
                     outputFile.write(footprintData)
                     outputFile.close()
-                    print("Footprint %s:%s was written" % (self.libraryName, entry.name))
+                    print("Footprint %s:%s was exported" % (self.libraryName, entry.name))
                 else:
                     print("Footprint %s:%s was left untouched" % (self.libraryName, entry.name))
             return None

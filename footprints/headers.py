@@ -68,6 +68,26 @@ class PinHeader(exporter.Footprint):
         return descriptor["description"] if "description" in descriptor.keys() else None
 
 
+class RightAnglePinHeader(PinHeader):
+    def __init__(self, spec, descriptor):
+        PinHeader.__init__(self, spec, descriptor)
+
+        projectionLength = descriptor["pins"]["length"]
+        topBorder, bottomBorder = -self.outline[1] / 2. + self.center[1], projectionLength - self.thickness / 2.
+        self.stripes = [self.outline[1] / 2. + self.center[1]]
+        self.body = (self.body[0], (float(self.count[1]) - 0.5) * self.pitch + projectionLength)
+        self.outline = (self.outline[0], bottomBorder - topBorder)
+        self.center = (self.center[0], (bottomBorder + topBorder) / 2.)
+
+    def generate(self):
+        objects = PinHeader.generate(self)
+        xOutlineSize = self.outline[0] / 2.
+        for yOffset in self.stripes:
+            objects.append(exporter.Line((-xOutlineSize + self.center[0], yOffset),
+                    (xOutlineSize + self.center[0], yOffset), self.thickness))
+        return objects
+
+
 class BoxHeader(PinHeader):
     def __init__(self, spec, descriptor):
         PinHeader.__init__(self, spec, descriptor)
@@ -76,4 +96,4 @@ class BoxHeader(PinHeader):
         self.outline = self.calcOutline()
 
 
-types = [PinHeader, BoxHeader]
+types = [PinHeader, RightAnglePinHeader, BoxHeader]

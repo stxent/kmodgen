@@ -70,38 +70,71 @@ class PinHeader:
             return a - TOLERANCE <= b <= a + TOLERANCE
 
         transform = model.Transform()
-        angular = "angular" in descriptor["pins"].keys() and descriptor["pins"]["angular"]
         pitch200 = eq(descriptor["pins"]["pitch"], 2.0)
         pitch254 = eq(descriptor["pins"]["pitch"], 2.54)
 
-        if angular:
-            if pitch200:
-                transform.translate([0., -0.391, 0.3937])
-                transform.rotate([1., 0., 0.], math.pi / 2.)
-            elif pitch254:
-                transform.translate([0., -0.557, 0.5])
-                transform.rotate([1., 0., 0.], math.pi / 2.)
+        if not pitch200 and not pitch254:
+            raise Exception()
 
         if descriptor["pins"]["rows"] == 1:
             if pitch200:
-                objectNames = ["PatPLS2Body", "PatPLS2EdgeBody", "PatPLS2RPin" if angular else "PatPLS2Pin"]
+                objectNames = ["PatPLS2Body", "PatPLS2EdgeBody", "PatPLS2Pin"]
             elif pitch254:
-                objectNames = ["PatPLSBody", "PatPLSEdgeBody", "PatPLSRPin" if angular else "PatPLSPin"]
-            else:
-                raise Exception()
+                objectNames = ["PatPLSBody", "PatPLSEdgeBody", "PatPLSPin"]
         elif descriptor["pins"]["rows"] == 2:
             if pitch200:
-                objectNames = ["PatPLD2Body", "PatPLD2EdgeBody", "PatPLD2RPin" if angular else "PatPLD2Pin"]
+                objectNames = ["PatPLD2Body", "PatPLD2EdgeBody", "PatPLD2Pin"]
             elif pitch254:
-                objectNames = ["PatPLDBody", "PatPLDEdgeBody", "PatPLDRPin" if angular else "PatPLDPin"]
-            else:
-                raise Exception()
+                objectNames = ["PatPLDBody", "PatPLDEdgeBody", "PatPLDPin"]
         else:
             raise Exception()
 
         referenceObject = map(lambda name: lookup(templates, name).parent, objectNames)
 
         return PinHeader.buildHeaderBody(
+                materials,
+                referenceObject[0], referenceObject[1], referenceObject[2], transform,
+                (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
+                metricToImperial(descriptor["pins"]["pitch"]),
+                descriptor["title"])
+
+
+class RightAnglePinHeader(PinHeader):
+    @staticmethod
+    def build(materials, templates, descriptor):
+        def eq(a, b):
+            TOLERANCE = 0.001
+            return a - TOLERANCE <= b <= a + TOLERANCE
+
+        transform = model.Transform()
+        pitch200 = eq(descriptor["pins"]["pitch"], 2.0)
+        pitch254 = eq(descriptor["pins"]["pitch"], 2.54)
+
+        if pitch200:
+            transform.translate([0., -0.391, 0.3937])
+            transform.rotate([1., 0., 0.], math.pi / 2.)
+        elif pitch254:
+            transform.translate([0., -0.557, 0.5])
+            transform.rotate([1., 0., 0.], math.pi / 2.)
+        else:
+            raise Exception()
+
+        if descriptor["pins"]["rows"] == 1:
+            if pitch200:
+                objectNames = ["PatPLS2Body", "PatPLS2EdgeBody", "PatPLS2RPin"]
+            elif pitch254:
+                objectNames = ["PatPLSBody", "PatPLSEdgeBody", "PatPLSRPin"]
+        elif descriptor["pins"]["rows"] == 2:
+            if pitch200:
+                objectNames = ["PatPLD2Body", "PatPLD2EdgeBody", "PatPLD2RPin"]
+            elif pitch254:
+                objectNames = ["PatPLDBody", "PatPLDEdgeBody", "PatPLDRPin"]
+        else:
+            raise Exception()
+
+        referenceObject = map(lambda name: lookup(templates, name).parent, objectNames)
+
+        return RightAnglePinHeader.buildHeaderBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
                 (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
@@ -170,4 +203,4 @@ class BoxHeader:
                 descriptor["title"])
 
 
-types = [PinHeader, BoxHeader]
+types = [PinHeader, RightAnglePinHeader, BoxHeader]

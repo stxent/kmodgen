@@ -107,6 +107,7 @@ if options.output != "":
     exportFunc = {"wrl": vrml_export_kicad.store, "x3d": x3d_export.store}[options.format] 
     for entry in models:
         exportFunc(entry[0], outputPath + entry[1] + "." + options.format)
+        print("Model %s.%s was exported" % (entry[1], options.format))
 
 if options.view:
     from wrlconv import helpers
