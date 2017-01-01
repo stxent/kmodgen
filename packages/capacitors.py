@@ -5,6 +5,9 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import math
+import numpy
+
 from wrlconv import curves
 from wrlconv import model
 
@@ -16,6 +19,137 @@ def metricToImperial(value):
 
 
 class RadialCapacitor:
+    @staticmethod
+    def buildBumpedCap(slices, beginning, sections, sectionWidth, capRadius, bodyRadius):
+        if sections < 2:
+            raise Exception()
+
+        rot = lambda a, b: a if a < b else a - b if a >= 0 else b - a
+
+        if beginning:
+            vertices = [slices[i][0] for i in range(0, len(slices))]
+        else:
+            vertices = [slices[i][len(slices[i]) - 1] for i in range(0, len(slices))]
+        center = sum(vertices) / len(slices)
+
+        geoVertices = []
+        geoPolygons = []
+
+        depth = sectionWidth / 4.
+        firstCircleRadius = sectionWidth / 4. / math.sin(2. * math.pi / float(2 * sections))
+        secondCircleRadius = sectionWidth / 2. / math.sin(2. * math.pi / float(2 * sections))
+        firstCirclePoints, secondCirclePoints = [], []
+        outerPoints = []
+        bodyPoints = []
+        for i in range(0, sections):
+            angle = 2. * math.pi / float(sections) * float(i)
+            vector = numpy.array([math.cos(angle), math.sin(angle), 0.])
+            firstCirclePoints.append(center + vector * firstCircleRadius + numpy.array([0., 0., -depth]))
+            secondCirclePoints.append(center + vector * secondCircleRadius)
+
+            angle = 2. * math.pi / float(sections) * (float(i) + 0.5)
+            vector = numpy.array([math.cos(angle), math.sin(angle), 0.])
+            normal = numpy.array([math.cos(angle + math.pi / 2.), math.sin(angle + math.pi / 2.), 0.])
+            points = [
+                    center + vector * capRadius + normal * sectionWidth / 2.,
+                    center + vector * capRadius + normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
+                    center + vector * capRadius - normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
+                    center + vector * capRadius - normal * sectionWidth / 2.
+            ]
+            outerPoints.append(points)
+            points = [
+                    center + vector * bodyRadius + normal * sectionWidth / 2.,
+                    center + vector * bodyRadius + normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
+                    center + vector * bodyRadius - normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
+                    center + vector * bodyRadius - normal * sectionWidth / 2.
+            ]
+            bodyPoints.append(points)
+
+        edgePoints = []
+        for i in range(0, sections):
+            angle = lambda v: math.atan2((v - center)[1], (v - center)[0])
+            belongs = lambda v, a, b: v >= a and v <= b if b >= a else v >= a or v <= b
+
+            def comparator(a, b):
+                aAngle, bAngle = angle(a), angle(b)
+                return 0 if aAngle == bAngle else -1 if aAngle <= bAngle else 1
+
+            innerRange = (outerPoints[rot(i - 1, sections)][0], outerPoints[i][3])
+            outerRange = (outerPoints[rot(i - 1, sections)][3], outerPoints[i][0])
+            inner = (angle(innerRange[0]), angle(innerRange[1]))
+            outer = (angle(outerRange[0]), angle(outerRange[1]))
+
+            normalAngles = (
+                    2. * math.pi / float(sections) * (float(i) + 0.5) + math.pi / 2.,
+                    2. * math.pi / float(sections) * (float(i) - 0.5) + math.pi / 2.
+            )
+            normals = (
+                    numpy.array([math.cos(normalAngles[0]), math.sin(normalAngles[0]), 0.]),
+                    numpy.array([math.cos(normalAngles[1]), math.sin(normalAngles[1]), 0.])
+            )
+
+            points = [v for v in vertices if belongs(angle(v), inner[0], inner[1])]
+
+            for j in range(0, len(vertices)):
+                seg = (vertices[rot(j - 1, len(vertices))], vertices[j])
+
+                if not belongs(angle(seg[0]), outer[0], outer[1]) and not belongs(angle(seg[1]), outer[0], outer[1]):
+                    continue
+
+                intersection = model.intersectLinePlane(secondCirclePoints[i], normals[0], seg[0], seg[1])
+                if intersection is not None:
+                    outerPoints[i][3] = intersection
+                    points.append(intersection)
+
+                intersection = model.intersectLinePlane(secondCirclePoints[i], normals[1], seg[0], seg[1])
+                if intersection is not None:
+                    outerPoints[rot(i - 1, sections)][0] = intersection
+                    points.append(intersection)
+
+            if inner[1] >= inner[0]:
+                points = sorted(points, comparator)
+            else:
+                points = sorted(filter(lambda x: angle(x) >= 0., points), comparator)\
+                        + sorted(filter(lambda x: angle(x) < 0., points), comparator)
+            edgePoints.append(points)
+
+        fcp = lambda a: rot(a, sections)
+        geoVertices.extend(firstCirclePoints)
+        scp = lambda a: sections + rot(a, sections)
+        geoVertices.extend(secondCirclePoints)
+        op = lambda a, b: 2 * sections + rot(a, sections) * 4 + rot(b, 4)
+        [geoVertices.extend(points) for points in outerPoints]
+        bp = lambda a, b: 6 * sections + rot(a, sections) * 4 + rot(b, 4)
+        [geoVertices.extend(points) for points in bodyPoints]
+
+        [geoVertices.extend(points) for points in edgePoints]
+        def edgeIndices(a):
+            return [10 * sections + sum(map(len, edgePoints[0:a])) + i for i in range(0, len(edgePoints[a]))]
+
+        # Central polygon
+        geoPolygons.append([i for i in range(0, sections)])
+        for i in range(0, sections):
+            # Bumped polygons
+            geoPolygons.append([fcp(i + 1), fcp(i), op(i, 2), op(i, 1)])
+            # Ramp polygons
+            geoPolygons.append([scp(i + 1), fcp(i + 1), op(i, 1), op(i, 0)])
+            geoPolygons.append([fcp(i), scp(i), op(i, 3), op(i, 2)])
+            # Arc polygons
+            geoPolygons.append([scp(i)] + edgeIndices(i))
+            # Partially visible polygons
+            geoPolygons.append([op(i, 0), op(i, 1), bp(i, 1), bp(i, 0)])
+            geoPolygons.append([op(i, 2), op(i, 3), bp(i, 3), bp(i, 2)])
+            geoPolygons.append([op(i, 1), op(i, 2), bp(i, 2), bp(i, 1)])
+            geoPolygons.append([bp(i, 0), bp(i, 1), bp(i, 2), bp(i, 3)])
+
+        #Generate object
+        mesh = model.Mesh()
+        mesh.geoVertices = geoVertices
+        [mesh.geoPolygons.extend(model.Mesh.tesselate(patch)) for patch in geoPolygons]
+        mesh.optimize()
+
+        return mesh
+
     @staticmethod
     def buildCapacitorCurve(radius, height, curvature, bandOffset, capRadius, capDepth, chamfer,
             edgeDetails=3, bandDetails=4):
@@ -68,7 +202,8 @@ class RadialCapacitor:
         return curve
 
     @staticmethod
-    def buildCapacitorBody(curve, edges, polarized, materials, name):
+    def buildCapacitorBody(curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
+            capSectionWidth, capBumpDepth):
         slices = curves.rotate(curve, (0., 0., 1.), edges)
         meshes = []
 
@@ -79,7 +214,11 @@ class RadialCapacitor:
         bottomCap.ident = name + "BottomCap"
         meshes.append(bottomCap)
 
-        topCap = curves.createTriCapMesh(slices, False)
+        if capSections == 1:
+            topCap = curves.createTriCapMesh(slices, False)
+        else:
+            topCap = RadialCapacitor.buildBumpedCap(slices=slices, beginning=False, sections=capSections,
+                    sectionWidth=capSectionWidth, capRadius=capInnerRadius, bodyRadius=capOuterRadius)
         topCap.appearance().material = RadialCapacitor.mat(materials, "Top")
         topCap.appearance().normals = debugNormals
         topCap.appearance().smooth = debugSmoothShading
@@ -140,6 +279,10 @@ class RadialCapacitor:
     def build(materials, templates, descriptor):
         title = RadialCapacitor.demangle(descriptor["title"])
 
+        bodyDetails = descriptor["body"]["details"] if "details" in descriptor["body"].keys() else 3
+        bodyEdges = descriptor["body"]["edges"] if "edges" in descriptor["body"].keys() else 24
+        capSections = descriptor["caps"]["sections"] if "sections" in descriptor["caps"].keys() else 1
+
         meshes = []
         bodyCurve = RadialCapacitor.buildCapacitorCurve(
                 metricToImperial(descriptor["body"]["diameter"]) / 2.,
@@ -148,9 +291,22 @@ class RadialCapacitor:
                 metricToImperial(descriptor["body"]["band"]),
                 metricToImperial(descriptor["caps"]["diameter"]) / 2.,
                 metricToImperial(descriptor["caps"]["depth"]),
-                metricToImperial(descriptor["caps"]["chamfer"]))
-        meshes.extend(RadialCapacitor.buildCapacitorBody(bodyCurve, descriptor["body"]["edges"],
-                descriptor["body"]["stripe"], materials, title))
+                metricToImperial(descriptor["caps"]["chamfer"]),
+                bodyDetails,
+                bodyDetails + 1)
+
+        bodyMesh = RadialCapacitor.buildCapacitorBody(
+                bodyCurve,
+                bodyEdges,
+                descriptor["body"]["stripe"],
+                materials,
+                title,
+                capSections,
+                metricToImperial(descriptor["caps"]["diameter"]) / 2.,
+                metricToImperial(descriptor["caps"]["diameter"] + descriptor["body"]["curvature"]) / 2.,
+                metricToImperial(descriptor["body"]["curvature"]),
+                metricToImperial(descriptor["body"]["curvature"]) / 2.)
+        meshes.extend(bodyMesh)
 
         pinCurve = RadialCapacitor.buildPinCurve(
                 metricToImperial(descriptor["pins"]["diameter"]) / 2.,
