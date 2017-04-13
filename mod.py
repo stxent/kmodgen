@@ -74,10 +74,6 @@ if options.debug:
     x3d_import.debugEnabled = True
     x3d_export.debugEnabled = True
 
-for entry in builders:
-    entry.debugNormals = options.normals
-    entry.debugSmoothShading = options.smooth
-
 templates = []
 for filename in options.files:
     extension = os.path.splitext(filename)[1][1:].lower()
@@ -105,9 +101,15 @@ if options.output != "":
     if outputPath[-1] != '/':
         outputPath += '/'
     exportFunc = {"wrl": vrml_export_kicad.store, "x3d": x3d_export.store}[options.format] 
-    for entry in models:
-        exportFunc(entry[0], outputPath + entry[1] + "." + options.format)
-        print("Model %s.%s was exported" % (entry[1], options.format))
+    for group in models:
+        exportFunc(group[0], outputPath + group[1] + "." + options.format)
+        print("Model %s.%s was exported" % (group[1], options.format))
+
+if options.normals or options.smooth:
+    for group in models:
+        for entry in group[0]:
+            entry.appearance().normals = options.normals
+            entry.appearance().smooth = options.smooth
 
 if options.view:
     from wrlconv import helpers

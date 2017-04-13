@@ -11,9 +11,6 @@ import re
 
 from wrlconv import model
 
-debugNormals = False
-debugSmoothShading = False
-
 def lookup(meshList, meshName):
     for entry in meshList:
         if re.search(meshName, entry.ident, re.S) is not None:
@@ -47,8 +44,6 @@ class PinHeader:
 
             pin = model.Mesh(parent=modelPin, name="%s_%uPin%u" % (name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, shift, 0.001])
-            pin.appearance().normals = debugNormals
-            pin.appearance().smooth = debugSmoothShading
             if "Pin" in materials.keys():
                 pin.appearance().material = materials["Pin"]
             pins.append(pin)
@@ -56,8 +51,6 @@ class PinHeader:
         body.transform = copy.deepcopy(bodyTransform)
         body.translate([0., 0., 0.001])
         body.optimize()
-        body.appearance().normals = debugNormals
-        body.appearance().smooth = debugSmoothShading
         if "Body" in materials.keys():
             body.appearance().material = materials["Body"]
 
@@ -155,8 +148,6 @@ class BoxHeader:
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
         body.translate([delta, pitch / 2., 0.001])
-        body.appearance().normals = debugNormals
-        body.appearance().smooth = debugSmoothShading
         if "Body" in materials.keys():
             body.appearance().material = materials["Body"]
 
@@ -164,8 +155,6 @@ class BoxHeader:
         for i in range(0, count[0]):
             pin = model.Mesh(parent=modelPin, name="%s_%uPin%u" % (name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, pitch / 2., 0.001])
-            pin.appearance().normals = debugNormals
-            pin.appearance().smooth = debugSmoothShading
             if "Pin" in materials.keys():
                 pin.appearance().material = materials["Pin"]
             pins.append(pin)

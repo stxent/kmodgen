@@ -11,9 +11,6 @@ import re
 
 from wrlconv import model
 
-debugNormals = False
-debugSmoothShading = False
-
 def lookup(meshList, meshName):
     found = []
     for entry in meshList:
@@ -46,15 +43,11 @@ class QuadFlatPackage:
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
         body.translate([0., 0., 0.001])
-        body.appearance().normals = debugNormals
-        body.appearance().smooth = debugSmoothShading
         if "Body" in materials.keys():
             body.appearance().material = materials["Body"]
 
         mark = copy.deepcopy(modelMark)
         mark.translate([dot[0], dot[1], 0.001])
-        mark.appearance().normals = debugNormals
-        mark.appearance().smooth = debugSmoothShading
         if "Mark" in materials.keys():
             mark.appearance().material = materials["Mark"]
 
@@ -62,8 +55,6 @@ class QuadFlatPackage:
             pin = model.Mesh(parent=modelPin, name="%s%uPin%u" % (name, count[0] * 2 + count[1] * 2, number))
             pin.translate([x, y, 0.001])
             pin.rotate([0., 0., 1.], angle * math.pi / 180.)
-            pin.appearance().normals = debugNormals
-            pin.appearance().smooth = debugSmoothShading
             if "Pin" in materials.keys():
                 pin.appearance().material = materials["Pin"]
             return pin

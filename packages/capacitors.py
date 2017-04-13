@@ -11,9 +11,6 @@ import numpy
 from wrlconv import curves
 from wrlconv import model
 
-debugNormals = False
-debugSmoothShading = False
-
 def metricToImperial(value):
     return value / 2.54 #Convert millimeters to hundreds of mils
 
@@ -209,8 +206,6 @@ class RadialCapacitor:
 
         bottomCap = curves.createTriCapMesh(slices, True)
         bottomCap.appearance().material = RadialCapacitor.mat(materials, "Bottom")
-        bottomCap.appearance().normals = debugNormals
-        bottomCap.appearance().smooth = debugSmoothShading
         bottomCap.ident = name + "BottomCap"
         meshes.append(bottomCap)
 
@@ -220,30 +215,22 @@ class RadialCapacitor:
             topCap = RadialCapacitor.buildBumpedCap(slices=slices, beginning=False, sections=capSections,
                     sectionWidth=capSectionWidth, capRadius=capInnerRadius, bodyRadius=capOuterRadius)
         topCap.appearance().material = RadialCapacitor.mat(materials, "Top")
-        topCap.appearance().normals = debugNormals
-        topCap.appearance().smooth = debugSmoothShading
         topCap.ident = name + "TopCap"
         meshes.append(topCap)
 
         if polarized:
             body = curves.createRotationMesh(slices[1:], False)
             body.appearance().material = RadialCapacitor.mat(materials, "Body")
-            body.appearance().normals = debugNormals
-            body.appearance().smooth = debugSmoothShading
             body.ident = name + "Body"
             meshes.append(body)
 
             mark = curves.createRotationMesh([slices[-1]] + slices[0:2], False)
             mark.appearance().material = RadialCapacitor.mat(materials, "Mark")
-            mark.appearance().normals = debugNormals
-            mark.appearance().smooth = debugSmoothShading
             mark.ident = name + "Mark"
             meshes.append(mark)
         else:
             body = curves.createRotationMesh(slices, True)
             body.appearance().material = RadialCapacitor.mat(materials, "Body")
-            body.appearance().normals = debugNormals
-            body.appearance().smooth = debugSmoothShading
             body.ident = name + "Body"
             meshes.append(body)
 
@@ -256,9 +243,6 @@ class RadialCapacitor:
         pin = curves.createRotationMesh(slices, True)
         pin.append(curves.createTriCapMesh(slices, True))
         pin.optimize()
-
-        pin.appearance().normals = debugNormals
-        pin.appearance().smooth = debugSmoothShading
 
         return pin
 
