@@ -33,9 +33,9 @@ class RadialCapacitor(exporter.Footprint):
         objects.append(exporter.Circle((0.0, 0.0), circleRadius, self.thickness, (0.0, 360.0)))
 
         pinOffsetX = self.spacing / 2.
-        objects.append(exporter.HolePad(1, self.padSize, (-pinOffsetX, 0.0), self.padDrill,
+        objects.append(exporter.HolePad("A", self.padSize, (-pinOffsetX, 0.0), self.padDrill,
                 exporter.AbstractPad.STYLE_RECT))
-        objects.append(exporter.HolePad(2, self.padSize, (pinOffsetX, 0.0), self.padDrill,
+        objects.append(exporter.HolePad("C", self.padSize, (pinOffsetX, 0.0), self.padDrill,
                 exporter.AbstractPad.STYLE_CIRCLE))
 
         return objects
