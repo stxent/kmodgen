@@ -90,7 +90,7 @@ class SmallOutlinePackage:
             soAttributedBody.append(soBody)
             soAttributedBody.visualAppearance = soBody.appearance()
 
-            referenceObject = (soAttributedBody, soBodyMark, soPin, (0.75, 0.5))
+            referenceObject = (soAttributedBody, soBodyMark, soPin, (0.75, 1.0))
         elif descriptor["package"]["subtype"] == "TSSOP":
             tssopBody = lookup(templates, "PatTSSOPBody")[0].parent
             tssopBodyMark = lookup(templates, "PatTSSOPBody")[1].parent
