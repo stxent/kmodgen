@@ -22,7 +22,7 @@ Features
 Installation
 ------------
 
-Scripts require python-2.7, python-numpy, python-xml and python-lxml packages. Internal X3D/VRML viewer is optional, python-imaging and python-opengl packages are needed for it to work.
+Scripts require Python 2.7 or Python 3 with NumPy and lxml packages. Internal X3D/VRML viewer is optional and requires Pillow and OpenGL packages.
 
 Now you are ready to clone the repository:
 
@@ -35,28 +35,11 @@ git submodule update --init --recursive
 Quickstart
 ----------
 
-Complete list of commands to process available descriptions, generate VRML models and put them in a temporary directory:
+Build all footprints and models from descriptions directory, output format is S-Expression for footprints and X3D for models, all files will be installed in the specified directory:
 
 ```sh
-mkdir temp
-./mod.py -i descriptions/capacitors.json -m descriptions/capacitors_mat.json -f wrl -o temp
-./mod.py templates/headers.x3d -i descriptions/headers.json -f wrl -o temp
-./mod.py templates/smd_qfp.x3d -i descriptions/smd_qfp.json -f wrl -o temp
-./mod.py templates/smd_sop.x3d -i descriptions/smd_sop.json -f wrl -o temp
+mkdir build
+cd build
+cmake .. -DUSE_PRETTY=ON -DUSE_X3D=ON -DCMAKE_INSTALL_PREFIX=~/kicad
+make install
 ```
-
-Examples
---------
-
-Generate 3D models for QFP packages using a template model and export them to X3D:
-
-```sh
-./mod.py templates/smd_qfp.x3d -i descriptions/smd_qfp.json -f x3d -o temp
-```
-
-View model in the internal viewer (requires PyOpenGL):
-
-```sh
-wrlconv/wrload.py --grid -v temp/lqfp64.wrl
-```
-

@@ -39,5 +39,5 @@ foreach(DESC_PATH ${DESC_LIST})
     add_custom_command(TARGET ${DESC_NAME}_mod COMMAND ${PROJECT_SOURCE_DIR}/mod.py ${FLAGS_MOD} -i ${DESC_PATH})
 endforeach()
 
-install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/ DESTINATION lib
+install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}
         FILES_MATCHING PATTERN "*.kicad_mod" PATTERN "*.mod" PATTERN "*.wrl" PATTERN "*.x3d")
