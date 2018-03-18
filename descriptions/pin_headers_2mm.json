@@ -1,0 +1,88 @@
+{
+  "library": "connectors",
+  "templates": [
+    "headers.x3d"
+  ],
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-2",
+      "pins": {"columns": 2, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-3",
+      "pins": {"columns": 3, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-4",
+      "pins": {"columns": 4, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-5",
+      "pins": {"columns": 5, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-6",
+      "pins": {"columns": 6, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-8",
+      "pins": {"columns": 8, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLS2-10",
+      "pins": {"columns": 10, "rows": 1, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-6",
+      "pins": {"columns": 3, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-8",
+      "pins": {"columns": 4, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-10",
+      "pins": {"columns": 5, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-12",
+      "pins": {"columns": 6, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-14",
+      "pins": {"columns": 7, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-16",
+      "pins": {"columns": 8, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-18",
+      "pins": {"columns": 9, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD2-20",
+      "pins": {"columns": 10, "rows": 2, "pitch": 2.0},
+      "pads": {"diameter": 1.4, "drill": 0.8}
+    }
+  ]
+}

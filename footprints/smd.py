@@ -144,7 +144,7 @@ class Chip(exporter.Footprint):
 
         objects.extend(pads)
         return objects
-        
+
     @staticmethod
     def describe(descriptor):
         return descriptor["description"] if "description" in descriptor.keys() else None
@@ -158,12 +158,12 @@ class SmallOutlineTransistor23(exporter.Footprint):
 
         self.size = (descriptor["pads"]["width"], descriptor["pads"]["height"])
         self.spacing = (descriptor["pins"]["horizontalSpacing"], descriptor["pins"]["verticalSpacing"])
-        
+
         if "centralPadWidth" in descriptor["pads"].keys():
             self.centralPadSize = (descriptor["pads"]["centralPadWidth"], self.size[0])
         else:
             self.centralPadSize = self.size
-        
+
         self.pinNames = descriptor["pins"]["names"]
         self.markDot = descriptor["mark"]["dot"] if "dot" in descriptor["mark"].keys() else False
         self.markTri = descriptor["mark"]["tri"] if "tri" in descriptor["mark"].keys() else False

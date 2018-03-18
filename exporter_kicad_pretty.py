@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # exporter_kicad_pretty.py
@@ -78,7 +78,7 @@ class Converter:
 
     def circleToText(self, circle):
         if circle.part is not None:
-            #Arc
+            # Arc
             angle = circle.part[0] * math.pi / 180.0
             start = (circle.position[0] + math.cos(angle) * circle.radius,
                     circle.position[1] + math.sin(angle) * circle.radius)
@@ -86,7 +86,7 @@ class Converter:
             return "  (fp_arc (start %.6f %.6f) (end %.6f %.6f) (angle %.6f) (layer F.SilkS) (width %.6f))\n"\
                     % (circle.position[0], circle.position[1], start[0], start[1], rotation, circle.thickness)
         else:
-            #Circle
+            # Circle
             return "  (fp_circle (center %.6f %.6f) (end %.6f %.6f) (layer F.SilkS) (width %.6f))\n"\
                     % (circle.position[0], circle.position[1], circle.position[0], circle.position[1] + circle.radius,
                     circle.thickness)
@@ -142,7 +142,7 @@ class Converter:
         timestamp = time.time()
 
         out = ""
-        out += "(module %s (layer F.Cu) (tedit %08X)\n" % (footprint.name, timestamp)
+        out += "(module %s (layer F.Cu) (tedit %08X)\n" % (footprint.name, int(timestamp))
 
         if footprint.description is not None:
             out += "  (descr \"%s\")\n" % footprint.description
@@ -174,12 +174,12 @@ class Converter:
     @staticmethod
     def isFileOutdated(path, newContent):
         try:
-            oldContent = open(path, "rb").read()
+            oldContent = open(path, "rb").read().decode('utf-8')
             return not re.sub("\(tedit [0-9A-F]+\)", "", oldContent) == re.sub("\(tedit [0-9A-F]+\)", "", newContent)
         except IOError:
             return True
 
-    def generateLibrary(self, parts):
+    def generateLibrary(self, parts, verbose=False):
         toConsole = self.libraryPath is None or self.libraryName is None
 
         if toConsole:
@@ -198,9 +198,11 @@ class Converter:
                 filename = "%s/%s.kicad_mod" % (libraryPath, entry.name)
                 if Converter.isFileOutdated(filename, footprintData):
                     outputFile = open(filename, "wb")
-                    outputFile.write(footprintData)
+                    outputFile.write(footprintData.encode('utf-8'))
                     outputFile.close()
-                    print("Footprint %s:%s was exported" % (self.libraryName, entry.name))
+                    if verbose:
+                        print("Footprint %s:%s was exported" % (self.libraryName, entry.name))
                 else:
-                    print("Footprint %s:%s was left untouched" % (self.libraryName, entry.name))
+                    if verbose:
+                        print("Footprint %s:%s was left untouched" % (self.libraryName, entry.name))
             return None

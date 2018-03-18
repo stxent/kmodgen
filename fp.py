@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # fp.py
@@ -20,12 +20,15 @@ from footprints import *
 class Autogen:
     MODE_KICAD, MODE_KICAD_PRETTY = range(0, 2)
 
-    def __init__(self, parts, specs, mode, models, name, path=None):
+    def __init__(self, parts, specs, mode, models, name, path=None, verbose=False):
         self.types = Autogen.load()
+        self.verbose = verbose
         self.parts = []
 
+        if path is not None and path[-1] != "/":
+            path += "/"
         if mode == Autogen.MODE_KICAD:
-            self.converter = exporter_kicad.Converter(name + "/")
+            self.converter = exporter_kicad.Converter(name + "/", path, name, models)
         elif mode == Autogen.MODE_KICAD_PRETTY:
             self.converter = exporter_kicad_pretty.Converter(name + "/", path, name, models)
         else:
@@ -39,9 +42,9 @@ class Autogen:
         self.parts.sort(key=lambda x: x.name)
 
     def generate(self):
-        out = self.converter.generateLibrary(self.parts)
+        out = self.converter.generateLibrary(self.parts, self.verbose)
         if out is not None:
-            print out
+            print(out)
 
     @staticmethod
     def load():
@@ -53,9 +56,9 @@ class Autogen:
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-d", dest="debug", help="show debug information", default=False, action="store_true")
 parser.add_argument("-i", dest="input", help="input file with descriptors", default=None)
 parser.add_argument("-f", dest="models", help="model file format", default="x3d")
-parser.add_argument("-l", dest="library", help="library name", default=None)
 parser.add_argument("-o", dest="output", help="write footprints to specified directory", default=None)
 parser.add_argument("-p", dest="pretty", help="use S-Expression format", default=False, action="store_true")
 parser.add_argument("-s", dest="specs", help="silkscreen specifications", default=None)
@@ -63,16 +66,13 @@ options = parser.parse_args()
 
 if options.input is None:
     raise Exception()
-if options.library is None:
+
+description = json.loads(open(options.input, "rb").read())
+if "library" not in description.keys() and "parts" not in description.keys():
     raise Exception()
-
-if options.specs is not None:
-    specsFile = options.specs
-else:
-    specsFile = os.path.dirname(os.path.realpath(__file__)) + "/descriptions/specs.json"
-specs = json.loads(open(specsFile, "rb").read())
-
-parts = json.loads(open(options.input, "rb").read())["parts"]
+specs = description["specs"] if options.specs is None else json.loads(open(options.specs, "rb").read())
+parts = description["parts"]
+name = description["library"]
 mode = Autogen.MODE_KICAD_PRETTY if options.pretty else Autogen.MODE_KICAD
 
-Autogen(parts, specs, mode, options.models, options.library, options.output).generate()
+Autogen(parts, specs, mode, options.models, name, options.output, options.debug).generate()

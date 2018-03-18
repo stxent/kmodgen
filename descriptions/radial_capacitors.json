@@ -1,4 +1,41 @@
 {
+  "library": "capacitors",
+  "materials": {
+    "body": {
+      "shininess": 0.039,
+      "diffuse": [0.073, 0.062, 0.326],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.073, 0.062, 0.326]
+    },
+    "mark": {
+      "shininess": 0.039,
+      "diffuse": [0.5, 0.5, 0.8],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.5, 0.5, 0.8]
+    },
+    "top": {
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.83, 0.83, 0.83]
+    },
+    "bottom": {
+      "shininess": 0.059,
+      "diffuse": [0.15, 0.15, 0.15],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.15, 0.15, 0.15]
+    },
+    "pin": {
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.241, 0.241, 0.241],
+      "ambient": [0.83, 0.83, 0.83]
+    }
+  },
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
   "parts": [
     {
       "package": {"type": "RadialCapacitor", "spec": "thin"},

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # sop.py
@@ -27,7 +27,7 @@ class SmallOutlinePackage:
     def buildPackageBody(materials, modelBody, modelMark, modelPin, markOffset, count, size, pitch, name):
         DEFAULT_WIDTH = metricToImperial(2.0)
 
-        halfCount = count / 2
+        halfCount = int(count / 2)
         offset = pitch / 2. if halfCount % 2 == 0 else pitch
         dot = (-(size[0] / 2. - markOffset[0]), -(size[1] / 2. - markOffset[1]))
 

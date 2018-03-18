@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # exporter_kicad.py
@@ -12,20 +12,24 @@ import time
 import exporter
 
 class Converter:
-    def __init__(self, path):
-        self.pathToModels = path
-        self.modelType = "wrl"
+    def __init__(self, modelPath, libraryPath=None, libraryName=None, modelType="wrl"):
+        if modelType != "wrl" and modelType != "x3d":
+            raise Exception()
+        self.pathToModels = modelPath
+        self.modelType = modelType
+        self.libraryPath = libraryPath if libraryName is not None else None
+        self.libraryName = libraryName if libraryPath is not None else None
 
     def circleToText(self, circle):
         if circle.part is not None:
-            #Arc
+            # Arc
             angle = circle.part[0] * math.pi / 180.0
             start = (circle.position[0] + math.cos(angle) * circle.radius,
                     circle.position[1] + math.sin(angle) * circle.radius)
             return "DA %.6f %.6f %.6f %.6f %i %.6f 21" % (circle.position[0], circle.position[1],
                     start[0], start[1], int(abs(circle.part[1] - circle.part[0]) * 10.0), circle.thickness)
         else:
-            #Circle
+            # Circle
             return "DC %.6f %.6f %.6f %.6f %.6f 21" % (circle.position[0], circle.position[1],
                     circle.position[0], circle.position[1] + circle.radius, circle.thickness)
 
@@ -80,7 +84,7 @@ class Converter:
 
         out = ""
         out += "$MODULE %s\n" % (footprint.name)
-        out += "Po 0 0 0 15 %08X 00000000 ~~\n" % (timestamp)
+        out += "Po 0 0 0 15 %08X 00000000 ~~\n" % (int(timestamp))
         out += "Li %s\n" % (footprint.name)
         if footprint.description is not None:
             out += "Cd %s\n" % (footprint.description)
@@ -113,7 +117,7 @@ class Converter:
         out += "$EndMODULE %s" % (footprint.name)
         return out
 
-    def generateLibrary(self, parts):
+    def generateLibrary(self, parts, verbose=False):
         timestring = datetime.datetime.fromtimestamp(time.time()).strftime('%d.%m.%Y %H:%M:%S')
 
         out = ""
@@ -128,4 +132,13 @@ class Converter:
             out += self.footprintToText(entry) + "\n"
         out += "$EndLIBRARY"
 
-        return out
+        toConsole = self.libraryPath is None or self.libraryName is None
+
+        if toConsole:
+            return out
+        else:
+            libraryPath = self.libraryPath + self.libraryName + ".mod"
+            outputFile = open(libraryPath, "wb")
+            outputFile.write(out.encode('utf-8'))
+            outputFile.close()
+            return None

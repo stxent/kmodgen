@@ -47,7 +47,7 @@ class SmallOutlinePackage(exporter.Footprint):
         outline = (self.body[0], min(self.body[1], self.body[1] + outlineMargin))
         borders = (outline[0] / 2., outline[1] / 2.)
 
-        count = self.count / 2
+        count = int(self.count / 2)
         offset = self.pitch / 2. if count % 2 == 0 else self.pitch
 
         objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))

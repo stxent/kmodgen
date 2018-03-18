@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # headers.py
@@ -82,7 +82,7 @@ class PinHeader:
         else:
             raise Exception()
 
-        referenceObject = map(lambda name: lookup(templates, name).parent, objectNames)
+        referenceObject = [lookup(templates, name).parent for name in objectNames]
 
         return PinHeader.buildHeaderBody(
                 materials,
@@ -125,7 +125,7 @@ class RightAnglePinHeader(PinHeader):
         else:
             raise Exception()
 
-        referenceObject = map(lambda name: lookup(templates, name).parent, objectNames)
+        referenceObject = [lookup(templates, name).parent for name in objectNames]
 
         return RightAnglePinHeader.buildHeaderBody(
                 materials,

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # __init__.py
@@ -7,5 +7,5 @@
 
 import os
 
-__all__ = map(lambda x: x[:-3], filter(lambda x: x.endswith(".py") and x != "__init__.py",
-        os.listdir(os.path.dirname(__file__))))
+__all__ = list(map(lambda x: x[:-3], filter(lambda x: x.endswith(".py") and x != "__init__.py",
+        os.listdir(os.path.dirname(__file__)))))

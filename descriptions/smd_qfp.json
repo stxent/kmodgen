@@ -1,4 +1,12 @@
 {
+  "library": "smd_qfp",
+  "templates": [
+    "smd_qfp.x3d"
+  ],
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
   "parts": [
     {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},

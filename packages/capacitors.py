@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # capacitors.py
@@ -201,7 +201,7 @@ class RadialCapacitor:
     @staticmethod
     def buildCapacitorBody(curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
             capSectionWidth, capBumpDepth):
-        slices = curves.rotate(curve, (0., 0., 1.), edges)
+        slices = curves.rotate(curve=curve, axis=(0., 0., 1.), edges=edges)
         meshes = []
 
         bottomCap = curves.createTriCapMesh(slices, True)
@@ -238,7 +238,7 @@ class RadialCapacitor:
 
     @staticmethod
     def buildCapacitorPin(curve, edges):
-        slices = curves.rotate(curve, (0., 0., 1.), edges)
+        slices = curves.rotate(curve=curve, axis=(0., 0., 1.), edges=edges)
 
         pin = curves.createRotationMesh(slices, True)
         pin.append(curves.createTriCapMesh(slices, True))
