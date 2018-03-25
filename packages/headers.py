@@ -18,7 +18,7 @@ def lookup(meshList, meshName):
     raise Exception()
 
 def metricToImperial(value):
-    return value / 2.54 #Convert millimeters to hundreds of mils
+    return value / 2.54 # Convert millimeters to hundreds of mils
 
 
 class PinHeader:
@@ -175,7 +175,7 @@ class BoxHeader:
         bhBody = lookup(templates, "PatBHBody").parent
         bhPin = lookup(templates, "PatBHPin").parent
 
-        #Modified BH models
+        # Modified BH models
         regions = [
                 (((0.7, 3.0, 4.0), (-2.5, -3.0, -0.5)), 1),
                 (((6.5, 3.0, 4.0), ( 4.5, -3.0, -0.5)), 2)]

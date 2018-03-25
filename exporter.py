@@ -80,12 +80,12 @@ class AbstractPad:
                 self.copper |= 1 << AbstractPad.Layer.CU_BACK
                 self.mask |= 1 << AbstractPad.Layer.MASK_BACK
             else:
-                raise Exception() #Configuration unsupported
+                raise Exception() # Configuration unsupported
         else:
             if copper == AbstractPad.LAYERS_BOTH:
                 self.copper |= 1 << AbstractPad.Layer.CU_BACK | 1 << AbstractPad.Layer.CU_FRONT
             elif copper != AbstractPad.LAYERS_NONE:
-                raise Exception() #Configuration unsupported
+                raise Exception() # Configuration unsupported
             self.mask |= (1 << AbstractPad.Layer.MASK_FRONT) | (1 << AbstractPad.Layer.MASK_BACK)
 
         self.paste = 0
@@ -119,7 +119,7 @@ class Poly:
 class Footprint:
     def __init__(self, name, description, model=None):
         self.name = name
-        self.description = None if description is None or description == "" else description
+        self.description = None if description is None or description == '' else description
         self.model = name.lower() if model is None else model
 
 
@@ -142,7 +142,7 @@ def collideLine(line, pads, thickness, gap):
             return None
 
     def getLineFunc(start, end):
-        #Returns (A, B, C)
+        # Returns (A, B, C)
         dx, dy = end[0] - start[0], end[1] - start[1]
 
         if dx == 0.0:
@@ -198,36 +198,36 @@ def collideLine(line, pads, thickness, gap):
     if len(pads) == 0:
         return [line]
 
-    #Create common line function Ax + By + C = 0
+    # Create common line function Ax + By + C = 0
     lineBox = ((min(line.start[0], line.end[0]), min(line.start[1], line.end[1])),
             (max(line.start[0], line.end[0]), max(line.start[1], line.end[1])))
     lineFunc = getLineFunc(line.start, line.end)
     segFunc = lambda x: getCrossSegment(lineFunc, x, lineBox)
 
-    #Subdivide all pads into segments
+    # Subdivide all pads into segments
     segments = []
     [segments.extend(getPadSegments(pad)) for pad in pads]
 
-    #Generate crossing points for the given line
+    # Generate crossing points for the given line
     crosses = [line.start, line.end]
     crosses.extend([cross for cross in [segFunc(seg) for seg in segments] if cross is not None])
 
-    #Sort crossing points
+    # Sort crossing points
     distFunc = lambda x: math.sqrt(math.pow(x[0] - line.start[0], 2.0) + math.pow(x[1] - line.start[1], 2.0))
     crosses = sorted(crosses, key=distFunc)
 
-    #Generate chunks
+    # Generate chunks
     chunks = []
     for i in range(0, len(crosses) - 1):
         chunks.append((crosses[i], crosses[i + 1]))
-    #Filter chunks by length
+    # Filter chunks by length
     chunkLengthFunc = lambda x: math.sqrt(math.pow(x[1][0] - x[0][0], 2.0) + math.pow(x[1][1] - x[0][1], 2.0))
     chunks = [chunk for chunk in chunks if chunkLengthFunc(chunk) >= minWidth]
 
-    #Exclude chunks intersected with pads
+    # Exclude chunks intersected with pads
     chunks = [chunk for chunk in chunks if not checkChunkCollisions(chunk, pads)]
 
-    #Reduce line width
+    # Reduce line width
     chunkShrinkFunc = lambda x: shrinkLine(x, checkPointCollisions(x[0], pads), checkPointCollisions(x[1], pads),
             gap + thickness / 2)
     chunks = [chunkShrinkFunc(chunk) for chunk in chunks]

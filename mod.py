@@ -15,32 +15,32 @@ import sys
 from wrlconv import model
 from wrlconv import vrml_export
 from wrlconv import vrml_import
-from wrlconv import x3d_import
 from wrlconv import x3d_export
+from wrlconv import x3d_import
 
 from packages import *
 
-builders = [entry[1] for entry in inspect.getmembers(sys.modules["packages"])
-        if inspect.ismodule(entry[1]) and entry[1].__name__.startswith("packages.")]
+builders = [entry[1] for entry in inspect.getmembers(sys.modules['packages'])
+        if inspect.ismodule(entry[1]) and entry[1].__name__.startswith('packages.')]
 types = []
-[types.extend(entry.__dict__["types"]) for entry in builders]
+[types.extend(entry.__dict__['types']) for entry in builders]
 
 def loadMaterials(entries):
-    def decodeMaterial(description, title):
+    def decodeMaterial(desc, title):
         material = model.Material()
         material.color.ident = title.capitalize()
-        if "shininess" in description.keys():
-            material.color.shininess = float(description["shininess"])
-        if "transparency" in description.keys():
-            material.color.transparency = float(description["transparency"])
-        if "diffuse" in description.keys():
-            material.color.diffuse = numpy.array(description["diffuse"])
-        if "specular" in description.keys():
-            material.color.specular = numpy.array(description["specular"])
-        if "emissive" in description.keys():
-            material.color.emissive = numpy.array(description["emissive"])
-        if "ambient" in description.keys():
-            material.color.ambient = numpy.array(description["ambient"])
+        if 'shininess' in desc.keys():
+            material.color.shininess = float(desc['shininess'])
+        if 'transparency' in desc.keys():
+            material.color.transparency = float(desc['transparency'])
+        if 'diffuse' in desc.keys():
+            material.color.diffuse = numpy.array(desc['diffuse'])
+        if 'specular' in desc.keys():
+            material.color.specular = numpy.array(desc['specular'])
+        if 'emissive' in desc.keys():
+            material.color.emissive = numpy.array(desc['emissive'])
+        if 'ambient' in desc.keys():
+            material.color.ambient = numpy.array(desc['ambient'])
         return material
 
     materials = {}
@@ -53,22 +53,22 @@ def loadTemplates(entries):
     for entry in entries:
         scriptPath = scriptDir + entry
         extension = os.path.splitext(scriptPath)[1][1:].lower()
-        if extension == "wrl":
+        if extension == 'wrl':
             templates.extend(vrml_import.load(scriptPath))
-        elif extension == "x3d":
+        elif extension == 'x3d':
             templates.extend(x3d_import.load(scriptPath))
     return templates
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", dest="debug", help="show debug information", default=False, action="store_true")
+parser.add_argument('-d', dest='debug', help='show debug information', default=False, action='store_true')
 parser.add_argument("-f", dest="format", help="output file format", default="x3d")
 parser.add_argument("-i", dest="input", help="input file with part descriptions", default="")
-parser.add_argument("-o", dest="output", help="write models to specified directory", default="")
-parser.add_argument("-v", dest="view", help="render models", default=False, action="store_true")
-parser.add_argument("--fast", dest="fast", help="disable visual effects", default=False, action="store_true")
-parser.add_argument("--no-grid", dest="simple", help="disable grid", default=False, action="store_true")
-parser.add_argument("--normals", dest="normals", help="show normals", default=False, action="store_true")
-parser.add_argument("--smooth", dest="smooth", help="use smooth shading", default=False, action="store_true")
+parser.add_argument('-o', dest='output', help='write models to a specified directory', default='')
+parser.add_argument('-v', dest='view', help='render models', default=False, action='store_true')
+parser.add_argument('--fast', dest='fast', help='disable visual effects', default=False, action='store_true')
+parser.add_argument('--no-grid', dest='simple', help='disable grid', default=False, action='store_true')
+parser.add_argument('--normals', dest='normals', help='show normals', default=False, action='store_true')
+parser.add_argument('--smooth', dest='smooth', help='use smooth shading', default=False, action='store_true')
 options = parser.parse_args()
 
 if options.debug:
@@ -93,10 +93,10 @@ if options.input != "":
                 models.append((package.build(materials, templates, descriptor), descriptor["title"].lower()))
                 break
 
-if options.output != "":
+if options.output != '':
     libraryPath = options.output
-    if libraryPath[-1] != "/":
-        libraryPath += "/"
+    if libraryPath[-1] != '/':
+        libraryPath += '/'
     libraryPath += description["library"] + "/"
     if not os.path.exists(libraryPath):
         os.makedirs(libraryPath)
@@ -120,7 +120,7 @@ if options.view:
     if options.debug:
         render_ogl41.debugEnabled = True
 
-    effects = {} if options.fast else {"antialiasing": 4}
+    effects = {} if options.fast else {'antialiasing': 4}
     helperObjects = [] if options.simple else helpers.createGrid()
     exportList = []
     [exportList.extend(entry[0]) for entry in models]

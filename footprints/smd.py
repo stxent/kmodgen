@@ -40,14 +40,14 @@ class Chip(exporter.Footprint):
         center = self.spacing / 2. + self.size[0] / 2.
 
         if self.markArrow or self.markWrap:
-            #Horizontal border
+            # Horizontal border
             horiz = self.spacing / 2. - self.thickness / 2. - self.gap
-            #Vertical border
+            # Vertical border
             vert = self.size[1] / 2. - self.thickness / 2.
         else:
-            #Horizontal border
+            # Horizontal border
             horiz = self.body[0] / 2.
-            #Vertical border
+            # Vertical border
             minVert = self.size[1] / 2. + self.gap + self.thickness / 2.
             minLineVert = self.size[1] / 2. + self.gap + self.thickness
             if minVert < self.body[1] / 2. < minLineVert:
@@ -80,7 +80,7 @@ class Chip(exporter.Footprint):
             dotMarkOffset = center + self.size[0] / 2. + self.gap + self.dotRadius + self.thickness / 2.
             objects.append(exporter.Circle((-dotMarkOffset, 0.0), self.dotRadius, self.thickness))
         if self.markBar:
-            horizPolar = horiz - self.thickness #Outer border without polarization
+            horizPolar = horiz - self.thickness # Outer border without polarization
             points = [(-horiz, -vert), (-horiz, vert), (-horizPolar, vert), (-horizPolar, -vert)]
             objects.append(exporter.Line(points[0], points[1], self.thickness))
             objects.append(exporter.Line(points[2], points[3], self.thickness))
@@ -107,7 +107,7 @@ class Chip(exporter.Footprint):
         objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
 
         if self.markWrap:
-            #Scale outline to pad size
+            # Scale outline to pad size
             outline = (self.size[0] * 2. + self.spacing, self.size[1])
             body = (max(self.body[0], outline[0]), max(self.body[1], outline[1]))
         else:
@@ -116,10 +116,10 @@ class Chip(exporter.Footprint):
         center = self.spacing / 2. + self.size[0] / 2.
         offset = self.gap + self.thickness / 2.
 
-        horiz0 = self.spacing / 2. #Inner border
-        horiz1 = body[0] / 2. + offset #Outer border without polarization
-        horiz2 = horiz1 - self.thickness #Plarization line
-        vert = body[1] / 2. + offset #Vertical border
+        horiz0 = self.spacing / 2. # Inner border
+        horiz1 = body[0] / 2. + offset # Outer border without polarization
+        horiz2 = horiz1 - self.thickness # Plarization line
+        vert = body[1] / 2. + offset # Vertical border
 
         pads = []
         pads.append(exporter.SmdPad(self.pinNames[0], self.size, (-center, 0)))
@@ -127,12 +127,12 @@ class Chip(exporter.Footprint):
         processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
 
         lines = []
-        #Right lines
+        # Right lines
         lines.append(exporter.Line((horiz0, vert), (horiz1, vert), self.thickness))
         lines.append(exporter.Line((horiz0, -vert), (horiz1, -vert), self.thickness))
         lines.append(exporter.Line((horiz1, vert), (horiz1, -vert), self.thickness))
 
-        #Left lines
+        # Left lines
         lines.append(exporter.Line((-horiz0, vert), (-horiz1, vert), self.thickness))
         lines.append(exporter.Line((-horiz0, -vert), (-horiz1, -vert), self.thickness))
         if self.markArrow or self.markBar or self.markDot:
@@ -174,7 +174,7 @@ class SmallOutlineTransistor23(exporter.Footprint):
 
         self.dotRadius = self.thickness / 2.
 
-        #Vertical border
+        # Vertical border
         border = (self.spacing[1] - self.size[1]) / 2. - self.gap - self.thickness / 2.
         self.body = (descriptor["body"]["width"], border * 2.)
         self.markOffset = border
@@ -186,19 +186,19 @@ class SmallOutlineTransistor23(exporter.Footprint):
         yOffset = self.spacing[1] / 2.
         outline = (self.body[0] / 2., self.body[1] / 2.)
 
-        #Outline
+        # Outline
         objects.append(exporter.Line((outline[0], -outline[1]), (-outline[0], -outline[1]), self.thickness))
         objects.append(exporter.Line((outline[0], outline[1]), (outline[0], -outline[1]), self.thickness))
         objects.append(exporter.Line((outline[0], outline[1]), (-outline[0], outline[1]), self.thickness))
         objects.append(exporter.Line((-outline[0], outline[1]), (-outline[0], -outline[1]), self.thickness))
 
-        #First pin mark
+        # First pin mark
         if self.markDot:
-            #Outer polarity mark
+            # Outer polarity mark
             dotMarkOffset = self.spacing[0] + self.size[0] / 2. + self.gap + self.dotRadius + self.thickness / 2.
             objects.append(exporter.Circle((-dotMarkOffset, yOffset), self.dotRadius, self.thickness))
         if self.markTri:
-            #Inner polarity mark
+            # Inner polarity mark
             points = [(-outline[0], outline[1] - self.markOffset), (-outline[0], outline[1]),
                     (-outline[0] + self.markOffset, outline[1])]
             objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))
@@ -207,10 +207,10 @@ class SmallOutlineTransistor23(exporter.Footprint):
         for i in range(0, 3):
             width = self.size[0] if i != 1 else self.centralPadSize[0]
             xOffset = self.spacing[0] * (i - 1)
-            #Bottom row
+            # Bottom row
             if self.pinNames[i] != "":
                 pads.append(exporter.SmdPad(self.pinNames[i], (width, self.size[1]), (xOffset, yOffset)))
-            #Top row
+            # Top row
             if self.pinNames[i + 3] != "":
                 pads.append(exporter.SmdPad(self.pinNames[i + 3], (width, self.size[1]), (-xOffset, -yOffset)))
 
@@ -252,19 +252,19 @@ class SmallOutlineTransistor223(exporter.Footprint):
         yOffset = self.spacing[1] / 2.
         outline = (self.body[0] / 2., self.body[1] / 2.)
 
-        #Outline
+        # Outline
         objects.append(exporter.Line((outline[0], -outline[1]), (-outline[0], -outline[1]), self.thickness))
         objects.append(exporter.Line((outline[0], outline[1]), (outline[0], -outline[1]), self.thickness))
         objects.append(exporter.Line((outline[0], outline[1]), (-outline[0], outline[1]), self.thickness))
         objects.append(exporter.Line((-outline[0], outline[1]), (-outline[0], -outline[1]), self.thickness))
 
-        #First pin marks
+        # First pin marks
         if self.markDot:
-            #Outer polarity mark
+            # Outer polarity mark
             dotMarkOffset = self.spacing[0] + self.size[0] / 2. + self.gap + self.dotRadius + self.thickness / 2.
             objects.append(exporter.Circle((-dotMarkOffset, yOffset), self.dotRadius, self.thickness))
         if self.markTri:
-            #Inner polarity mark
+            # Inner polarity mark
             points = [(-outline[0], outline[1] - self.markOffset), (-outline[0], outline[1]),
                     (-outline[0] + self.markOffset, outline[1])]
             objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))

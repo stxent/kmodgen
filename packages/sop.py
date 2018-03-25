@@ -19,7 +19,7 @@ def lookup(meshList, meshName):
     return found
 
 def metricToImperial(value):
-    return value / 2.54 #Convert millimeters to hundreds of mils
+    return value / 2.54 # Convert millimeters to hundreds of mils
 
 
 class SmallOutlinePackage:
@@ -85,7 +85,7 @@ class SmallOutlinePackage:
             soBodyMark = lookup(templates, "PatSOBody")[1].parent
             soPin = lookup(templates, "PatSOPin")[0].parent
 
-            #Modified SO models
+            # Modified SO models
             soAttributedBody = model.AttributedMesh(name="SOBody", regions=regions)
             soAttributedBody.append(soBody)
             soAttributedBody.visualAppearance = soBody.appearance()
@@ -96,7 +96,7 @@ class SmallOutlinePackage:
             tssopBodyMark = lookup(templates, "PatTSSOPBody")[1].parent
             tssopPin = lookup(templates, "PatTSSOPPin")[0].parent
 
-            #TSSOP model uses same regions
+            # TSSOP model uses same regions
             tssopAttributedBody = model.AttributedMesh(name="TSSOPBody", regions=regions)
             tssopAttributedBody.append(tssopBody)
             tssopAttributedBody.visualAppearance = tssopBody.appearance()

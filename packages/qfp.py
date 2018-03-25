@@ -19,7 +19,7 @@ def lookup(meshList, meshName):
     return found
 
 def metricToImperial(value):
-    return value / 2.54 #Convert millimeters to hundreds of mils
+    return value / 2.54 # Convert millimeters to hundreds of mils
 
 
 class QuadFlatPackage:

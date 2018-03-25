@@ -12,7 +12,7 @@ from wrlconv import curves
 from wrlconv import model
 
 def metricToImperial(value):
-    return value / 2.54 #Convert millimeters to hundreds of mils
+    return value / 2.54 # Convert millimeters to hundreds of mils
 
 
 class RadialCapacitor:
@@ -139,7 +139,7 @@ class RadialCapacitor:
             geoPolygons.append([op(i, 1), op(i, 2), bp(i, 2), bp(i, 1)])
             geoPolygons.append([bp(i, 0), bp(i, 1), bp(i, 2), bp(i, 3)])
 
-        #Generate object
+        # Generate object
         mesh = model.Mesh()
         mesh.geoVertices = geoVertices
         [mesh.geoPolygons.extend(model.Mesh.tesselate(patch)) for patch in geoPolygons]
@@ -156,7 +156,7 @@ class RadialCapacitor:
 
         curve = []
 
-        #Bottom cap
+        # Bottom cap
         if capRadius is not None:
             if capDepth is not None:
                 curve.append(curves.Line((capRadius, 0., capDepth - chamfer), (capRadius, 0., chamfer), 1))
@@ -165,7 +165,7 @@ class RadialCapacitor:
             else:
                 curve.append(curves.Line((capRadius, 0., 0.), (radius - curvature, 0., 0.), 1))
 
-        #Plastic
+        # Plastic
         curve.append(curves.Bezier((radius - curvature, 0., 0.), (curvature / 2., 0., 0.),
                 (radius, 0., curvature), (0., 0., -curvature / 2.), edgeDetails))
         curve.append(curves.Line((radius, 0., curvature), (radius, 0., bandOffset - curvature * 2.), 1))
@@ -177,7 +177,7 @@ class RadialCapacitor:
         curve.append(curves.Bezier((radius, 0., height - curvature), (0., 0., curvature / 2.),
                 (radius - curvature, 0., height), (curvature / 2., 0., 0.), edgeDetails))
 
-        #Top cap
+        # Top cap
         if capRadius is not None:
             if capDepth is not None:
                 curve.append(curves.Line((radius - curvature, 0., height), (capRadius + chamfer, 0., height), 1))
