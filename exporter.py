@@ -5,6 +5,7 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import functools
 import math
 
 
@@ -186,13 +187,13 @@ def collideLine(line, pads, thickness, gap):
     def checkPointCollisions(point, pads):
         padRectFunc = lambda pad: ((pad.position[0] - pad.size[0] / 2., pad.position[1] - pad.size[1] / 2.),
                 (pad.position[0] + pad.size[0] / 2., pad.position[1] + pad.size[1] / 2.))
-        collisions = map(lambda pad: pointInRect(padRectFunc(pad), point), pads)
-        return reduce(lambda x, y: x or y, collisions)
+        collisions = [pointInRect(padRectFunc(pad), point) for pad in pads]
+        return functools.reduce(lambda x, y: x or y, collisions)
 
     def checkChunkCollisions(chunk, pads):
         collisionFunc = lambda x: checkPointCollisions(chunk[0], [x]) and checkPointCollisions(chunk[1], [x])
-        collisions = map(collisionFunc, pads)
-        return reduce(lambda x, y: x or y, collisions)
+        collisions = [collisionFunc(pad) for pad in pads]
+        return functools.reduce(lambda x, y: x or y, collisions)
 
     if len(pads) == 0:
         return [line]
@@ -205,11 +206,11 @@ def collideLine(line, pads, thickness, gap):
 
     #Subdivide all pads into segments
     segments = []
-    map(segments.extend, map(getPadSegments, pads))
+    [segments.extend(getPadSegments(pad)) for pad in pads]
 
     #Generate crossing points for the given line
     crosses = [line.start, line.end]
-    crosses.extend(filter(lambda x: x is not None, map(segFunc, segments)))
+    crosses.extend([cross for cross in [segFunc(seg) for seg in segments] if cross is not None])
 
     #Sort crossing points
     distFunc = lambda x: math.sqrt(math.pow(x[0] - line.start[0], 2.0) + math.pow(x[1] - line.start[1], 2.0))
@@ -221,18 +222,17 @@ def collideLine(line, pads, thickness, gap):
         chunks.append((crosses[i], crosses[i + 1]))
     #Filter chunks by length
     chunkLengthFunc = lambda x: math.sqrt(math.pow(x[1][0] - x[0][0], 2.0) + math.pow(x[1][1] - x[0][1], 2.0))
-    chunks = filter(lambda x: chunkLengthFunc(x) >= minWidth, chunks)
+    chunks = [chunk for chunk in chunks if chunkLengthFunc(chunk) >= minWidth]
 
     #Exclude chunks intersected with pads
-    chunkCheckFunc = lambda x: not checkChunkCollisions(x, pads)
-    chunks = filter(chunkCheckFunc, chunks)
+    chunks = [chunk for chunk in chunks if not checkChunkCollisions(chunk, pads)]
 
     #Reduce line width
     chunkShrinkFunc = lambda x: shrinkLine(x, checkPointCollisions(x[0], pads), checkPointCollisions(x[1], pads),
             gap + thickness / 2)
-    chunks = map(chunkShrinkFunc, chunks)
+    chunks = [chunkShrinkFunc(chunk) for chunk in chunks]
 
-    #Remove broken lines
-    chunks = filter(lambda x: x is not None, chunks)
+    # Remove broken and short lines
+    chunks = [chunk for chunk in chunks if chunk is not None and chunkLengthFunc(chunk) >= minWidth]
 
-    return map(lambda x: Line(x[0], x[1], thickness), chunks)
+    return [Line(chunk[0], chunk[1], thickness) for chunk in chunks]

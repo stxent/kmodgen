@@ -5,6 +5,8 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import math
+
 import exporter
 
 
@@ -25,7 +27,7 @@ class PinHeader(exporter.Footprint):
         self.body = (self.count[0] * self.pitch, self.count[1] * self.pitch)
         self.outline = self.calcOutline()
 
-        xCenterOffset = self.pitch * float(self.count[0] / 2)
+        xCenterOffset = self.pitch * math.floor(self.count[0] / 2)
         if self.count[0] % 2 == 0:
             xCenterOffset -= self.pitch / 2.
         yCenterOffset = -self.pitch * float(self.count[1] - 1) / 2.

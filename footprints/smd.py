@@ -73,8 +73,8 @@ class Chip(exporter.Footprint):
             lines = []
             lines.append(exporter.Line((horiz, vert), (horiz, -vert), self.thickness))
             lines.append(exporter.Line((-horiz, vert), (-horiz, -vert), self.thickness))
-            processedLines = map(processFunc, lines)
-            map(objects.extend, processedLines)
+            processedLines = [processFunc(line) for line in lines]
+            [objects.extend(line) for line in processedLines]
 
         if self.markDot and self.verification:
             dotMarkOffset = center + self.size[0] / 2. + self.gap + self.dotRadius + self.thickness / 2.
@@ -139,8 +139,8 @@ class Chip(exporter.Footprint):
             lines.append(exporter.Line((-horiz2, vert), (-horiz2, -vert), self.thickness))
         lines.append(exporter.Line((-horiz1, vert), (-horiz1, -vert), self.thickness))
 
-        processedLines = map(processFunc, lines)
-        map(objects.extend, processedLines)
+        processedLines = [processFunc(line) for line in lines]
+        [objects.extend(line) for line in processedLines]
 
         objects.extend(pads)
         return objects

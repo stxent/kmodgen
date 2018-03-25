@@ -56,7 +56,7 @@ class SmallOutlinePackage(exporter.Footprint):
         objects.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
 
         #Outer polarity mark
-        dotMarkOffset = ((count / 2 - 1) * self.pitch + (self.sidePitch - self.pitch) + offset
+        dotMarkOffset = ((int(count / 2) - 1) * self.pitch + (self.sidePitch - self.pitch) + offset
                 + self.sidePadWidth / 2. + self.gap + self.dotRadius + self.thickness / 2.)
         objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.margin + self.padSize[1] / 2.),
                 self.dotRadius, self.thickness))
@@ -68,7 +68,7 @@ class SmallOutlinePackage(exporter.Footprint):
 
         pads = []
         for i in range(0, count):
-            x = -((count / 2 - 1) * self.pitch + (self.sidePitch - self.pitch) + offset)
+            x = -((int(count / 2) - 1) * self.pitch + (self.sidePitch - self.pitch) + offset)
             y = self.body[1] / 2. + self.margin + self.padSize[1] / 2.
 
             w = self.sidePadWidth if i == 0 or i == count - 1 else self.padSize[0]

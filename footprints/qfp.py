@@ -55,7 +55,7 @@ class QuadFlatPackage(exporter.Footprint):
         offset = lambda count: self.pitch / 2. if count % 2 == 0 else self.pitch
 
         #Outer polarity mark
-        dotMarkOffset = ((self.count[0] / 2 - 1) * self.pitch + (self.sidePitch - self.pitch)
+        dotMarkOffset = ((int(self.count[0] / 2) - 1) * self.pitch + (self.sidePitch - self.pitch)
                 + offset(self.count[0]) + self.sidePadWidth / 2. + self.gap + self.dotRadius + self.thickness / 2.)
         objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.padSize[1] / 2. + self.margin),
                 self.dotRadius, self.thickness))
@@ -69,7 +69,7 @@ class QuadFlatPackage(exporter.Footprint):
 
         pads = []
         for i in range(0, self.count[0]):
-            x = -((self.count[0] / 2 - 1) * self.pitch + (self.sidePitch - self.pitch) + offset(self.count[0]))
+            x = -((int(self.count[0] / 2) - 1) * self.pitch + (self.sidePitch - self.pitch) + offset(self.count[0]))
             y = self.body[1] / 2. + self.margin + self.padSize[1] / 2.
 
             w = width(self.count[0], i)
@@ -79,7 +79,7 @@ class QuadFlatPackage(exporter.Footprint):
             pads.append(exporter.SmdPad(numbers[0], (w, h), ( x + self.delta(i, self.count[0]),  y)))
             pads.append(exporter.SmdPad(numbers[1], (w, h), (-x - self.delta(i, self.count[0]), -y)))
         for i in range(0, self.count[1]):
-            y = -((self.count[1] / 2 - 1) * self.pitch + (self.sidePitch - self.pitch) + offset(self.count[1]))
+            y = -((int(self.count[1] / 2) - 1) * self.pitch + (self.sidePitch - self.pitch) + offset(self.count[1]))
             x = self.body[0] / 2. + self.margin + self.padSize[1] / 2.
 
             w = width(self.count[1], i)

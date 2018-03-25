@@ -61,7 +61,7 @@ class SmallOutlinePackage:
 
         pins = []
         for i in range(0, halfCount):
-            x = (i - halfCount / 2 + 1) * pitch - offset
+            x = (i - int(halfCount / 2) + 1) * pitch - offset
             y = size[1] / 2.
 
             pins.append(makePin(x, y, 180., i + 1 + halfCount))
