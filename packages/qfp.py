@@ -61,14 +61,14 @@ class QuadFlatPackage:
 
         pins = []
         for i in range(0, count[0]):
-            x = (i - count[0] / 2 + 1) * pitch - offset[0]
+            x = (i - int(count[0] / 2) + 1) * pitch - offset[0]
             y = margin[1]
 
             pins.append(makePin(x, y, 180., i + 1))
             pins.append(makePin(-x, -y, 0., i + 1 + count[0] + count[1]))
         for i in range(0, count[1]):
             x = margin[0]
-            y = (i - count[1] / 2 + 1) * pitch - offset[1]
+            y = (i - int(count[1] / 2) + 1) * pitch - offset[1]
 
             pins.append(makePin(x, -y, 90., i + 1 + count[0]))
             pins.append(makePin(-x, y, -90., i + 1 + count[0] * 2 + count[1]))
