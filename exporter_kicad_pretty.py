@@ -6,8 +6,6 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import math
-import os
-import re
 import time
 
 import exporter
@@ -170,38 +168,5 @@ class Converter:
         out += ')\n'
         return out
 
-    @staticmethod
-    def isFileOutdated(path, newContent):
-        try:
-            oldContent = open(path, "rb").read().decode('utf-8')
-            return not re.sub("\(tedit [0-9A-F]+\)", "", oldContent) == re.sub("\(tedit [0-9A-F]+\)", "", newContent)
-        except IOError:
-            return True
-
-    def generateLibrary(self, parts, verbose=False):
-        toConsole = self.libraryPath is None or self.libraryName is None
-
-        if toConsole:
-            out = ""
-            for entry in parts:
-                out += self.footprintToText(entry)
-            return out
-        else:
-            libraryPath = "%s%s.pretty" % (self.libraryPath, self.libraryName)
-            if not os.path.exists(libraryPath):
-                os.makedirs(libraryPath)
-
-            for entry in parts:
-                footprintData = self.footprintToText(entry)
-
-                filename = "%s/%s.kicad_mod" % (libraryPath, entry.name)
-                if Converter.isFileOutdated(filename, footprintData):
-                    outputFile = open(filename, "wb")
-                    outputFile.write(footprintData.encode('utf-8'))
-                    outputFile.close()
-                    if verbose:
-                        print("Footprint %s:%s was exported" % (self.libraryName, entry.name))
-                else:
-                    if verbose:
-                        print("Footprint %s:%s was left untouched" % (self.libraryName, entry.name))
-            return None
+    def generate(self, part):
+        return self.footprintToText(part)

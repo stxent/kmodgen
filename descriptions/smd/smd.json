@@ -1,5 +1,4 @@
 {
-  "library": "smd",
   "specs": {
     "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
     "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
@@ -229,7 +228,7 @@
     }, {
       "package": {"type": "SmallOutlineTransistor223", "spec": "thick"},
       "title": "SOT223",
-      "body": {"width": 6.5, "height": 3.5, "model": "sot223"},
+      "body": {"width": 6.5, "height": 3.5, "model": "SOT223"},
       "pins": {"horizontalSpacing": 2.3, "verticalSpacing": 6.1, "names": ["1", "2", "3", "4"]},
       "pads": {"width": 1.3, "height": 1.3, "powerPadWidth": 3.6, "powerPadHeight": 1.3},
       "mark": {"dot": true, "tri": true},
@@ -237,7 +236,7 @@
     }, {
       "package": {"type": "SmallOutlineTransistor223", "spec": "thick"},
       "title": "SOT223-BCE",
-      "body": {"width": 6.5, "height": 3.5, "model": "sot223"},
+      "body": {"width": 6.5, "height": 3.5, "model": "SOT223"},
       "pins": {"horizontalSpacing": 2.3, "verticalSpacing": 6.1, "names": ["B", "C", "E", "C"]},
       "pads": {"width": 1.3, "height": 1.3, "powerPadWidth": 3.6, "powerPadHeight": 1.3},
       "mark": {},
@@ -246,7 +245,7 @@
     }, {
       "package": {"type": "SmallOutlineTransistor23", "spec": "thin"},
       "title": "SOT23",
-      "body": {"width": 3.0, "height": 1.4, "model": "sot23"},
+      "body": {"width": 3.0, "height": 1.4, "model": "SOT23"},
       "pins": {"horizontalSpacing": 0.95, "verticalSpacing": 2.0, "names": ["1", "", "2", "", "3", ""]},
       "pads": {"width": 0.6, "height": 0.7},
       "mark": {},
@@ -254,7 +253,7 @@
     }, {
       "package": {"type": "SmallOutlineTransistor23", "spec": "thin"},
       "title": "SOT23-BEC",
-      "body": {"width": 3.0, "height": 1.4, "model": "sot23"},
+      "body": {"width": 3.0, "height": 1.4, "model": "SOT23"},
       "pins": {"horizontalSpacing": 0.95, "verticalSpacing": 2.0, "names": ["B", "", "E", "", "C", ""]},
       "pads": {"width": 0.6, "height": 0.7},
       "mark": {},
@@ -263,7 +262,7 @@
     }, {
       "package": {"type": "SmallOutlineTransistor23", "spec": "thin"},
       "title": "SOT23-GSD",
-      "body": {"width": 3.0, "height": 1.4, "model": "sot23"},
+      "body": {"width": 3.0, "height": 1.4, "model": "SOT23"},
       "pins": {"horizontalSpacing": 0.95, "verticalSpacing": 2.0, "names": ["G", "", "S", "", "D", ""]},
       "pads": {"width": 0.6, "height": 0.7},
       "mark": {},

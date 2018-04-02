@@ -7,6 +7,7 @@
 
 import datetime
 import math
+import re
 import time
 
 import exporter
@@ -117,28 +118,32 @@ class Converter:
 
         return out
 
-    def generateLibrary(self, parts, verbose=False):
+    def generate(self, part):
+        return self.footprintToText(part)
+
+    @staticmethod
+    def extractPartName(part):
+        return re.sub(re.compile(r'^.*\$MODULE (CP.*?)\n.*$', re.M | re.S), r'\1', part)
+
+    @staticmethod
+    def archive(parts):
         timestring = datetime.datetime.fromtimestamp(time.time()).strftime('%d.%m.%Y %H:%M:%S')
 
-        out = ""
-        out += "PCBNEW-LibModule-V1 %s\n" % (timestring)
-        out += "# encoding utf-8\n"
-        out += "Units mm\n"
-        out += "$INDEX\n"
-        for entry in parts:
-            out += entry.name + "\n"
-        out += "$EndINDEX\n"
-        for entry in parts:
-            out += self.footprintToText(entry) + "\n"
-        out += "$EndLIBRARY"
+        footprints = {}
+        [footprints.update({Converter.extractPartName(part): part}) for part in parts]
+        names = list(footprints.keys())
+        names.sort()
 
-        toConsole = self.libraryPath is None or self.libraryName is None
+        out = ''
+        out += 'PCBNEW-LibModule-V1 %s\n' % (timestring)
+        out += '# encoding utf-8\n'
+        out += 'Units mm\n'
+        out += '$INDEX\n'
+        for name in names:
+            out += name + '\n'
+        out += '$EndINDEX\n'
+        for name in names:
+            out += footprints[name]
+        out += '$EndLIBRARY'
 
-        if toConsole:
-            return out
-        else:
-            libraryPath = self.libraryPath + self.libraryName + ".mod"
-            outputFile = open(libraryPath, "wb")
-            outputFile.write(out.encode('utf-8'))
-            outputFile.close()
-            return None
+        return out

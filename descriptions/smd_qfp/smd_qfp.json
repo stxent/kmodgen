@@ -1,5 +1,4 @@
 {
-  "library": "smd_qfp",
   "templates": [
     "smd_qfp.x3d"
   ],

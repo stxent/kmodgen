@@ -9,6 +9,7 @@ import argparse
 import inspect
 import json
 import os
+import re
 import sys
 
 import exporter_kicad
@@ -17,62 +18,76 @@ import exporter_kicad_pretty
 from footprints import *
 
 
-class Autogen:
-    MODE_KICAD, MODE_KICAD_PRETTY = range(0, 2)
-
-    def __init__(self, parts, specs, mode, models, name, path=None, verbose=False):
-        self.types = Autogen.load()
+class Generator:
+    def __init__(self, specs, libraryName=None, libraryPath=None, useLegacy=False, useVrml=False, verbose=False):
+        self.legacy = useLegacy
+        self.specs = specs
         self.verbose = verbose
-        self.parts = []
+        self.types = Generator.load()
 
-        if path is not None and path[-1] != "/":
-            path += "/"
-        if mode == Autogen.MODE_KICAD:
-            self.converter = exporter_kicad.Converter(name + "/", path, name, models)
-        elif mode == Autogen.MODE_KICAD_PRETTY:
-            self.converter = exporter_kicad_pretty.Converter(name + "/", path, name, models)
+        if libraryPath is not None:
+            self.libraryPath = libraryPath
+            if self.libraryPath[-1] != '/':
+                self.libraryPath += '/'
         else:
-            raise Exception()
+            self.libraryPath = None
+        self.libraryName = libraryName if libraryName is not None else 'untitled'
 
-        for part in parts:
-            for group in self.types:
-                if group.__name__ == part["package"]["type"]:
-                    self.parts.append(group(specs[part["package"]["spec"]], part))
+        modelPath = self.libraryName + '/'
+        modelType = 'wrl' if useVrml else 'x3d'
 
-        self.parts.sort(key=lambda x: x.name)
+        if self.legacy:
+            self.converter = exporter_kicad.Converter(modelPath, modelType)
+        else:
+            self.converter = exporter_kicad_pretty.Converter(modelPath, modelType)
 
-    def generate(self):
-        out = self.converter.generateLibrary(self.parts, self.verbose)
-        if out is not None:
-            print(out)
+    def generate(self, parts, pattern):
+        footprints = []
+        for footprint in filter(lambda x: pattern.search(x['title']) is not None, parts):
+            package = next(filter(lambda x: x.__name__ == footprint['package']['type'], self.types), None)
+            if package is not None:
+                footprints.append(package(self.specs[footprint['package']['spec']], footprint))
+        footprints.sort(key=lambda x: x.name)
+
+        if self.libraryPath is not None:
+            makeFileName = lambda entry: libraryPath + '/' + entry.name + ('.mod.obj' if self.legacy else '.kicad_mod')
+            libraryPath = self.libraryPath + self.libraryName + ('.obj' if self.legacy else '.pretty')
+            if not os.path.exists(libraryPath):
+                os.makedirs(libraryPath)
+
+        for footprint in footprints:
+            footprintData = self.converter.generate(footprint)
+
+            if self.libraryPath is not None:
+                open(makeFileName(footprint), 'wb').write(footprintData.encode('utf-8'))
+                if self.verbose:
+                    print('Footprint %s:%s was exported' % (self.libraryName, footprints.name))
+            else:
+                print(footprintData)
 
     @staticmethod
     def load():
-        builders = [entry[1] for entry in inspect.getmembers(sys.modules["footprints"])
-                if inspect.ismodule(entry[1]) and entry[1].__name__.startswith("footprints.")]
+        builders = [entry[1] for entry in inspect.getmembers(sys.modules['footprints'])
+                if inspect.ismodule(entry[1]) and entry[1].__name__.startswith('footprints.')]
         types = []
-        [types.extend(entry.__dict__["types"]) for entry in builders]
+        [types.extend(entry.__dict__['types']) for entry in builders]
         return types
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", dest="debug", help="show debug information", default=False, action="store_true")
-parser.add_argument("-i", dest="input", help="input file with descriptors", default=None)
-parser.add_argument("-f", dest="models", help="model file format", default="x3d")
-parser.add_argument("-o", dest="output", help="write footprints to specified directory", default=None)
-parser.add_argument("-p", dest="pretty", help="use S-Expression format", default=False, action="store_true")
-parser.add_argument("-s", dest="specs", help="silkscreen specifications", default=None)
+parser.add_argument('-d', dest='debug', help='show debug information', default=False, action='store_true')
+parser.add_argument('-f', dest='pattern', help='filter parts by name', default='.*')
+parser.add_argument('-l', dest='library', help='add footprints to a specified library', default=None)
+parser.add_argument('-o', dest='output', help='write footprints to a specified directory', default=None)
+parser.add_argument('--legacy', dest='legacy', help='use legacy footprint format', default=False, action='store_true')
+parser.add_argument('--specs', dest='specs', help='override silkscreen specifications', default=None)
+parser.add_argument('--vrml', dest='vrml', help='use VRML model format', default=False, action='store_true')
+parser.add_argument(dest='files', nargs='*')
 options = parser.parse_args()
 
-if options.input is None:
-    raise Exception()
-
-description = json.loads(open(options.input, "rb").read())
-if "library" not in description.keys() and "parts" not in description.keys():
-    raise Exception()
-specs = description["specs"] if options.specs is None else json.loads(open(options.specs, "rb").read())
-parts = description["parts"]
-name = description["library"]
-mode = Autogen.MODE_KICAD_PRETTY if options.pretty else Autogen.MODE_KICAD
-
-Autogen(parts, specs, mode, options.models, name, options.output, options.debug).generate()
+for filename in options.files:
+    desc = json.load(open(filename, 'rb'))
+    specs = desc['specs'] if options.specs is None else json.load(open(options.specs, 'rb'))
+    pattern = re.compile(options.pattern, re.S)
+    generator = Generator(specs, options.library, options.output, options.legacy, options.vrml, options.debug)
+    generator.generate(desc['parts'], pattern)

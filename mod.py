@@ -10,10 +10,12 @@ import inspect
 import json
 import numpy
 import os
+import re
 import sys
 
 from wrlconv import model
 from wrlconv import vrml_export
+from wrlconv import vrml_export_kicad
 from wrlconv import vrml_import
 from wrlconv import x3d_export
 from wrlconv import x3d_import
@@ -47,11 +49,10 @@ def loadMaterials(entries):
     [materials.update({entry.capitalize(): decodeMaterial(entries[entry], entry)}) for entry in entries.keys()]
     return materials
 
-def loadTemplates(entries):
+def loadTemplates(entries, path):
     templates = []
-    scriptDir = os.path.dirname(os.path.realpath(__file__)) + "/descriptions/"
     for entry in entries:
-        scriptPath = scriptDir + entry
+        scriptPath = path + '/' + entry
         extension = os.path.splitext(scriptPath)[1][1:].lower()
         if extension == 'wrl':
             templates.extend(vrml_import.load(scriptPath))
@@ -61,14 +62,16 @@ def loadTemplates(entries):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', dest='debug', help='show debug information', default=False, action='store_true')
-parser.add_argument("-f", dest="format", help="output file format", default="x3d")
-parser.add_argument("-i", dest="input", help="input file with part descriptions", default="")
+parser.add_argument('-f', dest='pattern', help='filter parts by name', default='.*')
+parser.add_argument('-l', dest='library', help='add footprints to a specified library', default=None)
 parser.add_argument('-o', dest='output', help='write models to a specified directory', default='')
 parser.add_argument('-v', dest='view', help='render models', default=False, action='store_true')
 parser.add_argument('--fast', dest='fast', help='disable visual effects', default=False, action='store_true')
 parser.add_argument('--no-grid', dest='simple', help='disable grid', default=False, action='store_true')
 parser.add_argument('--normals', dest='normals', help='show normals', default=False, action='store_true')
 parser.add_argument('--smooth', dest='smooth', help='use smooth shading', default=False, action='store_true')
+parser.add_argument('--vrml', dest='vrml', help='use VRML model format', default=False, action='store_true')
+parser.add_argument(dest='files', nargs='*')
 options = parser.parse_args()
 
 if options.debug:
@@ -79,33 +82,34 @@ if options.debug:
     x3d_export.debugEnabled = True
 
 models = []
+pattern = re.compile(options.pattern, re.S)
 
-if options.input != "":
-    description = json.loads(open(options.input, "rb").read())
-    if "library" not in description.keys() and "parts" not in description.keys():
-        raise Exception()
-    materials = loadMaterials(description["materials"]) if "materials" in description.keys() else {}
-    templates = loadTemplates(description["templates"]) if "templates" in description.keys() else []
+for filename in options.files:
+    desc = json.load(open(filename, 'rb'))
 
-    for descriptor in description["parts"]:
-        for package in types:
-            if package.__name__ == descriptor["package"]["type"]:
-                models.append((package.build(materials, templates, descriptor), descriptor["title"].lower()))
-                break
+    materials = loadMaterials(desc['materials']) if 'materials' in desc.keys() else {}
+    templates = loadTemplates(desc['templates'], os.path.dirname(filename)) if 'templates' in desc.keys() else []
+
+    for part in filter(lambda x: pattern.search(x['title']) is not None, desc['parts']):
+        package = next(filter(lambda x: x.__name__ == part['package']['type'], types), None)
+        if package is not None:
+            models.append((package.build(materials, templates, part), part['title']))
 
 if options.output != '':
     libraryPath = options.output
     if libraryPath[-1] != '/':
         libraryPath += '/'
-    libraryPath += description["library"] + "/"
+    if options.library is not None:
+        libraryPath += options.library + '/'
     if not os.path.exists(libraryPath):
         os.makedirs(libraryPath)
 
-    exportFunc = {"wrl": vrml_export.store, "x3d": x3d_export.store}[options.format]
+    exportSuffix = 'wrl' if options.vrml else 'x3d'
+    exportFunc = vrml_export_kicad.store if options.vrml else x3d_export.store
     for group in models:
-        exportFunc(group[0], libraryPath + group[1] + "." + options.format)
+        exportFunc(group[0], libraryPath + group[1] + '.' + exportSuffix)
         if options.debug:
-            print("Model %s.%s was exported" % (group[1], options.format))
+            print('Model %s.%s was exported' % (group[1], exportSuffix))
 
 if options.normals or options.smooth:
     for group in models:
