@@ -1,0 +1,16 @@
+{
+  "templates": [
+    "tfp09-2-12b.x3d"
+  ],
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "MemoryCard", "spec": "thick"},
+      "title": "TFP09-2-12B",
+      "description": "MicroSD card self-eject socket"
+    }
+  ]
+}
