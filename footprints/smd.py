@@ -10,22 +10,22 @@ import exporter
 
 class Chip(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"], description=Chip.describe(descriptor))
+        exporter.Footprint.__init__(self, name=descriptor['title'], description=Chip.describe(descriptor))
 
-        self.size = (descriptor["pads"]["width"], descriptor["pads"]["height"])
-        self.spacing = descriptor["pins"]["spacing"]
-        self.body = (descriptor["body"]["width"], descriptor["body"]["height"])
-        self.pinNames = descriptor["pins"]["names"] if "names" in descriptor["pins"].keys() else ["1", "2"]
+        self.size = (descriptor['pads']['width'], descriptor['pads']['height'])
+        self.spacing = descriptor['pins']['spacing']
+        self.body = (descriptor['body']['width'], descriptor['body']['height'])
+        self.pinNames = descriptor['pins']['names'] if 'names' in descriptor['pins'].keys() else ['1', '2']
 
-        self.markArrow = descriptor["mark"]["arrow"] if "arrow" in descriptor["mark"].keys() else False
-        self.markBar = descriptor["mark"]["bar"] if "bar" in descriptor["mark"].keys() else False
-        self.markDot = descriptor["mark"]["dot"] if "dot" in descriptor["mark"].keys() else False
-        self.markVertical = descriptor["mark"]["vertical"] if "vertical" in descriptor["mark"].keys() else False
-        self.markWrap = descriptor["mark"]["wrap"] if "wrap" in descriptor["mark"].keys() else False
+        self.markArrow = descriptor['mark']['arrow'] if 'arrow' in descriptor['mark'].keys() else False
+        self.markBar = descriptor['mark']['bar'] if 'bar' in descriptor['mark'].keys() else False
+        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'].keys() else False
+        self.markVertical = descriptor['mark']['vertical'] if 'vertical' in descriptor['mark'].keys() else False
+        self.markWrap = descriptor['mark']['wrap'] if 'wrap' in descriptor['mark'].keys() else False
 
-        self.font = spec["font"]
-        self.gap = spec["gap"]
-        self.thickness = spec["thickness"]
+        self.font = spec['font']
+        self.gap = spec['gap']
+        self.thickness = spec['thickness']
 
         self.dotRadius = self.thickness / 2.
         self.centeredArrow, self.filledArrow, self.verification = True, False, True
@@ -73,8 +73,7 @@ class Chip(exporter.Footprint):
             lines = []
             lines.append(exporter.Line((horiz, vert), (horiz, -vert), self.thickness))
             lines.append(exporter.Line((-horiz, vert), (-horiz, -vert), self.thickness))
-            processedLines = [processFunc(line) for line in lines]
-            [objects.extend(line) for line in processedLines]
+            [objects.extend(processFunc(line)) for line in lines]
 
         if self.markDot and self.verification:
             dotMarkOffset = center + self.size[0] / 2. + self.gap + self.dotRadius + self.thickness / 2.
@@ -139,44 +138,43 @@ class Chip(exporter.Footprint):
             lines.append(exporter.Line((-horiz2, vert), (-horiz2, -vert), self.thickness))
         lines.append(exporter.Line((-horiz1, vert), (-horiz1, -vert), self.thickness))
 
-        processedLines = [processFunc(line) for line in lines]
-        [objects.extend(line) for line in processedLines]
+        [objects.extend(processFunc(line)) for line in lines]
 
         objects.extend(pads)
         return objects
 
     @staticmethod
     def describe(descriptor):
-        return descriptor["description"] if "description" in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor.keys() else None
 
 
 class SmallOutlineTransistor23(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"],
+        exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=SmallOutlineTransistor23.describe(descriptor),
-                model=descriptor["body"]["model"] if "model" in descriptor["body"].keys() else None)
+                model=descriptor['body']['model'] if 'model' in descriptor['body'].keys() else None)
 
-        self.size = (descriptor["pads"]["width"], descriptor["pads"]["height"])
-        self.spacing = (descriptor["pins"]["horizontalSpacing"], descriptor["pins"]["verticalSpacing"])
+        self.size = (descriptor['pads']['width'], descriptor['pads']['height'])
+        self.spacing = (descriptor['pins']['horizontalSpacing'], descriptor['pins']['verticalSpacing'])
 
-        if "centralPadWidth" in descriptor["pads"].keys():
-            self.centralPadSize = (descriptor["pads"]["centralPadWidth"], self.size[0])
+        if 'centralPadWidth' in descriptor['pads'].keys():
+            self.centralPadSize = (descriptor['pads']['centralPadWidth'], self.size[0])
         else:
             self.centralPadSize = self.size
 
-        self.pinNames = descriptor["pins"]["names"]
-        self.markDot = descriptor["mark"]["dot"] if "dot" in descriptor["mark"].keys() else False
-        self.markTri = descriptor["mark"]["tri"] if "tri" in descriptor["mark"].keys() else False
+        self.pinNames = descriptor['pins']['names']
+        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'].keys() else False
+        self.markTri = descriptor['mark']['tri'] if 'tri' in descriptor['mark'].keys() else False
 
-        self.font = spec["font"]
-        self.gap = spec["gap"]
-        self.thickness = spec["thickness"]
+        self.font = spec['font']
+        self.gap = spec['gap']
+        self.thickness = spec['thickness']
 
         self.dotRadius = self.thickness / 2.
 
         # Vertical border
         border = (self.spacing[1] - self.size[1]) / 2. - self.gap - self.thickness / 2.
-        self.body = (descriptor["body"]["width"], border * 2.)
+        self.body = (descriptor['body']['width'], border * 2.)
         self.markOffset = border
 
     def generate(self):
@@ -208,10 +206,10 @@ class SmallOutlineTransistor23(exporter.Footprint):
             width = self.size[0] if i != 1 else self.centralPadSize[0]
             xOffset = self.spacing[0] * (i - 1)
             # Bottom row
-            if self.pinNames[i] != "":
+            if self.pinNames[i] != '':
                 pads.append(exporter.SmdPad(self.pinNames[i], (width, self.size[1]), (xOffset, yOffset)))
             # Top row
-            if self.pinNames[i + 3] != "":
+            if self.pinNames[i + 3] != '':
                 pads.append(exporter.SmdPad(self.pinNames[i + 3], (width, self.size[1]), (-xOffset, -yOffset)))
 
         pads.sort(key=lambda x: x.number)
@@ -221,26 +219,26 @@ class SmallOutlineTransistor23(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor["description"] if "description" in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor.keys() else None
 
 
 class SmallOutlineTransistor223(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"], description=Chip.describe(descriptor),
-                model=descriptor["body"]["model"] if "model" in descriptor["body"].keys() else None)
+        exporter.Footprint.__init__(self, name=descriptor['title'], description=Chip.describe(descriptor),
+                model=descriptor['body']['model'] if 'model' in descriptor['body'].keys() else None)
 
-        self.size = (descriptor["pads"]["width"], descriptor["pads"]["height"])
-        self.powerPadSize = (descriptor["pads"]["powerPadWidth"], descriptor["pads"]["powerPadHeight"])
-        self.spacing = (descriptor["pins"]["horizontalSpacing"], descriptor["pins"]["verticalSpacing"])
-        self.body = (descriptor["body"]["width"], descriptor["body"]["height"])
+        self.size = (descriptor['pads']['width'], descriptor['pads']['height'])
+        self.powerPadSize = (descriptor['pads']['powerPadWidth'], descriptor['pads']['powerPadHeight'])
+        self.spacing = (descriptor['pins']['horizontalSpacing'], descriptor['pins']['verticalSpacing'])
+        self.body = (descriptor['body']['width'], descriptor['body']['height'])
 
-        self.font = spec["font"]
-        self.gap = spec["gap"]
-        self.thickness = spec["thickness"]
+        self.font = spec['font']
+        self.gap = spec['gap']
+        self.thickness = spec['thickness']
 
-        self.pinNames = descriptor["pins"]["names"]
-        self.markDot = descriptor["mark"]["dot"] if "dot" in descriptor["mark"].keys() else False
-        self.markTri = descriptor["mark"]["tri"] if "tri" in descriptor["mark"].keys() else False
+        self.pinNames = descriptor['pins']['names']
+        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'].keys() else False
+        self.markTri = descriptor['mark']['tri'] if 'tri' in descriptor['mark'].keys() else False
 
         self.dotRadius = self.thickness / 2.
         self.markOffset = 1.0
@@ -277,7 +275,7 @@ class SmallOutlineTransistor223(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor["description"] if "description" in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor.keys() else None
 
 
 types = [Chip, SmallOutlineTransistor23, SmallOutlineTransistor223]

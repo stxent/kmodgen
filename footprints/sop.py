@@ -10,20 +10,20 @@ import exporter
 
 class SmallOutlinePackage(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"],
+        exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=SmallOutlinePackage.describe(descriptor))
 
-        self.body = (descriptor["body"]["length"], descriptor["body"]["width"])
-        self.padSize = (descriptor["pads"]["width"], descriptor["pads"]["length"])
-        self.sidePadWidth = descriptor["pads"]["sideWidth"]
-        self.count = descriptor["pins"]["count"]
-        self.margin = descriptor["pins"]["margin"]
-        self.pitch = descriptor["pins"]["pitch"]
+        self.body = (descriptor['body']['length'], descriptor['body']['width'])
+        self.padSize = (descriptor['pads']['width'], descriptor['pads']['length'])
+        self.sidePadWidth = descriptor['pads']['sideWidth']
+        self.count = descriptor['pins']['count']
+        self.margin = descriptor['pins']['margin']
+        self.pitch = descriptor['pins']['pitch']
         self.sidePitch = self.pitch + (self.sidePadWidth - self.padSize[0]) / 2.
 
-        self.font = spec["font"]
-        self.gap = spec["gap"]
-        self.thickness = spec["thickness"]
+        self.font = spec['font']
+        self.gap = spec['gap']
+        self.thickness = spec['thickness']
 
         self.dotRadius = self.thickness / 2.
         self.markOffset = 1.0
@@ -84,11 +84,11 @@ class SmallOutlinePackage(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if "description" in descriptor.keys():
-            return descriptor["description"]
+        if 'description' in descriptor.keys():
+            return descriptor['description']
         else:
-            return "%u leads, body width %.1f mm, pitch %.2f mm" % (
-                    descriptor["pins"]["count"], descriptor["body"]["width"], descriptor["pins"]["pitch"])
+            return '%u leads, body width %.1f mm, pitch %.2f mm' % (
+                    descriptor['pins']['count'], descriptor['body']['width'], descriptor['pins']['pitch'])
 
 
 types = [SmallOutlinePackage]

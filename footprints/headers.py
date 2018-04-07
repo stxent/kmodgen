@@ -12,17 +12,17 @@ import exporter
 
 class PinHeader(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"],
+        exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=PinHeader.describe(descriptor))
 
-        self.count = (descriptor["pins"]["columns"], descriptor["pins"]["rows"])
-        self.pitch = descriptor["pins"]["pitch"]
-        self.padDrill = descriptor["pads"]["drill"]
-        self.padSize = (descriptor["pads"]["diameter"], descriptor["pads"]["diameter"])
+        self.count = (descriptor['pins']['columns'], descriptor['pins']['rows'])
+        self.pitch = descriptor['pins']['pitch']
+        self.padDrill = descriptor['pads']['drill']
+        self.padSize = (descriptor['pads']['diameter'], descriptor['pads']['diameter'])
 
-        self.font = spec["font"]
-        self.gap = spec["gap"]
-        self.thickness = spec["thickness"]
+        self.font = spec['font']
+        self.gap = spec['gap']
+        self.thickness = spec['thickness']
 
         self.body = (self.count[0] * self.pitch, self.count[1] * self.pitch)
         self.outline = self.calcOutline()
@@ -67,14 +67,14 @@ class PinHeader(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor["description"] if "description" in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor.keys() else None
 
 
 class RightAnglePinHeader(PinHeader):
     def __init__(self, spec, descriptor):
         PinHeader.__init__(self, spec, descriptor)
 
-        projectionLength = descriptor["pins"]["length"]
+        projectionLength = descriptor['pins']['length']
         topBorder, bottomBorder = -self.outline[1] / 2. + self.center[1], projectionLength - self.thickness / 2.
         self.stripes = [self.outline[1] / 2. + self.center[1]]
         self.body = (self.body[0], (float(self.count[1]) - 0.5) * self.pitch + projectionLength)
@@ -94,7 +94,7 @@ class BoxHeader(PinHeader):
     def __init__(self, spec, descriptor):
         PinHeader.__init__(self, spec, descriptor)
 
-        self.body = (descriptor["body"]["length"], descriptor["body"]["width"])
+        self.body = (descriptor['body']['length'], descriptor['body']['width'])
         self.outline = self.calcOutline()
 
 

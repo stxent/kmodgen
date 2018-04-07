@@ -205,8 +205,8 @@ class RadialCapacitor:
         meshes = []
 
         bottomCap = curves.createTriCapMesh(slices, True)
-        bottomCap.appearance().material = RadialCapacitor.mat(materials, "Bottom")
-        bottomCap.ident = name + "BottomCap"
+        bottomCap.appearance().material = RadialCapacitor.mat(materials, 'Bottom')
+        bottomCap.ident = name + 'BottomCap'
         meshes.append(bottomCap)
 
         if capSections == 1:
@@ -214,24 +214,24 @@ class RadialCapacitor:
         else:
             topCap = RadialCapacitor.buildBumpedCap(slices=slices, beginning=False, sections=capSections,
                     sectionWidth=capSectionWidth, capRadius=capInnerRadius, bodyRadius=capOuterRadius)
-        topCap.appearance().material = RadialCapacitor.mat(materials, "Top")
-        topCap.ident = name + "TopCap"
+        topCap.appearance().material = RadialCapacitor.mat(materials, 'Top')
+        topCap.ident = name + 'TopCap'
         meshes.append(topCap)
 
         if polarized:
             body = curves.createRotationMesh(slices[1:], False)
-            body.appearance().material = RadialCapacitor.mat(materials, "Body")
-            body.ident = name + "Body"
+            body.appearance().material = RadialCapacitor.mat(materials, 'Body')
+            body.ident = name + 'Body'
             meshes.append(body)
 
             mark = curves.createRotationMesh([slices[-1]] + slices[0:2], False)
-            mark.appearance().material = RadialCapacitor.mat(materials, "Mark")
-            mark.ident = name + "Mark"
+            mark.appearance().material = RadialCapacitor.mat(materials, 'Mark')
+            mark.ident = name + 'Mark'
             meshes.append(mark)
         else:
             body = curves.createRotationMesh(slices, True)
-            body.appearance().material = RadialCapacitor.mat(materials, "Body")
-            body.ident = name + "Body"
+            body.appearance().material = RadialCapacitor.mat(materials, 'Body')
+            body.ident = name + 'Body'
             meshes.append(body)
 
         return meshes
@@ -248,7 +248,7 @@ class RadialCapacitor:
 
     @staticmethod
     def demangle(title):
-        return title.replace("C-", "Cap").replace("CP-", "Cap").replace("R-", "Radial").replace("A-", "Axial")
+        return title.replace('C-', 'Cap').replace('CP-', 'Cap').replace('R-', 'Radial').replace('A-', 'Axial')
 
     @staticmethod
     def mat(materials, name):
@@ -261,51 +261,51 @@ class RadialCapacitor:
 
     @staticmethod
     def build(materials, templates, descriptor):
-        title = RadialCapacitor.demangle(descriptor["title"])
+        title = RadialCapacitor.demangle(descriptor['title'])
 
-        bodyDetails = descriptor["body"]["details"] if "details" in descriptor["body"].keys() else 3
-        bodyEdges = descriptor["body"]["edges"] if "edges" in descriptor["body"].keys() else 24
-        capSections = descriptor["caps"]["sections"] if "sections" in descriptor["caps"].keys() else 1
+        bodyDetails = descriptor['body']['details'] if 'details' in descriptor['body'].keys() else 3
+        bodyEdges = descriptor['body']['edges'] if 'edges' in descriptor['body'].keys() else 24
+        capSections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'].keys() else 1
 
         meshes = []
         bodyCurve = RadialCapacitor.buildCapacitorCurve(
-                metricToImperial(descriptor["body"]["diameter"]) / 2.,
-                metricToImperial(descriptor["body"]["height"]),
-                metricToImperial(descriptor["body"]["curvature"]),
-                metricToImperial(descriptor["body"]["band"]),
-                metricToImperial(descriptor["caps"]["diameter"]) / 2.,
-                metricToImperial(descriptor["caps"]["depth"]),
-                metricToImperial(descriptor["caps"]["chamfer"]),
+                metricToImperial(descriptor['body']['diameter']) / 2.,
+                metricToImperial(descriptor['body']['height']),
+                metricToImperial(descriptor['body']['curvature']),
+                metricToImperial(descriptor['body']['band']),
+                metricToImperial(descriptor['caps']['diameter']) / 2.,
+                metricToImperial(descriptor['caps']['depth']),
+                metricToImperial(descriptor['caps']['chamfer']),
                 bodyDetails,
                 bodyDetails + 1)
 
         bodyMesh = RadialCapacitor.buildCapacitorBody(
                 bodyCurve,
                 bodyEdges,
-                descriptor["body"]["stripe"],
+                descriptor['body']['stripe'],
                 materials,
                 title,
                 capSections,
-                metricToImperial(descriptor["caps"]["diameter"]) / 2.,
-                metricToImperial(descriptor["caps"]["diameter"] + descriptor["body"]["curvature"]) / 2.,
-                metricToImperial(descriptor["body"]["curvature"]),
-                metricToImperial(descriptor["body"]["curvature"]) / 2.)
+                metricToImperial(descriptor['caps']['diameter']) / 2.,
+                metricToImperial(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.,
+                metricToImperial(descriptor['body']['curvature']),
+                metricToImperial(descriptor['body']['curvature']) / 2.)
         meshes.extend(bodyMesh)
 
         pinCurve = RadialCapacitor.buildPinCurve(
-                metricToImperial(descriptor["pins"]["diameter"]) / 2.,
-                metricToImperial(descriptor["pins"]["height"]),
-                metricToImperial(descriptor["pins"]["curvature"]))
+                metricToImperial(descriptor['pins']['diameter']) / 2.,
+                metricToImperial(descriptor['pins']['height']),
+                metricToImperial(descriptor['pins']['curvature']))
 
-        pinMesh = RadialCapacitor.buildCapacitorPin(pinCurve, descriptor["pins"]["edges"])
-        pinMesh.appearance().material = RadialCapacitor.mat(materials, "Pin")
-        pinMesh.ident = title + "Pin"
+        pinMesh = RadialCapacitor.buildCapacitorPin(pinCurve, descriptor['pins']['edges'])
+        pinMesh.appearance().material = RadialCapacitor.mat(materials, 'Pin')
+        pinMesh.ident = title + 'Pin'
 
-        spacing = metricToImperial(descriptor["pins"]["spacing"]) / 2.
-        posPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + "Pos")
+        spacing = metricToImperial(descriptor['pins']['spacing']) / 2.
+        posPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Pos')
         posPin.translate([-spacing, 0., 0.])
         meshes.append(posPin)
-        negPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + "Neg")
+        negPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Neg')
         negPin.translate([spacing, 0., 0.])
         meshes.append(negPin)
 

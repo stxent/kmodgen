@@ -26,7 +26,7 @@ class PinHeader:
     def buildHeaderBody(materials, modelBody, modelEdge, modelPin, bodyTransform, count, pitch, name):
         shift = pitch / 2. if count[1] > 1 else 0.
 
-        body = model.Mesh(name="%s_%uBody" % (name, count[0] * count[1]))
+        body = model.Mesh(name='%s_%uBody' % (name, count[0] * count[1]))
         body.visualAppearance = modelBody.appearance()
 
         pins = []
@@ -42,17 +42,17 @@ class PinHeader:
             segment.translate([float(i) * pitch, shift, 0.])
             body.append(segment)
 
-            pin = model.Mesh(parent=modelPin, name="%s_%uPin%u" % (name, count[0] * count[1], (i + 1)))
+            pin = model.Mesh(parent=modelPin, name='%s_%uPin%u' % (name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, shift, 0.001])
-            if "Pin" in materials.keys():
-                pin.appearance().material = materials["Pin"]
+            if 'Pin' in materials.keys():
+                pin.appearance().material = materials['Pin']
             pins.append(pin)
 
         body.transform = copy.deepcopy(bodyTransform)
         body.translate([0., 0., 0.001])
         body.optimize()
-        if "Body" in materials.keys():
-            body.appearance().material = materials["Body"]
+        if 'Body' in materials.keys():
+            body.appearance().material = materials['Body']
 
         return [body] + pins
 
@@ -63,22 +63,22 @@ class PinHeader:
             return a - TOLERANCE <= b <= a + TOLERANCE
 
         transform = model.Transform()
-        pitch200 = eq(descriptor["pins"]["pitch"], 2.0)
-        pitch254 = eq(descriptor["pins"]["pitch"], 2.54)
+        pitch200 = eq(descriptor['pins']['pitch'], 2.0)
+        pitch254 = eq(descriptor['pins']['pitch'], 2.54)
 
         if not pitch200 and not pitch254:
             raise Exception()
 
-        if descriptor["pins"]["rows"] == 1:
+        if descriptor['pins']['rows'] == 1:
             if pitch200:
-                objectNames = ["PatPLS2Body", "PatPLS2EdgeBody", "PatPLS2Pin"]
+                objectNames = ['PatPLS2Body', 'PatPLS2EdgeBody', 'PatPLS2Pin']
             elif pitch254:
-                objectNames = ["PatPLSBody", "PatPLSEdgeBody", "PatPLSPin"]
-        elif descriptor["pins"]["rows"] == 2:
+                objectNames = ['PatPLSBody', 'PatPLSEdgeBody', 'PatPLSPin']
+        elif descriptor['pins']['rows'] == 2:
             if pitch200:
-                objectNames = ["PatPLD2Body", "PatPLD2EdgeBody", "PatPLD2Pin"]
+                objectNames = ['PatPLD2Body', 'PatPLD2EdgeBody', 'PatPLD2Pin']
             elif pitch254:
-                objectNames = ["PatPLDBody", "PatPLDEdgeBody", "PatPLDPin"]
+                objectNames = ['PatPLDBody', 'PatPLDEdgeBody', 'PatPLDPin']
         else:
             raise Exception()
 
@@ -87,9 +87,9 @@ class PinHeader:
         return PinHeader.buildHeaderBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
-                (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
-                metricToImperial(descriptor["pins"]["pitch"]),
-                descriptor["title"])
+                (descriptor['pins']['columns'], descriptor['pins']['rows']),
+                metricToImperial(descriptor['pins']['pitch']),
+                descriptor['title'])
 
 
 class RightAnglePinHeader(PinHeader):
@@ -100,8 +100,8 @@ class RightAnglePinHeader(PinHeader):
             return a - TOLERANCE <= b <= a + TOLERANCE
 
         transform = model.Transform()
-        pitch200 = eq(descriptor["pins"]["pitch"], 2.0)
-        pitch254 = eq(descriptor["pins"]["pitch"], 2.54)
+        pitch200 = eq(descriptor['pins']['pitch'], 2.0)
+        pitch254 = eq(descriptor['pins']['pitch'], 2.54)
 
         if pitch200:
             transform.translate([0., -0.391, 0.3937])
@@ -112,16 +112,16 @@ class RightAnglePinHeader(PinHeader):
         else:
             raise Exception()
 
-        if descriptor["pins"]["rows"] == 1:
+        if descriptor['pins']['rows'] == 1:
             if pitch200:
-                objectNames = ["PatPLS2Body", "PatPLS2EdgeBody", "PatPLS2RPin"]
+                objectNames = ['PatPLS2Body', 'PatPLS2EdgeBody', 'PatPLS2RPin']
             elif pitch254:
-                objectNames = ["PatPLSBody", "PatPLSEdgeBody", "PatPLSRPin"]
-        elif descriptor["pins"]["rows"] == 2:
+                objectNames = ['PatPLSBody', 'PatPLSEdgeBody', 'PatPLSRPin']
+        elif descriptor['pins']['rows'] == 2:
             if pitch200:
-                objectNames = ["PatPLD2Body", "PatPLD2EdgeBody", "PatPLD2RPin"]
+                objectNames = ['PatPLD2Body', 'PatPLD2EdgeBody', 'PatPLD2RPin']
             elif pitch254:
-                objectNames = ["PatPLDBody", "PatPLDEdgeBody", "PatPLDRPin"]
+                objectNames = ['PatPLDBody', 'PatPLDEdgeBody', 'PatPLDRPin']
         else:
             raise Exception()
 
@@ -130,9 +130,9 @@ class RightAnglePinHeader(PinHeader):
         return RightAnglePinHeader.buildHeaderBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
-                (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
-                metricToImperial(descriptor["pins"]["pitch"]),
-                descriptor["title"])
+                (descriptor['pins']['columns'], descriptor['pins']['rows']),
+                metricToImperial(descriptor['pins']['pitch']),
+                descriptor['title'])
 
 
 class BoxHeader:
@@ -148,15 +148,15 @@ class BoxHeader:
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
         body.translate([delta, pitch / 2., 0.001])
-        if "Body" in materials.keys():
-            body.appearance().material = materials["Body"]
+        if 'Body' in materials.keys():
+            body.appearance().material = materials['Body']
 
         pins = []
         for i in range(0, count[0]):
-            pin = model.Mesh(parent=modelPin, name="%s_%uPin%u" % (name, count[0] * count[1], (i + 1)))
+            pin = model.Mesh(parent=modelPin, name='%s_%uPin%u' % (name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, pitch / 2., 0.001])
-            if "Pin" in materials.keys():
-                pin.appearance().material = materials["Pin"]
+            if 'Pin' in materials.keys():
+                pin.appearance().material = materials['Pin']
             pins.append(pin)
 
         return [body] + pins
@@ -167,29 +167,30 @@ class BoxHeader:
             TOLERANCE = 0.001
             return a - TOLERANCE <= b <= a + TOLERANCE
 
-        if descriptor["pins"]["rows"] != 2:
+        if descriptor['pins']['rows'] != 2:
             raise Exception()
-        if not eq(descriptor["pins"]["pitch"], 2.54):
+        if not eq(descriptor['pins']['pitch'], 2.54):
             raise Exception()
 
-        bhBody = lookup(templates, "PatBHBody").parent
-        bhPin = lookup(templates, "PatBHPin").parent
+        bhBody = lookup(templates, 'PatBHBody').parent
+        bhPin = lookup(templates, 'PatBHPin').parent
 
         # Modified BH models
         regions = [
                 (((0.7, 3.0, 4.0), (-2.5, -3.0, -0.5)), 1),
-                (((6.5, 3.0, 4.0), ( 4.5, -3.0, -0.5)), 2)]
-        bhAttributedBody = model.AttributedMesh(name="PatBHAttributed", regions=regions)
+                (((6.5, 3.0, 4.0), ( 4.5, -3.0, -0.5)), 2)
+        ]
+        bhAttributedBody = model.AttributedMesh(name='PatBHAttributed', regions=regions)
         bhAttributedBody.append(bhBody)
         bhAttributedBody.visualAppearance = bhBody.appearance()
 
         return BoxHeader.buildHeaderBody(
                 materials,
                 bhAttributedBody, bhPin,
-                (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
-                metricToImperial(descriptor["body"]["length"]),
-                metricToImperial(descriptor["pins"]["pitch"]),
-                descriptor["title"])
+                (descriptor['pins']['columns'], descriptor['pins']['rows']),
+                metricToImperial(descriptor['body']['length']),
+                metricToImperial(descriptor['pins']['pitch']),
+                descriptor['title'])
 
 
 types = [PinHeader, RightAnglePinHeader, BoxHeader]

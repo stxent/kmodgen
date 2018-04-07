@@ -43,20 +43,20 @@ class QuadFlatPackage:
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
         body.translate([0., 0., 0.001])
-        if "Body" in materials.keys():
-            body.appearance().material = materials["Body"]
+        if 'Body' in materials.keys():
+            body.appearance().material = materials['Body']
 
         mark = copy.deepcopy(modelMark)
         mark.translate([dot[0], dot[1], 0.001])
-        if "Mark" in materials.keys():
-            mark.appearance().material = materials["Mark"]
+        if 'Mark' in materials.keys():
+            mark.appearance().material = materials['Mark']
 
         def makePin(x, y, angle, number):
-            pin = model.Mesh(parent=modelPin, name="%s%uPin%u" % (name, count[0] * 2 + count[1] * 2, number))
+            pin = model.Mesh(parent=modelPin, name='%s%uPin%u' % (name, count[0] * 2 + count[1] * 2, number))
             pin.translate([x, y, 0.001])
             pin.rotate([0., 0., 1.], angle * math.pi / 180.)
-            if "Pin" in materials.keys():
-                pin.appearance().material = materials["Pin"]
+            if 'Pin' in materials.keys():
+                pin.appearance().material = materials['Pin']
             return pin
 
         pins = []
@@ -77,11 +77,11 @@ class QuadFlatPackage:
 
     @staticmethod
     def build(materials, templates, descriptor):
-        qfpBody = lookup(templates, "PatQFPBody")[0].parent
-        qfpBodyMark = lookup(templates, "PatQFPBody")[1].parent
+        qfpBody = lookup(templates, 'PatQFPBody')[0].parent
+        qfpBodyMark = lookup(templates, 'PatQFPBody')[1].parent
 
-        qfpNarrowPin = lookup(templates, "PatQFPNarrowPin")[0].parent
-        qfpWidePin = lookup(templates, "PatQFPWidePin")[0].parent
+        qfpNarrowPin = lookup(templates, 'PatQFPNarrowPin')[0].parent
+        qfpWidePin = lookup(templates, 'PatQFPWidePin')[0].parent
 
         regions = [
                 ((( 0.5,  0.5, 1.0), (-0.5, -0.5, -1.0)), 1),
@@ -89,11 +89,11 @@ class QuadFlatPackage:
                 (((-1.5,  1.5, 1.0), (-0.5,  0.5, -1.0)), 3),
                 ((( 1.5, -1.5, 1.0), ( 0.5, -0.5, -1.0)), 4),
                 (((-1.5, -1.5, 1.0), (-0.5, -0.5, -1.0)), 5)]
-        qfpAttributedBody = model.AttributedMesh(name="QFPBody", regions=regions)
+        qfpAttributedBody = model.AttributedMesh(name='QFPBody', regions=regions)
         qfpAttributedBody.append(qfpBody)
         qfpAttributedBody.visualAppearance = qfpBody.appearance()
 
-        if descriptor["pins"]["pitch"] >= 0.65:
+        if descriptor['pins']['pitch'] >= 0.65:
             modelPin = qfpWidePin
         else:
             modelPin = qfpNarrowPin
@@ -101,10 +101,10 @@ class QuadFlatPackage:
         return QuadFlatPackage.buildPackageBody(
                 materials,
                 qfpAttributedBody, qfpBodyMark, modelPin,
-                (descriptor["pins"]["columns"], descriptor["pins"]["rows"]),
-                (metricToImperial(descriptor["body"]["width"]), metricToImperial(descriptor["body"]["length"])),
-                metricToImperial(descriptor["pins"]["pitch"]),
-                descriptor["title"])
+                (descriptor['pins']['columns'], descriptor['pins']['rows']),
+                (metricToImperial(descriptor['body']['width']), metricToImperial(descriptor['body']['length'])),
+                metricToImperial(descriptor['pins']['pitch']),
+                descriptor['title'])
 
 
 types = [QuadFlatPackage]

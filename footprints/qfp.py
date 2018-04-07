@@ -10,20 +10,20 @@ import exporter
 
 class QuadFlatPackage(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor["title"],
+        exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=QuadFlatPackage.describe(descriptor))
 
-        self.body = (descriptor["body"]["width"], descriptor["body"]["length"])
-        self.padSize = (descriptor["pads"]["width"], descriptor["pads"]["length"])
-        self.sidePadWidth = descriptor["pads"]["sideWidth"]
-        self.count = (descriptor["pins"]["columns"], descriptor["pins"]["rows"])
-        self.margin = descriptor["pins"]["margin"]
-        self.pitch = descriptor["pins"]["pitch"]
+        self.body = (descriptor['body']['width'], descriptor['body']['length'])
+        self.padSize = (descriptor['pads']['width'], descriptor['pads']['length'])
+        self.sidePadWidth = descriptor['pads']['sideWidth']
+        self.count = (descriptor['pins']['columns'], descriptor['pins']['rows'])
+        self.margin = descriptor['pins']['margin']
+        self.pitch = descriptor['pins']['pitch']
         self.sidePitch = self.pitch + (self.sidePadWidth - self.padSize[0]) / 2.
 
-        self.font = spec["font"]
-        self.gap = spec["gap"]
-        self.thickness = spec["thickness"]
+        self.font = spec['font']
+        self.gap = spec['gap']
+        self.thickness = spec['thickness']
 
         self.dotRadius = self.thickness / 2.
         self.markOffset = 1.0
@@ -96,13 +96,13 @@ class QuadFlatPackage(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if "description" in descriptor.keys():
-            return descriptor["description"]
+        if 'description' in descriptor.keys():
+            return descriptor['description']
         else:
-            return "%u leads, body %ux%ux%.1f mm, pitch %.1f mm" % (
-                    (descriptor["pins"]["columns"] + descriptor["pins"]["rows"]) * 2,
-                    descriptor["body"]["width"], descriptor["body"]["length"], descriptor["body"]["height"],
-                    descriptor["pins"]["pitch"])
+            return '%u leads, body %ux%ux%.1f mm, pitch %.1f mm' % (
+                    (descriptor['pins']['columns'] + descriptor['pins']['rows']) * 2,
+                    descriptor['body']['width'], descriptor['body']['length'], descriptor['body']['height'],
+                    descriptor['pins']['pitch'])
 
 
 types = [QuadFlatPackage]
