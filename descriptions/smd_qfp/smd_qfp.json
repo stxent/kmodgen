@@ -10,58 +10,58 @@
     {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP32",
-      "body": {"length": 7.0, "width": 7.0, "height": 1.4},
+      "body": {"size": [7.0, 7.0, 1.4]},
+      "pads": {"regularPadSize": [0.5, 1.2], "sidePadSize": [0.6, 1.2]},
       "pins": {"columns": 8, "rows": 8, "pitch": 0.8, "margin": 0.150},
-      "pads": {"length": 1.2, "width": 0.5, "sideWidth": 0.6},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP48",
-      "body": {"length": 7.0, "width": 7.0, "height": 1.4},
+      "body": {"size": [7.0, 7.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 12, "rows": 12, "pitch": 0.5, "margin": 0.175},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP64",
-      "body": {"length": 10.0, "width": 10.0, "height": 1.4},
+      "body": {"size": [10.0, 10.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 16, "rows": 16, "pitch": 0.5, "margin": 0.150},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP80",
-      "body": {"length": 12.0, "width": 12.0, "height": 1.4},
+      "body": {"size": [12.0, 12.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 20, "rows": 20, "pitch": 0.5, "margin": 0.150},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP100",
-      "body": {"length": 14.0, "width": 14.0, "height": 1.4},
+      "body": {"size": [14.0, 14.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 25, "rows": 25, "pitch": 0.5, "margin": 0.150},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP128",
-      "body": {"length": 14.0, "width": 20.0, "height": 1.4},
+      "body": {"size": [20.0, 14.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 38, "rows": 26, "pitch": 0.5, "margin": 0.450},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP144",
-      "body": {"length": 20.0, "width": 20.0, "height": 1.4},
+      "body": {"size": [20.0, 20.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 36, "rows": 36, "pitch": 0.5, "margin": 0.150},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QuadFlatPackage", "spec": "thick"},
       "title": "LQFP176",
-      "body": {"length": 24.0, "width": 24.0, "height": 1.4},
+      "body": {"size": [24.0, 24.0, 1.4]},
+      "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5]},
       "pins": {"columns": 44, "rows": 44, "pitch": 0.5, "margin": 0.150},
-      "pads": {"length": 1.5, "width": 0.28, "sideWidth": 0.4},
       "source": "NXP specifications for reflow soldering"
     }
   ]

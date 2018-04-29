@@ -18,9 +18,6 @@ def lookup(meshList, meshName):
             found.append(entry)
     return found
 
-def metricToImperial(value):
-    return value / 2.54 # Convert millimeters to hundreds of mils
-
 
 class QuadFlatPackage:
     @staticmethod
@@ -102,8 +99,8 @@ class QuadFlatPackage:
                 materials,
                 qfpAttributedBody, qfpBodyMark, modelPin,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
-                (metricToImperial(descriptor['body']['width']), metricToImperial(descriptor['body']['length'])),
-                metricToImperial(descriptor['pins']['pitch']),
+                model.metricToImperial(descriptor['body']['size']),
+                model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 
 

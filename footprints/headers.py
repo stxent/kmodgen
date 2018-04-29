@@ -5,63 +5,39 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import math
-
+import numpy
 import exporter
 
 
 class PinHeader(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=PinHeader.describe(descriptor))
+                description=PinHeader.describe(descriptor), spec=spec)
 
-        self.count = (descriptor['pins']['columns'], descriptor['pins']['rows'])
+        self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
         self.pitch = descriptor['pins']['pitch']
+        self.bodySize = numpy.asfarray(self.count) * self.pitch
+        self.bodyCenter = numpy.asfarray(self.count - 1) * numpy.array([1.0, -1.0]) * self.pitch / 2.0
+        self.padSize = numpy.array([descriptor['pads']['diameter'], descriptor['pads']['diameter']])
         self.padDrill = descriptor['pads']['drill']
-        self.padSize = (descriptor['pads']['diameter'], descriptor['pads']['diameter'])
-
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
-
-        self.body = (self.count[0] * self.pitch, self.count[1] * self.pitch)
-        self.outline = self.calcOutline()
-
-        xCenterOffset = self.pitch * math.floor(self.count[0] / 2)
-        if self.count[0] % 2 == 0:
-            xCenterOffset -= self.pitch / 2.
-        yCenterOffset = -self.pitch * float(self.count[1] - 1) / 2.
-        self.center = (xCenterOffset, yCenterOffset)
-
-    def calcOutline(self):
-        staticOffset = self.gap * 2. + self.thickness - self.pitch
-        minOffsets = (staticOffset + self.padSize[0] + self.body[0], staticOffset + self.padSize[1] + self.body[1])
-        return (max(minOffsets[0], self.body[0]), max(minOffsets[1], self.body[1]))
 
     def generate(self):
         objects = []
-        borders = (self.outline[0] / 2., self.outline[1] / 2.)
+        objects.append(exporter.Label(self.name, self.bodyCenter, self.thickness, self.font))
 
-        objects.append(exporter.Label(name=self.name, position=self.center,
-                thickness=self.thickness, font=self.font))
+        # Body outline
+        outlineMargin = 2.0 * self.gap + self.thickness - self.pitch
+        outlineSize = numpy.maximum(self.bodySize, self.bodySize + self.padSize + outlineMargin)
+        objects.append(exporter.Rect(outlineSize / 2.0 + self.bodyCenter, -outlineSize / 2.0 + self.bodyCenter,
+                self.thickness))
 
-        objects.append(exporter.Line((-borders[0] + self.center[0], borders[1] + self.center[1]),
-                (borders[0] + self.center[0], borders[1] + self.center[1]), self.thickness))
-        objects.append(exporter.Line((-borders[0] + self.center[0], -borders[1] + self.center[1]),
-                (borders[0] + self.center[0], -borders[1] + self.center[1]), self.thickness))
-        objects.append(exporter.Line((borders[0] + self.center[0], borders[1] + self.center[1]),
-                (borders[0] + self.center[0], -borders[1] + self.center[1]), self.thickness))
-        objects.append(exporter.Line((-borders[0] + self.center[0], borders[1] + self.center[1]),
-                (-borders[0] + self.center[0], -borders[1] + self.center[1]), self.thickness))
-
-        pads = []
+        # Pads
         for x in range(0, self.count[0]):
             for y in range(0, self.count[1]):
-                offset = (x * self.pitch, -y * self.pitch)
-                number = x * self.count[1] + y
-                style = exporter.AbstractPad.STYLE_CIRCLE if number > 0 else exporter.AbstractPad.STYLE_RECT
-                pads.append(exporter.HolePad(number + 1, self.padSize, offset, self.padDrill, style))
-        objects.extend(pads)
+                offset = numpy.array([float(x), -float(y)]) * self.pitch
+                number = 1 + x * self.count[1] + y
+                style = exporter.AbstractPad.STYLE_CIRCLE if number > 1 else exporter.AbstractPad.STYLE_RECT
+                objects.append(exporter.HolePad(number, self.padSize, offset, self.padDrill, style))
 
         return objects
 
@@ -74,28 +50,25 @@ class RightAnglePinHeader(PinHeader):
     def __init__(self, spec, descriptor):
         PinHeader.__init__(self, spec, descriptor)
 
-        projectionLength = descriptor['pins']['length']
-        topBorder, bottomBorder = -self.outline[1] / 2. + self.center[1], projectionLength - self.thickness / 2.
-        self.stripes = [self.outline[1] / 2. + self.center[1]]
-        self.body = (self.body[0], (float(self.count[1]) - 0.5) * self.pitch + projectionLength)
-        self.outline = (self.outline[0], bottomBorder - topBorder)
-        self.center = (self.center[0], (bottomBorder + topBorder) / 2.)
+        projectionLength = descriptor['pins']['length'] - 0.5 * self.pitch
+        self.bodySize += numpy.array([0.0, projectionLength])
+        self.bodyCenter += numpy.array([0.0, projectionLength / 2.0])
 
     def generate(self):
         objects = PinHeader.generate(self)
-        xOutlineSize = self.outline[0] / 2.
-        for yOffset in self.stripes:
-            objects.append(exporter.Line((-xOutlineSize + self.center[0], yOffset),
-                    (xOutlineSize + self.center[0], yOffset), self.thickness))
+
+        outlineMargin = 2.0 * self.gap + self.thickness - self.pitch
+        outlineSize = numpy.maximum(self.bodySize, self.bodySize + self.padSize + outlineMargin)
+        lineOffsets = (outlineSize[0] / 2.0, self.gap + (self.padSize[1] + self.thickness) / 2.0)
+        objects.append(exporter.Line((lineOffsets[0] + self.bodyCenter[0], lineOffsets[1]),
+                (-lineOffsets[0] + self.bodyCenter[0], lineOffsets[1]), self.thickness))
         return objects
 
 
 class BoxHeader(PinHeader):
     def __init__(self, spec, descriptor):
         PinHeader.__init__(self, spec, descriptor)
-
-        self.body = (descriptor['body']['length'], descriptor['body']['width'])
-        self.outline = self.calcOutline()
+        self.bodySize = numpy.array(descriptor['body']['size'])
 
 
 types = [PinHeader, RightAnglePinHeader, BoxHeader]

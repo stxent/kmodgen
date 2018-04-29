@@ -11,28 +11,25 @@ import exporter
 
 class RadialCapacitor(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=RadialCapacitor.describe(descriptor))
+        exporter.Footprint.__init__(self, name=descriptor['title'],
+                description=RadialCapacitor.describe(descriptor), spec=spec)
+
         self.bodyDiameter = descriptor['body']['diameter']
         self.padDrill = descriptor['pads']['drill']
         self.padSize = (descriptor['pads']['diameter'], descriptor['pads']['diameter'])
         self.spacing = descriptor['pins']['spacing']
 
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
-
     def generate(self):
         objects = []
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        markOffsetX = -self.bodyDiameter / 2. - self.thickness - self.gap - self.font / 2.
-        objects.append(exporter.String(value='+', position=(markOffsetX, 0.0), thickness=self.thickness,
-                font=self.font))
+        markOffsetX = -self.bodyDiameter / 2.0 - self.thickness - self.gap - self.font / 2.0
+        objects.append(exporter.String('+', (markOffsetX, 0.0), self.thickness, self.font))
 
-        circleRadius = self.bodyDiameter / 2. + self.thickness / 2.
+        circleRadius = self.bodyDiameter / 2.0 + self.thickness / 2.0
         objects.append(exporter.Circle((0.0, 0.0), circleRadius, self.thickness, (0.0, 360.0)))
 
-        pinOffsetX = self.spacing / 2.
+        pinOffsetX = self.spacing / 2.0
         objects.append(exporter.HolePad('A', self.padSize, (-pinOffsetX, 0.0), self.padDrill,
                 exporter.AbstractPad.STYLE_RECT))
         objects.append(exporter.HolePad('C', self.padSize, (pinOffsetX, 0.0), self.padDrill,

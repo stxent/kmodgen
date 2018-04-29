@@ -5,122 +5,102 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import numpy
 import exporter
 
 
 class FlexibleFlatCableConnector(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=FlexibleFlatCableConnector.describe(descriptor))
+                description=FlexibleFlatCableConnector.describe(descriptor), spec=spec)
 
-        self.mountPadSize = (descriptor['pads']['mountWidth'], descriptor['pads']['mountHeight'])
-        self.mountPadSpacing = (descriptor['mount']['horizontalSpacing'], descriptor['mount']['verticalSpacing'])
-        self.signalPadSize = (descriptor['pads']['width'], descriptor['pads']['height'])
+        self.mountPadSize = numpy.array([descriptor['pads']['mountWidth'], descriptor['pads']['mountHeight']])
+        self.mountPadSpacing = numpy.array([
+                descriptor['mount']['horizontalSpacing'],
+                descriptor['mount']['verticalSpacing']
+        ])
+        self.signalPadSize = numpy.array([descriptor['pads']['width'], descriptor['pads']['height']])
         self.signalPadOffset = descriptor['pads']['offset']
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
         self.bodyHeight = descriptor['body']['height']
         self.bodyWidthIncrease = descriptor['body']['widthIncrease']
 
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
-
     def generate(self):
-        objects = []
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+        silkscreen, pads = [], []
+        silkscreen.append(exporter.Label(self.name, self.center, self.thickness, self.font))
 
-        totalPadsWidth = self.pitch * (self.count - 1)
-        borders = ((self.bodyWidthIncrease * 2.0 + totalPadsWidth) / 2.0, self.bodyHeight / 2.0)
-        mountPadOffset = (self.mountPadSpacing[0] + totalPadsWidth / 2.0,
-                self.signalPadOffset - self.mountPadSpacing[1])
+        totalPadsWidth = float(self.count - 1) * self.pitch
 
-        dotMarkRadius = self.thickness / 2.0
-        dotMarkOffset = (-totalPadsWidth / 2.0, -(self.signalPadOffset + self.signalPadSize[1] / 2.0
-                + self.gap + self.thickness))
-
-        objects.append(exporter.Circle(dotMarkOffset, dotMarkRadius, self.thickness))
-
-        pads = []
+        # First pin mark
+        dotMarkPosition = numpy.array([
+                -totalPadsWidth / 2.0,
+                -(self.signalPadOffset + self.signalPadSize[1] / 2.0 + self.gap + self.thickness)
+        ])
+        silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 
         # Mounting pads
-        pads.append(exporter.SmdPad('', self.mountPadSize, (mountPadOffset[0], -mountPadOffset[1])))
-        pads.append(exporter.SmdPad('', self.mountPadSize, (-mountPadOffset[0], -mountPadOffset[1])))
+        mountPadOffset = self.mountPadSpacing + numpy.array([totalPadsWidth / 2.0, self.signalPadOffset])
+        pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([+1.0, -1.0])))
+        pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([-1.0, -1.0])))
 
         # Signal pads
         for i in range(0, self.count):
             x = -totalPadsWidth / 2.0 + i * self.pitch
             pads.append(exporter.SmdPad(i + 1, self.signalPadSize, (x, -self.signalPadOffset)))
 
-        objects += pads
-
-        lines = []
-        lines.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
-        lines.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
-        lines.append(exporter.Line((borders[0], borders[1]), (borders[0], -borders[1]), self.thickness))
-        lines.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
-
+        # Body outline
+        topCorner = numpy.array([totalPadsWidth / 2.0 + self.bodyWidthIncrease, self.bodyHeight / 2.0])
+        outline = exporter.Rect(topCorner, -topCorner, self.thickness)
         processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
-        [objects.extend(processFunc(line)) for line in lines]
+        [silkscreen.extend(processFunc(line)) for line in outline.lines]
 
-        return objects
+        return silkscreen + pads
 
     @staticmethod
     def describe(descriptor):
         if 'description' in descriptor.keys():
             return descriptor['description']
         else:
-            pitch = descriptor['pins']['pitch']
-            pitchStr = '%.1f' % pitch if int(pitch * 100) == int(pitch * 10) * 10 else '%.2f' % pitch
-            return 'FFC/FPC connector, %s mm pitch, surface mount, %s contact style, %u circuits'\
-                    % (pitchStr, descriptor['pins']['style'], descriptor['pins']['count'])
+            round1f = lambda x: '{:d}'.format(x) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
+            pitchStr = round1f(descriptor['pins']['pitch'])
+            return 'FFC/FPC connector, {:s} mm pitch, surface mount, {:s} contact style, {:d} circuits'.format(
+                    pitchStr, descriptor['pins']['style'], descriptor['pins']['count'])
 
 
 class IpxFootprint(exporter.Footprint):
     def __init__(self, spec, descriptor, coreSize, coreOffset, sideSize, sideOffset):
         exporter.Footprint.__init__(self, name=descriptor['title'],
-                description='Miniature RF connector for high-frequency signals')
+                description='Miniature RF connector for high-frequency signals', spec=spec)
 
-        self.coreOffset, self.coreSize = coreOffset, coreSize
-        self.sideOffset, self.sideSize = sideOffset, sideSize
-
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
-
-        self.body = (descriptor['body']['width'], descriptor['body']['height'])
+        self.coreOffset, self.coreSize = numpy.array(coreOffset), numpy.array(coreSize)
+        self.sideOffset, self.sideSize = numpy.array(sideOffset), numpy.array(sideSize)
+        self.bodySize = numpy.array([descriptor['body']['width'], descriptor['body']['height']])
 
     def generate(self):
-        objects = []
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+        silkscreen, pads = [], []
+        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        borders = (self.body[0] / 2.0, self.body[1] / 2.0)
-        borderDeltaX = borders[0] - self.sideSize[0] / 2.0 - self.thickness / 2.0
-        if borderDeltaX < self.gap:
-            borders = (borders[0] + (self.gap - borderDeltaX), borders[1])
-
-        pads = []
+        # Pads
         pads.append(exporter.SmdPad(1, self.coreSize, self.coreOffset))
-        pads.append(exporter.SmdPad(2, self.sideSize, (self.sideOffset[0], self.sideOffset[1])))
-        pads.append(exporter.SmdPad(2, self.sideSize, (self.sideOffset[0], -self.sideOffset[1])))
-        objects += pads
+        pads.append(exporter.SmdPad(2, self.sideSize, self.sideOffset * numpy.array([+1.0, +1.0])))
+        pads.append(exporter.SmdPad(2, self.sideSize, self.sideOffset * numpy.array([+1.0, -1.0])))
 
-        lines = []
-        lines.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
-        lines.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
-        lines.append(exporter.Line((-borders[0], -borders[1]), (borders[0], -borders[1]), self.thickness))
-        lines.append(exporter.Line((borders[0], -borders[1]), (borders[0], borders[1]), self.thickness))
-
+        # Body outline
+        outlineDeltaX = (self.bodySize[0] - self.sideSize[0] - self.thickness) / 2.0
+        outlineDeltaX = self.gap - outlineDeltaX if outlineDeltaX < self.gap else 0.0
+        outlineSize = numpy.array([self.bodySize[0] / 2.0 + outlineDeltaX, self.bodySize[1] / 2.0])
+        outline = exporter.Rect(outlineSize, -outlineSize, self.thickness)
         processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
-        [objects.extend(processFunc(line)) for line in lines]
+        [silkscreen.extend(processFunc(line)) for line in outline.lines]
 
-        return objects
+        return silkscreen + pads
 
 
 class IPX(IpxFootprint):
     def __init__(self, spec, descriptor):
         IpxFootprint.__init__(self=self, spec=spec, descriptor=descriptor,
-                coreSize=(1.0, 1.0), coreOffset=(1.5, 0.0), sideSize=(2.2, 1.05), sideOffset=(0, 1.475))
+                coreSize=(1.0, 1.0), coreOffset=(1.5, 0.0), sideSize=(2.2, 1.05), sideOffset=(0.0, 1.475))
 
 
 class MemoryCard(exporter.Footprint):
@@ -132,12 +112,13 @@ class MemoryCard(exporter.Footprint):
 
 
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=MemoryCard.describe(descriptor))
+        exporter.Footprint.__init__(self, name=descriptor['title'],
+                description=MemoryCard.describe(descriptor), spec=spec)
 
         self.signalPadCount = 9
-        self.signalPadSize = (0.7, 1.6)
+        self.signalPadSize = numpy.array([0.7, 1.6])
         self.signalpadPitch = -1.1
-        self.signalPadOffset = (2.25, -10.5)
+        self.signalPadOffset = numpy.array([2.25, -10.5])
 
         # Top left pad, top right pad, bottom left pad, bottom right pad
         self.mountPadSizes = ((1.2, 1.4), (1.6, 1.4), (1.2, 2.2), (1.2, 2.2))
@@ -146,30 +127,18 @@ class MemoryCard(exporter.Footprint):
         self.mountHoleDiameter = 1.0
         self.mountHoleOffsets = ((-4.93, 0.0), (3.05, 0.0))
 
-        self.bodySize = (14.7, 14.5)
-        self.bodyOffset = (0.0, -2.75)
-        self.labelOffset = (0.0, -2.0)
-
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
+        self.bodySize = numpy.array([14.7, 14.5])
+        self.bodyOffset = numpy.array([0.0, -2.75])
+        self.labelOffset = numpy.array([0.0, -2.0])
 
     def generate(self):
-        objects = []
+        silkscreen, pads = [], []
+        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        bodyLeft = -self.bodySize[0] / 2.0 + self.bodyOffset[0]
-        bodyRight = self.bodySize[0] / 2.0 + self.bodyOffset[0]
-        bodyTop = self.bodySize[1] / 2.0 + self.bodyOffset[1]
-        bodyBottom = -self.bodySize[1] / 2.0 + self.bodyOffset[1]
-
-        dotMarkRadius = self.thickness / 2.0
-        dotMarkOffset = (self.signalPadOffset[0], self.signalPadOffset[1] - (self.signalPadSize[1] / 2.0 + self.gap
-                + self.thickness))
-
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
-        objects.append(exporter.Circle(dotMarkOffset, dotMarkRadius, self.thickness))
-
-        pads = []
+        # First pin mark
+        dotMarkPosition = self.signalPadOffset + numpy.array([0.0, self.signalPadSize[1] / 2.0
+                + self.gap + self.thickness])
+        silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 
         # Mounting pads
         for i in range(0, len(self.mountPadSizes)):
@@ -185,18 +154,13 @@ class MemoryCard(exporter.Footprint):
             y = self.signalPadOffset[1]
             pads.append(exporter.SmdPad(i + 1, self.signalPadSize, (x, y)))
 
-        objects += pads
-
-        lines = []
-        lines.append(exporter.Line((bodyLeft, bodyTop), (bodyRight, bodyTop), self.thickness))
-        lines.append(exporter.Line((bodyLeft, bodyBottom), (bodyRight, bodyBottom), self.thickness))
-        lines.append(exporter.Line((bodyLeft, bodyTop), (bodyLeft, bodyBottom), self.thickness))
-        lines.append(exporter.Line((bodyRight, bodyTop), (bodyRight, bodyBottom), self.thickness))
-
+        # Body outline
+        topCorner = self.bodySize / 2.0
+        outline = exporter.Rect(topCorner + self.bodyOffset, -topCorner + self.bodyOffset, self.thickness)
         processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
-        [objects.extend(processFunc(line)) for line in lines]
+        [silkscreen.extend(processFunc(line)) for line in outline.lines]
 
-        return objects
+        return silkscreen + pads
 
     @staticmethod
     def describe(descriptor):
@@ -211,26 +175,27 @@ class AngularSmaFootprint(exporter.Footprint):
 
 
     def __init__(self, spec, descriptor, space, innerSize, outerSize):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description='')
+        exporter.Footprint.__init__(self, name=descriptor['title'],
+                description=AngularSmaFootprint.describe(descriptor), spec=spec)
 
         self.space = space
-        self.innerSize = innerSize
-        self.outerSize = outerSize
+        self.innerSize = numpy.array(innerSize)
+        self.outerSize = numpy.array(outerSize)
 
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
+    @staticmethod
+    def makePolyLine(points, thickness, layer):
+        if len(points) < 2:
+            raise Exception()
+        lines = []
+        for seg in range(0, len(points) - 1):
+            lines.append(exporter.Line(points[seg], points[seg + 1], thickness, layer))
+        return lines
 
     def generate(self):
         objects = []
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        borders = (
-                self.space + self.outerSize[0] / 2.0 + self.thickness / 2.0 + self.gap,
-                self.innerSize[1] / 2.0 + self.thickness / 2.0 + self.gap
-        )
-        yOuterBorder = self.innerSize[1] / 2.0 - self.thickness / 2.0
-
+        # Pads
         objects.append(AngularSmaFootprint.SidePad(1, self.innerSize, (0.0, 0.0),
                 exporter.AbstractPad.LAYERS_FRONT))
         objects.append(AngularSmaFootprint.SidePad(2, self.outerSize, (self.space, 0.0),
@@ -242,11 +207,25 @@ class AngularSmaFootprint(exporter.Footprint):
         objects.append(AngularSmaFootprint.SidePad(2, self.outerSize, (-self.space, 0.0),
                 exporter.AbstractPad.LAYERS_BACK))
 
-        objects.append(exporter.Line((borders[0], yOuterBorder), (borders[0], -borders[1]), self.thickness))
-        objects.append(exporter.Line((-borders[0], yOuterBorder), (-borders[0], -borders[1]), self.thickness))
-        objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
+        # Body outline
+        xOutline = self.gap + self.thickness / 2.0 + self.outerSize[0] / 2.0 + self.space
+        yBottomOutline = (self.innerSize[1] - self.thickness) / 2.0
+        yTopOutline = -(self.innerSize[1] + self.thickness) / 2.0 - self.gap
+
+        outlinePoints = [
+                (xOutline, yBottomOutline),
+                (xOutline, yTopOutline),
+                (-xOutline, yTopOutline),
+                (-xOutline, yBottomOutline)
+        ]
+        objects.extend(AngularSmaFootprint.makePolyLine(outlinePoints, self.thickness, exporter.Layer.SILK_FRONT))
+        objects.extend(AngularSmaFootprint.makePolyLine(outlinePoints, self.thickness, exporter.Layer.SILK_BACK))
 
         return objects
+
+    @staticmethod
+    def describe(descriptor):
+        return descriptor['description'] if 'description' in descriptor.keys() else ''
 
 
 class SMA:
@@ -274,63 +253,47 @@ class MiniUSB(exporter.Footprint):
 
 
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=MiniUSB.describe(descriptor))
+        exporter.Footprint.__init__(self, name=descriptor['title'], description=MiniUSB.describe(descriptor), spec=spec)
 
         self.padOffset = 3.05
         self.padPitch = 0.8
-        self.padSize = (2.3, 0.5)
-        self.holdOffset = 4.4
-        self.frontHold = -2.95
-        self.backHold = 2.55
-        self.holdSize = (2.5, 2.0)
-        self.holeDiameter = 0.9
-        self.holeSpacing = 2.2
-        self.bodySize = (9.3, 7.7)
-        self.bodyOffset = 1.35
-
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
+        self.padSize = numpy.array([2.3, 0.5])
+        self.mountPadOffset = 4.4
+        self.frontMountPad = -2.95
+        self.backMountPad = 2.55
+        self.mountPadSize = numpy.array([2.5, 2.0])
+        self.mountHoleDiameter = 0.9
+        self.mountHoleSpacing = 2.2
+        self.bodySize = numpy.array([9.3, 7.7])
+        self.bodyOffset = numpy.array([1.35, 0.0])
 
     def generate(self):
-        objects = []
-        borders = (self.bodySize[0] / 2.0, self.bodySize[1] / 2.0)
-        dotMarkRadius = self.thickness / 2.0
-        dotMarkOffset = (self.padOffset + self.padSize[0] / 2.0 + self.gap + self.thickness, -2.0 * self.padPitch)
+        silkscreen, pads = [], []
+        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
-        objects.append(exporter.Circle(dotMarkOffset, dotMarkRadius, self.thickness))
+        # First pin mark
+        dotMarkPosition = (self.padOffset + self.padSize[0] / 2.0 + self.gap + self.thickness, -2.0 * self.padPitch)
+        objects.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 
-        pads = []
-
+        # Pads
         for i in range(0, 5):
-            yOffset = float(i - 2) * self.padPitch
-            pads.append(exporter.SmdPad(i + 1, self.padSize, (self.padOffset, yOffset)))
+            y = float(i - 2) * self.padPitch
+            pads.append(exporter.SmdPad(i + 1, self.padSize, (self.padOffset, y)))
 
-        pads.append(exporter.SmdPad('', self.holdSize, (self.backHold, self.holdOffset)))
-        pads.append(exporter.SmdPad('', self.holdSize, (self.backHold, -self.holdOffset)))
-        pads.append(exporter.SmdPad('', self.holdSize, (self.frontHold, self.holdOffset)))
-        pads.append(exporter.SmdPad('', self.holdSize, (self.frontHold, -self.holdOffset)))
+        pads.append(exporter.SmdPad('', self.mountPadSize, (self.backMountPad, self.mountPadOffset)))
+        pads.append(exporter.SmdPad('', self.mountPadSize, (self.backMountPad, -self.mountPadOffset)))
+        pads.append(exporter.SmdPad('', self.mountPadSize, (self.frontMountPad, self.mountPadOffset)))
+        pads.append(exporter.SmdPad('', self.mountPadSize, (self.frontMountPad, -self.mountPadOffset)))
 
-        pads.append(MiniUSB.MountHole('', (0.0, self.holeSpacing), self.holeDiameter))
-        pads.append(MiniUSB.MountHole('', (0.0, -self.holeSpacing), self.holeDiameter))
+        pads.append(MiniUSB.MountHole('', (0.0, self.mountHoleSpacing), self.mountHoleDiameter))
+        pads.append(MiniUSB.MountHole('', (0.0, -self.mountHoleSpacing), self.mountHoleDiameter))
 
-        objects += pads
-
-        lines = []
-        lines.append(exporter.Line((borders[0] - self.bodyOffset, borders[1]),
-                (-borders[0] - self.bodyOffset, borders[1]), self.thickness))
-        lines.append(exporter.Line((-borders[0] - self.bodyOffset, borders[1]),
-                (-borders[0] - self.bodyOffset, -borders[1]), self.thickness))
-        lines.append(exporter.Line((-borders[0] - self.bodyOffset, -borders[1]),
-                (borders[0] - self.bodyOffset, -borders[1]), self.thickness))
-        lines.append(exporter.Line((borders[0] - self.bodyOffset, -borders[1]),
-                (borders[0] - self.bodyOffset, borders[1]), self.thickness))
-
+        topCorner = self.bodySize / 2.0
+        outline = exporter.Rect(topCorner - self.bodyOffset, -topCorner - self.bodyOffset, self.thickness)
         processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
-        [objects.extend(processFunc(line)) for line in lines]
+        [silkscreen.extend(processFunc(line)) for line in outline.lines]
 
-        return objects
+        return silkscreen + pads
 
     @staticmethod
     def describe(descriptor):

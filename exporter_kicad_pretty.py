@@ -22,32 +22,32 @@ class Converter:
     def layersToText(mask):
         layers = []
 
-        if mask & (1 << exporter.AbstractPad.Layer.CU_BACK) and mask & (1 << exporter.AbstractPad.Layer.CU_FRONT):
+        if mask & (1 << exporter.Layer.CU_BACK) and mask & (1 << exporter.Layer.CU_FRONT):
             layers.append('*.Cu')
-        elif mask & (1 << exporter.AbstractPad.Layer.CU_BACK):
+        elif mask & (1 << exporter.Layer.CU_BACK):
             layers.append('B.Cu')
-        elif mask & (1 << exporter.AbstractPad.Layer.CU_FRONT):
+        elif mask & (1 << exporter.Layer.CU_FRONT):
             layers.append('F.Cu')
 
-        if mask & (1 << exporter.AbstractPad.Layer.PASTE_BACK) and mask & (1 << exporter.AbstractPad.Layer.PASTE_FRONT):
+        if mask & (1 << exporter.Layer.PASTE_BACK) and mask & (1 << exporter.Layer.PASTE_FRONT):
             layers.append('*.Paste')
-        elif mask & (1 << exporter.AbstractPad.Layer.PASTE_BACK):
+        elif mask & (1 << exporter.Layer.PASTE_BACK):
             layers.append('B.Paste')
-        elif mask & (1 << exporter.AbstractPad.Layer.PASTE_FRONT):
+        elif mask & (1 << exporter.Layer.PASTE_FRONT):
             layers.append('F.Paste')
 
-        if mask & (1 << exporter.AbstractPad.Layer.MASK_BACK) and mask & (1 << exporter.AbstractPad.Layer.MASK_FRONT):
+        if mask & (1 << exporter.Layer.MASK_BACK) and mask & (1 << exporter.Layer.MASK_FRONT):
             layers.append('*.Mask')
-        elif mask & (1 << exporter.AbstractPad.Layer.MASK_BACK):
+        elif mask & (1 << exporter.Layer.MASK_BACK):
             layers.append('B.Mask')
-        elif mask & (1 << exporter.AbstractPad.Layer.MASK_FRONT):
+        elif mask & (1 << exporter.Layer.MASK_FRONT):
             layers.append('F.Mask')
 
-        if mask & (1 << exporter.AbstractPad.Layer.SILK_BACK) and mask & (1 << exporter.AbstractPad.Layer.SILK_FRONT):
+        if mask & (1 << exporter.Layer.SILK_BACK) and mask & (1 << exporter.Layer.SILK_FRONT):
             layers.append('*.SilkS')
-        elif mask & (1 << exporter.AbstractPad.Layer.SILK_BACK):
+        elif mask & (1 << exporter.Layer.SILK_BACK):
             layers.append('B.SilkS')
-        elif mask & (1 << exporter.AbstractPad.Layer.SILK_FRONT):
+        elif mask & (1 << exporter.Layer.SILK_FRONT):
             layers.append('F.SilkS')
 
         return ' '.join(layers)
@@ -114,6 +114,9 @@ class Converter:
         return '  (fp_line (start %.6f %.6f) (end %.6f %.6f) (layer F.SilkS) (width %.6f))\n'\
                 % (line.start[0], line.start[1], line.end[0], line.end[1], line.thickness)
 
+    def rectToText(self, rect):
+        return ''.join([self.lineToText(line) for line in rect.lines])
+
     def padToText(self, pad):
         padName = str(pad.number) if len(str(pad.number)) else '""'
 
@@ -154,6 +157,8 @@ class Converter:
             out += self.circleToText(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Line), objects):
             out += self.lineToText(obj)
+        for obj in filter(lambda x: isinstance(x, exporter.Rect), objects):
+            out += self.rectToText(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Poly), objects):
             out += self.polyToText(obj)
         for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):

@@ -32,33 +32,33 @@ class RadialCapacitor:
         geoVertices = []
         geoPolygons = []
 
-        depth = sectionWidth / 4.
-        firstCircleRadius = sectionWidth / 4. / math.sin(2. * math.pi / float(2 * sections))
-        secondCircleRadius = sectionWidth / 2. / math.sin(2. * math.pi / float(2 * sections))
+        depth = sectionWidth / 4.0
+        firstCircleRadius = sectionWidth / 4.0 / math.sin(2.0 * math.pi / float(2 * sections))
+        secondCircleRadius = sectionWidth / 2.0 / math.sin(2.0 * math.pi / float(2 * sections))
         firstCirclePoints, secondCirclePoints = [], []
         outerPoints = []
         bodyPoints = []
         for i in range(0, sections):
-            angle = 2. * math.pi / float(sections) * float(i)
-            vector = numpy.array([math.cos(angle), math.sin(angle), 0.])
-            firstCirclePoints.append(center + vector * firstCircleRadius + numpy.array([0., 0., -depth]))
+            angle = 2.0 * math.pi / float(sections) * float(i)
+            vector = numpy.array([math.cos(angle), math.sin(angle), 0.0])
+            firstCirclePoints.append(center + vector * firstCircleRadius + numpy.array([0.0, 0.0, -depth]))
             secondCirclePoints.append(center + vector * secondCircleRadius)
 
-            angle = 2. * math.pi / float(sections) * (float(i) + 0.5)
-            vector = numpy.array([math.cos(angle), math.sin(angle), 0.])
-            normal = numpy.array([math.cos(angle + math.pi / 2.), math.sin(angle + math.pi / 2.), 0.])
+            angle = 2.0 * math.pi / float(sections) * (float(i) + 0.5)
+            vector = numpy.array([math.cos(angle), math.sin(angle), 0.0])
+            normal = numpy.array([math.cos(angle + math.pi / 2.0), math.sin(angle + math.pi / 2.0), 0.0])
             points = [
-                    center + vector * capRadius + normal * sectionWidth / 2.,
-                    center + vector * capRadius + normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
-                    center + vector * capRadius - normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
-                    center + vector * capRadius - normal * sectionWidth / 2.
+                    center + vector * capRadius + normal * sectionWidth / 2.0,
+                    center + vector * capRadius + normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
+                    center + vector * capRadius - normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
+                    center + vector * capRadius - normal * sectionWidth / 2.0
             ]
             outerPoints.append(points)
             points = [
-                    center + vector * bodyRadius + normal * sectionWidth / 2.,
-                    center + vector * bodyRadius + normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
-                    center + vector * bodyRadius - normal * sectionWidth / 4. + numpy.array([0., 0., -depth]),
-                    center + vector * bodyRadius - normal * sectionWidth / 2.
+                    center + vector * bodyRadius + normal * sectionWidth / 2.0,
+                    center + vector * bodyRadius + normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
+                    center + vector * bodyRadius - normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
+                    center + vector * bodyRadius - normal * sectionWidth / 2.0
             ]
             bodyPoints.append(points)
 
@@ -77,12 +77,12 @@ class RadialCapacitor:
             outer = (angle(outerRange[0]), angle(outerRange[1]))
 
             normalAngles = (
-                    2. * math.pi / float(sections) * (float(i) + 0.5) + math.pi / 2.,
-                    2. * math.pi / float(sections) * (float(i) - 0.5) + math.pi / 2.
+                    2.0 * math.pi / float(sections) * (float(i) + 0.5) + math.pi / 2.0,
+                    2.0 * math.pi / float(sections) * (float(i) - 0.5) + math.pi / 2.0
             )
             normals = (
-                    numpy.array([math.cos(normalAngles[0]), math.sin(normalAngles[0]), 0.]),
-                    numpy.array([math.cos(normalAngles[1]), math.sin(normalAngles[1]), 0.])
+                    numpy.array([math.cos(normalAngles[0]), math.sin(normalAngles[0]), 0.0]),
+                    numpy.array([math.cos(normalAngles[1]), math.sin(normalAngles[1]), 0.0])
             )
 
             points = [v for v in vertices if belongs(angle(v), inner[0], inner[1])]
@@ -106,8 +106,8 @@ class RadialCapacitor:
             if inner[1] >= inner[0]:
                 points = sorted(points, comparator)
             else:
-                points = sorted(filter(lambda x: angle(x) >= 0., points), comparator)\
-                        + sorted(filter(lambda x: angle(x) < 0., points), comparator)
+                points = sorted(filter(lambda x: angle(x) >= 0.0, points), comparator)\
+                        + sorted(filter(lambda x: angle(x) < 0.0, points), comparator)
             edgePoints.append(points)
 
         fcp = lambda a: rot(a, sections)
@@ -159,32 +159,32 @@ class RadialCapacitor:
         # Bottom cap
         if capRadius is not None:
             if capDepth is not None:
-                curve.append(curves.Line((capRadius, 0., capDepth - chamfer), (capRadius, 0., chamfer), 1))
-                curve.append(curves.Line((capRadius, 0., chamfer), (capRadius + chamfer, 0., 0.), 1))
-                curve.append(curves.Line((capRadius + chamfer, 0., 0.), (radius - curvature, 0., 0.), 1))
+                curve.append(curves.Line((capRadius, 0.0, capDepth - chamfer), (capRadius, 0.0, chamfer), 1))
+                curve.append(curves.Line((capRadius, 0.0, chamfer), (capRadius + chamfer, 0.0, 0.0), 1))
+                curve.append(curves.Line((capRadius + chamfer, 0.0, 0.0), (radius - curvature, 0.0, 0.0), 1))
             else:
-                curve.append(curves.Line((capRadius, 0., 0.), (radius - curvature, 0., 0.), 1))
+                curve.append(curves.Line((capRadius, 0.0, 0.0), (radius - curvature, 0.0, 0.0), 1))
 
         # Plastic
-        curve.append(curves.Bezier((radius - curvature, 0., 0.), (curvature / 2., 0., 0.),
-                (radius, 0., curvature), (0., 0., -curvature / 2.), edgeDetails))
-        curve.append(curves.Line((radius, 0., curvature), (radius, 0., bandOffset - curvature * 2.), 1))
-        curve.append(curves.Bezier((radius, 0., bandOffset - curvature * 2.), (0., 0., curvature),
-                (radius - curvature, 0., bandOffset), (0., 0., -curvature), bandDetails))
-        curve.append(curves.Bezier((radius - curvature, 0., bandOffset), (0., 0., curvature),
-                (radius, 0., bandOffset + curvature * 2.), (0., 0., -curvature), bandDetails))
-        curve.append(curves.Line((radius, 0., bandOffset + curvature * 2.), (radius, 0., height - curvature), 1))
-        curve.append(curves.Bezier((radius, 0., height - curvature), (0., 0., curvature / 2.),
-                (radius - curvature, 0., height), (curvature / 2., 0., 0.), edgeDetails))
+        curve.append(curves.Bezier((radius - curvature, 0.0, 0.0), (curvature / 2.0, 0.0, 0.0),
+                (radius, 0.0, curvature), (0.0, 0.0, -curvature / 2.0), edgeDetails))
+        curve.append(curves.Line((radius, 0.0, curvature), (radius, 0.0, bandOffset - curvature * 2.0), 1))
+        curve.append(curves.Bezier((radius, 0.0, bandOffset - curvature * 2.0), (0.0, 0.0, curvature),
+                (radius - curvature, 0.0, bandOffset), (0.0, 0.0, -curvature), bandDetails))
+        curve.append(curves.Bezier((radius - curvature, 0.0, bandOffset), (0.0, 0.0, curvature),
+                (radius, 0.0, bandOffset + curvature * 2.0), (0.0, 0.0, -curvature), bandDetails))
+        curve.append(curves.Line((radius, 0.0, bandOffset + curvature * 2.0), (radius, 0.0, height - curvature), 1))
+        curve.append(curves.Bezier((radius, 0.0, height - curvature), (0.0, 0.0, curvature / 2.0),
+                (radius - curvature, 0.0, height), (curvature / 2.0, 0.0, 0.0), edgeDetails))
 
         # Top cap
         if capRadius is not None:
             if capDepth is not None:
-                curve.append(curves.Line((radius - curvature, 0., height), (capRadius + chamfer, 0., height), 1))
-                curve.append(curves.Line((capRadius + chamfer, 0., height), (capRadius, 0., height - chamfer), 1))
-                curve.append(curves.Line((capRadius, 0., height - chamfer), (capRadius, 0., height - capDepth), 1))
+                curve.append(curves.Line((radius - curvature, 0.0, height), (capRadius + chamfer, 0.0, height), 1))
+                curve.append(curves.Line((capRadius + chamfer, 0.0, height), (capRadius, 0.0, height - chamfer), 1))
+                curve.append(curves.Line((capRadius, 0.0, height - chamfer), (capRadius, 0.0, height - capDepth), 1))
             else:
-                curve.append(curves.Line((radius - curvature, 0., height), (capRadius, 0., height), 1))
+                curve.append(curves.Line((radius - curvature, 0.0, height), (capRadius, 0.0, height), 1))
 
         return curve
 
@@ -192,16 +192,16 @@ class RadialCapacitor:
     def buildPinCurve(radius, height, curvature, edgeDetails=2):
         curve = []
 
-        curve.append(curves.Bezier((radius - curvature, 0., -height), (curvature / 2., 0., 0.),
-                (radius, 0., -height + curvature), (0., 0., -curvature / 2.), edgeDetails))
-        curve.append(curves.Line((radius, 0., curvature - height), (radius, 0., 0.), 1))
+        curve.append(curves.Bezier((radius - curvature, 0.0, -height), (curvature / 2.0, 0.0, 0.0),
+                (radius, 0.0, -height + curvature), (0.0, 0.0, -curvature / 2.0), edgeDetails))
+        curve.append(curves.Line((radius, 0.0, curvature - height), (radius, 0.0, 0.0), 1))
 
         return curve
 
     @staticmethod
     def buildCapacitorBody(curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
             capSectionWidth, capBumpDepth):
-        slices = curves.rotate(curve=curve, axis=(0., 0., 1.), edges=edges)
+        slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
         meshes = []
 
         bottomCap = curves.createTriCapMesh(slices, True)
@@ -238,7 +238,7 @@ class RadialCapacitor:
 
     @staticmethod
     def buildCapacitorPin(curve, edges):
-        slices = curves.rotate(curve=curve, axis=(0., 0., 1.), edges=edges)
+        slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
 
         pin = curves.createRotationMesh(slices, True)
         pin.append(curves.createTriCapMesh(slices, True))
@@ -269,11 +269,11 @@ class RadialCapacitor:
 
         meshes = []
         bodyCurve = RadialCapacitor.buildCapacitorCurve(
-                metricToImperial(descriptor['body']['diameter']) / 2.,
+                metricToImperial(descriptor['body']['diameter']) / 2.0,
                 metricToImperial(descriptor['body']['height']),
                 metricToImperial(descriptor['body']['curvature']),
                 metricToImperial(descriptor['body']['band']),
-                metricToImperial(descriptor['caps']['diameter']) / 2.,
+                metricToImperial(descriptor['caps']['diameter']) / 2.0,
                 metricToImperial(descriptor['caps']['depth']),
                 metricToImperial(descriptor['caps']['chamfer']),
                 bodyDetails,
@@ -286,14 +286,14 @@ class RadialCapacitor:
                 materials,
                 title,
                 capSections,
-                metricToImperial(descriptor['caps']['diameter']) / 2.,
-                metricToImperial(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.,
+                metricToImperial(descriptor['caps']['diameter']) / 2.0,
+                metricToImperial(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.0,
                 metricToImperial(descriptor['body']['curvature']),
-                metricToImperial(descriptor['body']['curvature']) / 2.)
+                metricToImperial(descriptor['body']['curvature']) / 2.0)
         meshes.extend(bodyMesh)
 
         pinCurve = RadialCapacitor.buildPinCurve(
-                metricToImperial(descriptor['pins']['diameter']) / 2.,
+                metricToImperial(descriptor['pins']['diameter']) / 2.0,
                 metricToImperial(descriptor['pins']['height']),
                 metricToImperial(descriptor['pins']['curvature']))
 
@@ -301,12 +301,12 @@ class RadialCapacitor:
         pinMesh.appearance().material = RadialCapacitor.mat(materials, 'Pin')
         pinMesh.ident = title + 'Pin'
 
-        spacing = metricToImperial(descriptor['pins']['spacing']) / 2.
+        spacing = metricToImperial(descriptor['pins']['spacing']) / 2.0
         posPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Pos')
-        posPin.translate([-spacing, 0., 0.])
+        posPin.translate([-spacing, 0.0, 0.0])
         meshes.append(posPin)
         negPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Neg')
-        negPin.translate([spacing, 0., 0.])
+        negPin.translate([spacing, 0.0, 0.0])
         meshes.append(negPin)
 
         return meshes

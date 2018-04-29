@@ -18,9 +18,6 @@ def lookup(meshList, meshName):
             found.append(entry)
     return found
 
-def metricToImperial(value):
-    return value / 2.54 # Convert millimeters to hundreds of mils
-
 
 class SmallOutlinePackage:
     @staticmethod
@@ -108,10 +105,10 @@ class SmallOutlinePackage:
         return SmallOutlinePackage.buildPackageBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2],
-                (metricToImperial(referenceObject[3][0]), metricToImperial(referenceObject[3][1])),
+                model.metricToImperial(referenceObject[3]),
                 descriptor['pins']['count'],
-                (metricToImperial(descriptor['body']['length']), metricToImperial(descriptor['body']['width'])),
-                metricToImperial(descriptor['pins']['pitch']),
+                model.metricToImperial(descriptor['body']['size']),
+                model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 
 

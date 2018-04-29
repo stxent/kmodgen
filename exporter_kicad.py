@@ -53,6 +53,9 @@ class Converter:
         return 'DS %.6f %.6f %.6f %.6f %.6f 21' % (line.start[0], line.start[1], line.end[0], line.end[1],
                 line.thickness)
 
+    def rectToText(self, rect):
+        return ''.join([self.lineToText(line) for line in rect.lines])
+
     def padToText(self, pad):
         style = 'R' if pad.style == exporter.AbstractPad.STYLE_RECT else 'C'
 
@@ -103,6 +106,8 @@ class Converter:
             out += self.circleToText(obj) + '\n'
         for obj in filter(lambda x: isinstance(x, exporter.Line), objects):
             out += self.lineToText(obj) + '\n'
+        for obj in filter(lambda x: isinstance(x, exporter.Rect), objects):
+            out += self.rectToText(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Poly), objects):
             out += self.polyToText(obj) + '\n'
         for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):

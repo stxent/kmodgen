@@ -5,90 +5,92 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import numpy
 import exporter
 
 
 class SmallOutlinePackage(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=SmallOutlinePackage.describe(descriptor))
+                description=SmallOutlinePackage.describe(descriptor), spec=spec)
 
-        self.body = (descriptor['body']['length'], descriptor['body']['width'])
-        self.padSize = (descriptor['pads']['width'], descriptor['pads']['length'])
-        self.sidePadWidth = descriptor['pads']['sideWidth']
-        self.count = descriptor['pins']['count']
+        if 'regularPadSize' in descriptor['pads'].keys():
+            self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
+        else:
+            self.padSize = numpy.array(descriptor['pads']['size'])
+
+        if 'sidePadSize' in descriptor['pads'].keys():
+            self.sidePadSize = numpy.array(descriptor['pads']['sidePadSize'])
+        else:
+            self.sidePadSize = self.padSize
+
+        self.bodySize = numpy.array(descriptor['body']['size'])
+        self.rows = int(descriptor['pins']['count'] / 2)
         self.margin = descriptor['pins']['margin']
         self.pitch = descriptor['pins']['pitch']
-        self.sidePitch = self.pitch + (self.sidePadWidth - self.padSize[0]) / 2.
+        self.sidePitch = self.pitch + (self.sidePadSize[0] - self.padSize[0]) / 2.0
 
-        self.font = spec['font']
-        self.gap = spec['gap']
-        self.thickness = spec['thickness']
+    def pad(self, position, count):
+        return self.sidePadSize if position == 0 or position == count - 1 else self.padSize
 
-        self.dotRadius = self.thickness / 2.
-        self.markOffset = 1.0
-
-    def delta(self, position, count):
+    def spacing(self, position, count):
         res = 0.0
-        if position >= 1:
-            res += self.sidePitch
         if position > 0:
             res += self.pitch * (position - 1)
+        if position >= 1:
+            res += self.sidePitch
         if position == count - 1:
             res += self.sidePitch - self.pitch
         return res
 
     def generate(self):
-        objects = []
-        objects.append(exporter.Label(name=self.name, position=(0.0, 0.0), thickness=self.thickness, font=self.font))
+        silkscreen, pads = [], []
+        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        #Borders
-        outlineMargin = (self.margin - self.gap - self.thickness / 2.) * 2.
-        outline = (self.body[0], min(self.body[1], self.body[1] + outlineMargin))
-        borders = (outline[0] / 2., outline[1] / 2.)
+        # Horizontal offset of the first pin
+        firstPinOffset = (float(self.rows) - 3.0) * self.pitch / 2.0 + self.sidePitch
 
-        count = int(self.count / 2)
-        offset = self.pitch / 2. if count % 2 == 0 else self.pitch
+        # Body outline
+        outlineMargin = numpy.array([0.0, (self.margin - self.gap) * 2.0 - self.thickness, 0.0])
+        outlineSize = numpy.minimum(self.bodySize, self.bodySize + outlineMargin)
+        topCorner = outlineSize / 2.0
+        silkscreen.append(exporter.Rect(topCorner, -topCorner, self.thickness))
 
-        objects.append(exporter.Line((borders[0], -borders[1]), (-borders[0], -borders[1]), self.thickness))
-        objects.append(exporter.Line((borders[0], borders[1]), (borders[0], -borders[1]), self.thickness))
-        objects.append(exporter.Line((borders[0], borders[1]), (-borders[0], borders[1]), self.thickness))
-        objects.append(exporter.Line((-borders[0], borders[1]), (-borders[0], -borders[1]), self.thickness))
+        # Outer first pin mark
+        dotMarkPosition = numpy.array([
+                -(firstPinOffset + self.sidePadSize[0] / 2.0 + self.gap + self.thickness),
+                (self.bodySize[1] + self.padSize[1]) / 2.0 + self.margin])
+        silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 
-        #Outer polarity mark
-        dotMarkOffset = ((int(count / 2) - 1) * self.pitch + (self.sidePitch - self.pitch) + offset
-                + self.sidePadWidth / 2. + self.gap + self.dotRadius + self.thickness / 2.)
-        objects.append(exporter.Circle((-dotMarkOffset, self.body[1] / 2. + self.margin + self.padSize[1] / 2.),
-                self.dotRadius, self.thickness))
+        # Inner first pin mark
+        triMarkOffset = 1.0
+        triMarkPoints = [
+                (-topCorner[0], topCorner[1] - triMarkOffset),
+                (-topCorner[0], topCorner[1]),
+                (-topCorner[0] + triMarkOffset, topCorner[1])]
+        silkscreen.append(exporter.Poly(triMarkPoints, self.thickness, exporter.Layer.SILK_FRONT))
 
-        #Inner polarity mark
-        points = [(-borders[0], borders[1] - self.markOffset), (-borders[0], borders[1]),
-                (-borders[0] + self.markOffset, borders[1])]
-        objects.append(exporter.Poly(points, self.thickness, exporter.AbstractPad.Layer.SILK_FRONT))
-
-        pads = []
-        for i in range(0, count):
-            x = -((int(count / 2) - 1) * self.pitch + (self.sidePitch - self.pitch) + offset)
-            y = self.body[1] / 2. + self.margin + self.padSize[1] / 2.
-
-            w = self.sidePadWidth if i == 0 or i == count - 1 else self.padSize[0]
-            h = self.padSize[1]
-
-            pads.append(exporter.SmdPad(i + 1 + count, (w, h), (-x - self.delta(i, count), -y)))
-            pads.append(exporter.SmdPad(i + 1,         (w, h), ( x + self.delta(i, count),  y)))
+        # Horizontal pads
+        y = (self.bodySize[1] + self.padSize[1]) / 2.0 + self.margin
+        for i in range(0, self.rows):
+            x = -firstPinOffset + self.spacing(i, self.rows)
+            pads.append(exporter.SmdPad(i + 1, self.pad(i, self.rows), (x, y)))
+            pads.append(exporter.SmdPad(i + 1 + self.rows, self.pad(i, self.rows), (-x, -y)))
 
         pads.sort(key=lambda x: x.number)
-        objects.extend(pads)
-
-        return objects
+        return silkscreen + pads
 
     @staticmethod
     def describe(descriptor):
         if 'description' in descriptor.keys():
             return descriptor['description']
         else:
-            return '%u leads, body width %.1f mm, pitch %.2f mm' % (
-                    descriptor['pins']['count'], descriptor['body']['width'], descriptor['pins']['pitch'])
+            round1f = lambda x: '{:d}'.format(int(x)) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
+            round2f = lambda x: '{:.1f}'.format(x) if int(x * 100) == int(x * 10) * 10 else '{:.2f}'.format(x)
+            widthStr = round1f(descriptor['body']['size'][0])
+            pitchStr = round2f(descriptor['pins']['pitch'])
+            return '{:d} leads, body width {:s} mm, pitch {:s} mm'.format(
+                    descriptor['pins']['count'], widthStr, pitchStr)
 
 
 types = [SmallOutlinePackage]

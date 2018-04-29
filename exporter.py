@@ -9,55 +9,70 @@ import functools
 import math
 
 
+class Layer:
+    CU_BACK     = 0
+    CU_FRONT    = 15
+    ADHES_BACK  = 16
+    ADHES_FRONT = 17
+    PASTE_BACK  = 18
+    PASTE_FRONT = 19
+    SILK_BACK   = 20
+    SILK_FRONT  = 21
+    MASK_BACK   = 22
+    MASK_FRONT  = 23
+    DRAWINGS    = 24
+    COMMENTS    = 25
+    ECO1        = 26
+    ECO2        = 27
+    EDGES       = 28
+
+
 class Circle:
-    def __init__(self, position, radius, thickness, part=None):
+    def __init__(self, position, radius, thickness, part=None, layer=Layer.SILK_FRONT):
         self.position = position
         self.radius = radius
         self.thickness = thickness
         self.part = part
+        self.layer = 1 << layer
 
 
 class Label:
-    def __init__(self, name, position, thickness, font):
+    def __init__(self, name, position, thickness, font, layer=Layer.SILK_FRONT):
         self.position = position
         self.name = name
         self.font = font
         self.thickness = thickness
+        self.layer = 1 << layer
 
 
 class String:
-    def __init__(self, value, position, thickness, font):
+    def __init__(self, value, position, thickness, font, layer=Layer.SILK_FRONT):
         self.position = position
         self.value = value
         self.font = font
         self.thickness = thickness
+        self.layer = 1 << layer
 
 
 class Line:
-    def __init__(self, start, end, thickness):
+    def __init__(self, start, end, thickness, layer=Layer.SILK_FRONT):
         self.start = start
         self.end = end
         self.thickness = thickness
+        self.layer = 1 << layer
+
+
+class Rect:
+    def __init__(self, top, bottom, thickness, layer=Layer.SILK_FRONT):
+        self.lines = [
+                Line((top[0], bottom[1]), (bottom[0], bottom[1]), thickness, layer),
+                Line((top[0], top[1]), (top[0], bottom[1]), thickness, layer),
+                Line((top[0], top[1]), (bottom[0], top[1]), thickness, layer),
+                Line((bottom[0], top[1]), (bottom[0], bottom[1]), thickness, layer)
+        ]
 
 
 class AbstractPad:
-    class Layer:
-        CU_BACK     = 0
-        CU_FRONT    = 15
-        ADHES_BACK  = 16
-        ADHES_FRONT = 17
-        PASTE_BACK  = 18
-        PASTE_FRONT = 19
-        SILK_BACK   = 20
-        SILK_FRONT  = 21
-        MASK_BACK   = 22
-        MASK_FRONT  = 23
-        DRAWINGS    = 24
-        COMMENTS    = 25
-        ECO1        = 26
-        ECO2        = 27
-        EDGES       = 28
-
     FAMILY_SMD, FAMILY_TH, FAMILY_NPTH, FAMILY_CONNECT = range(0, 4)
     LAYERS_NONE, LAYERS_FRONT, LAYERS_BACK, LAYERS_BOTH = range(0, 4)
     STYLE_CIRCLE, STYLE_RECT, STYLE_OVAL, STYLE_TRAPEZOID = range(0, 4)
@@ -74,25 +89,25 @@ class AbstractPad:
         self.mask = 0
         if self.family == AbstractPad.FAMILY_SMD:
             if copper == AbstractPad.LAYERS_FRONT:
-                self.copper |= 1 << AbstractPad.Layer.CU_FRONT
-                self.mask |= 1 << AbstractPad.Layer.MASK_FRONT
+                self.copper |= 1 << Layer.CU_FRONT
+                self.mask |= 1 << Layer.MASK_FRONT
             elif copper == AbstractPad.LAYERS_BACK:
-                self.copper |= 1 << AbstractPad.Layer.CU_BACK
-                self.mask |= 1 << AbstractPad.Layer.MASK_BACK
+                self.copper |= 1 << Layer.CU_BACK
+                self.mask |= 1 << Layer.MASK_BACK
             else:
                 raise Exception() # Configuration unsupported
         else:
             if copper == AbstractPad.LAYERS_BOTH:
-                self.copper |= 1 << AbstractPad.Layer.CU_BACK | 1 << AbstractPad.Layer.CU_FRONT
+                self.copper |= 1 << Layer.CU_BACK | 1 << Layer.CU_FRONT
             elif copper != AbstractPad.LAYERS_NONE:
                 raise Exception() # Configuration unsupported
-            self.mask |= (1 << AbstractPad.Layer.MASK_FRONT) | (1 << AbstractPad.Layer.MASK_BACK)
+            self.mask |= (1 << Layer.MASK_FRONT) | (1 << Layer.MASK_BACK)
 
         self.paste = 0
         if paste in (AbstractPad.LAYERS_BOTH, AbstractPad.LAYERS_FRONT):
-            self.paste |= 1 << AbstractPad.Layer.PASTE_FRONT
+            self.paste |= 1 << Layer.PASTE_FRONT
         if paste in (AbstractPad.LAYERS_BOTH, AbstractPad.LAYERS_BACK):
-            self.paste |= 1 << AbstractPad.Layer.PASTE_BACK
+            self.paste |= 1 << Layer.PASTE_BACK
 
 
 class HolePad(AbstractPad):
@@ -117,10 +132,15 @@ class Poly:
 
 
 class Footprint:
-    def __init__(self, name, description, model=None):
+    def __init__(self, name, description, model=None, spec=None):
         self.name = name
         self.description = None if description is None or description == '' else description
         self.model = name if model is None else model
+
+        if spec is not None:
+            self.font = spec['font']
+            self.gap = spec['gap']
+            self.thickness = spec['thickness']
 
 
 def collideLine(line, pads, thickness, gap):

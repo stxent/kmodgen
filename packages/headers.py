@@ -24,32 +24,32 @@ def metricToImperial(value):
 class PinHeader:
     @staticmethod
     def buildHeaderBody(materials, modelBody, modelEdge, modelPin, bodyTransform, count, pitch, name):
-        shift = pitch / 2. if count[1] > 1 else 0.
+        shift = pitch / 2.0 if count[1] > 1 else 0.0
 
-        body = model.Mesh(name='%s_%uBody' % (name, count[0] * count[1]))
+        body = model.Mesh(name='{:s}_{:d}Body'.format(name, count[0] * count[1]))
         body.visualAppearance = modelBody.appearance()
 
         pins = []
         for i in range(0, count[0]):
             if i == 0:
                 segment = copy.deepcopy(modelEdge)
-                segment.rotate([0., 0., 1.], math.pi)
+                segment.rotate([0.0, 0.0, 1.0], math.pi)
             elif i == count[0] - 1:
                 segment = copy.deepcopy(modelEdge)
-                segment.rotate([0., 0., 1.], 0.)
+                segment.rotate([0.0, 0.0, 1.0], 0.0)
             else:
                 segment = copy.deepcopy(modelBody)
-            segment.translate([float(i) * pitch, shift, 0.])
+            segment.translate([float(i) * pitch, shift, 0.0])
             body.append(segment)
 
-            pin = model.Mesh(parent=modelPin, name='%s_%uPin%u' % (name, count[0] * count[1], (i + 1)))
+            pin = model.Mesh(parent=modelPin, name='{:s}_{:d}Pin{:d}'.format(name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, shift, 0.001])
             if 'Pin' in materials.keys():
                 pin.appearance().material = materials['Pin']
             pins.append(pin)
 
         body.transform = copy.deepcopy(bodyTransform)
-        body.translate([0., 0., 0.001])
+        body.translate([0.0, 0.0, 0.001])
         body.optimize()
         if 'Body' in materials.keys():
             body.appearance().material = materials['Body']
@@ -104,11 +104,11 @@ class RightAnglePinHeader(PinHeader):
         pitch254 = eq(descriptor['pins']['pitch'], 2.54)
 
         if pitch200:
-            transform.translate([0., -0.391, 0.3937])
-            transform.rotate([1., 0., 0.], math.pi / 2.)
+            transform.translate([0.0, -0.391, 0.3937])
+            transform.rotate([1.0, 0.0, 0.0], math.pi / 2.0)
         elif pitch254:
-            transform.translate([0., -0.557, 0.5])
-            transform.rotate([1., 0., 0.], math.pi / 2.)
+            transform.translate([0.0, -0.557, 0.5])
+            transform.rotate([1.0, 0.0, 0.0], math.pi / 2.0)
         else:
             raise Exception()
 
@@ -138,23 +138,23 @@ class RightAnglePinHeader(PinHeader):
 class BoxHeader:
     @staticmethod
     def buildHeaderBody(materials, modelBody, modelPin, count, length, pitch, name):
-        DEFAULT_WIDTH = metricToImperial(20.34)
-        delta = (length - DEFAULT_WIDTH) / 2.
+        DEFAULT_WIDTH = model.metricToImperial(20.34)
+        delta = (length - DEFAULT_WIDTH) / 2.0
 
         leftPart, rightPart = model.Transform(), model.Transform()
-        leftPart.translate([-delta, 0., 0.])
-        rightPart.translate([delta, 0., 0.])
+        leftPart.translate([-delta, 0.0, 0.0])
+        rightPart.translate([delta, 0.0, 0.0])
         transforms = [model.Transform(), leftPart, rightPart]
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
-        body.translate([delta, pitch / 2., 0.001])
+        body.translate([delta, pitch / 2.0, 0.001])
         if 'Body' in materials.keys():
             body.appearance().material = materials['Body']
 
         pins = []
         for i in range(0, count[0]):
-            pin = model.Mesh(parent=modelPin, name='%s_%uPin%u' % (name, count[0] * count[1], (i + 1)))
-            pin.translate([float(i) * pitch, pitch / 2., 0.001])
+            pin = model.Mesh(parent=modelPin, name='{:s}_{:d}Pin{:d}'.format(name, count[0] * count[1], (i + 1)))
+            pin.translate([float(i) * pitch, pitch / 2.0, 0.001])
             if 'Pin' in materials.keys():
                 pin.appearance().material = materials['Pin']
             pins.append(pin)
@@ -188,8 +188,8 @@ class BoxHeader:
                 materials,
                 bhAttributedBody, bhPin,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
-                metricToImperial(descriptor['body']['length']),
-                metricToImperial(descriptor['pins']['pitch']),
+                model.metricToImperial(descriptor['body']['length']),
+                model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 
 
