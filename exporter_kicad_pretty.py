@@ -11,6 +11,7 @@ import time
 import exporter
 
 
+# Default precision for :g format is 6
 class Converter:
     def __init__(self, modelPath, modelType='wrl'):
         if modelType != 'wrl' and modelType != 'x3d':
@@ -79,40 +80,45 @@ class Converter:
             start = (circle.position[0] + math.cos(angle) * circle.radius,
                     circle.position[1] + math.sin(angle) * circle.radius)
             rotation = abs(circle.part[1] - circle.part[0])
-            return '  (fp_arc (start %.6f %.6f) (end %.6f %.6f) (angle %.6f) (layer F.SilkS) (width %.6f))\n'\
-                    % (circle.position[0], circle.position[1], start[0], start[1], rotation, circle.thickness)
+            return '  (fp_arc (start {:g} {:g}) (end {:g} {:g}) (angle {:g}) (layer {:s}) (width {:g}))\n'.format(
+                    *circle.position, *start, rotation, Converter.layersToText(circle.layer), circle.thickness)
         else:
             # Circle
-            return '  (fp_circle (center %.6f %.6f) (end %.6f %.6f) (layer F.SilkS) (width %.6f))\n'\
-                    % (circle.position[0], circle.position[1], circle.position[0], circle.position[1] + circle.radius,
-                            circle.thickness)
+            return '  (fp_circle (center {:g} {:g}) (end {:g} {:g}) (layer {:s}) (width {:g}))\n'.format(
+                    *circle.position, circle.position[0], circle.position[1] + circle.radius,
+                    Converter.layersToText(circle.layer), circle.thickness)
 
     def labelToText(self, label):
         if label is None:
             return ''
 
         out = ''
-        out += '  (fp_text reference REF (at %.6f %.6f) (layer F.SilkS)\n' % (label.position[0], label.position[1])
-        out += '    (effects (font (size %.6f %.6f) (thickness %.6f)))\n' % (label.font, label.font, label.thickness)
+        out += '  (fp_text reference REF (at {:g} {:g}) (layer {:s})\n'.format(*label.position,
+                Converter.layersToText(label.layer))
+        out += '    (effects (font (size {:g} {:g}) (thickness {:g})))\n'.format(label.font, label.font,
+                label.thickness)
         out += '  )\n'
-        out += '  (fp_text value %s (at %.6f %.6f) (layer F.Fab)\n'\
-                % (label.name, label.position[0], label.position[1])
-        out += '    (effects (font (size %.6f %.6f) (thickness %.6f)))\n' % (label.font, label.font, label.thickness)
+        out += '  (fp_text value {:s} (at {:g} {:g}) (layer F.Fab)\n'.format(label.name, *label.position)
+        out += '    (effects (font (size {:g} {:g}) (thickness {:g})))\n'.format(label.font, label.font,
+                label.thickness)
         out += '  )\n'
         return out
 
     def stringToText(self, string):
         out = ''
-        out += '  (fp_text user %s (at %.6f %.6f) (layer F.SilkS)\n'\
-                % (string.value, string.position[0], string.position[1])
-        out += '    (effects (font (size %.6f %.6f) (thickness %.6f)))\n'\
-                % (string.font, string.font, string.thickness)
+        out += '  (fp_text user {:s} (at {:g} {:g}) (layer {:s})\n'.format(string.value, *string.position,
+                Converter.layersToText(string.layer))
+        out += '    (effects (font (size {:g} {:g}) (thickness {:g})))\n'.format(string.font, string.font,
+                string.thickness)
         out += '  )\n'
         return out
 
     def lineToText(self, line):
-        return '  (fp_line (start %.6f %.6f) (end %.6f %.6f) (layer F.SilkS) (width %.6f))\n'\
-                % (line.start[0], line.start[1], line.end[0], line.end[1], line.thickness)
+        return '  (fp_line (start {:g} {:g}) (end {:g} {:g}) (layer {:s}) (width {:g}))\n'.format(
+                *line.start, *line.end, Converter.layersToText(line.layer), line.thickness)
+
+    def rectToText(self, rect):
+        return ''.join([self.lineToText(line) for line in rect.lines])
 
     def rectToText(self, rect):
         return ''.join([self.lineToText(line) for line in rect.lines])
@@ -121,13 +127,13 @@ class Converter:
         padName = str(pad.number) if len(str(pad.number)) else '""'
 
         out = ''
-        out += '  (pad %s' % padName
-        out += ' %s %s' % (Converter.padTypeToText(pad.family), Converter.padStyleToText(pad.style))
-        out += ' (at %.6f %.6f)' % (pad.position[0], pad.position[1])
-        out += ' (size %.6f %.6f)' % (pad.size[0], pad.size[1])
+        out += '  (pad {:s}'.format(padName)
+        out += ' {:s} {:s}'.format(Converter.padTypeToText(pad.family), Converter.padStyleToText(pad.style))
+        out += ' (at {:g} {:g})'.format(*pad.position)
+        out += ' (size {:g} {:g})'.format(*pad.size)
         if pad.family == exporter.AbstractPad.FAMILY_TH or pad.family == exporter.AbstractPad.FAMILY_NPTH:
-            out += ' (drill %.6f)' % pad.diameter
-        out += ' (layers %s)' % Converter.layersToText(pad.copper | pad.mask | pad.paste)
+            out += ' (drill {:g})'.format(pad.diameter)
+        out += ' (layers {:s})'.format(Converter.layersToText(pad.copper | pad.mask | pad.paste))
         out += ')\n'
         return out
 
@@ -135,17 +141,17 @@ class Converter:
         out = ''
         out += '  (fp_poly (pts'
         for vertex in poly.vertices:
-            out += ' (xy %.6f %.6f)' % (vertex[0], vertex[1])
-        out += ') (layer %s) (width 0.16))\n' % Converter.layersToText(poly.layer)
+            out += ' (xy {:g} {:g})'.format(*vertex)
+        out += ') (layer {:s}) (width {:g}))\n'.format(Converter.layersToText(poly.layer), poly.thickness)
         return out
 
     def footprintToText(self, footprint):
         timestamp = time.time()
 
-        out = '(module %s (layer F.Cu) (tedit %08X)\n' % (footprint.name, int(timestamp))
+        out = '(module {:s} (layer F.Cu) (tedit {:08X})\n'.format(footprint.name, int(timestamp))
 
         if footprint.description is not None:
-            out += '  (descr "%s")\n' % footprint.description
+            out += '  (descr "{:s}")\n'.format(footprint.description)
 
         objects = footprint.generate()
 
@@ -164,7 +170,7 @@ class Converter:
         for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):
             out += self.padToText(obj)
 
-        out += '  (model %s%s.%s\n' % (self.modelPath, footprint.model, self.modelType)
+        out += '  (model {:s}{:s}.{:s}\n'.format(self.modelPath, footprint.model, self.modelType)
         out += '    (at (xyz 0 0 0))\n'
         out += '    (scale (xyz 1 1 1))\n'
         out += '    (rotate (xyz 0 0 0))\n'
