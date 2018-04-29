@@ -1,0 +1,55 @@
+{
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "CrystalSMD", "spec": "thin"},
+      "title": "KX-7",
+      "body": {"size": [3.2, 2.5, 0.8]},
+      "pads": {"size": [1.3, 1.1]},
+      "pins": {"pitch": [2.3, 1.8], "names": ["1", "2", "3", "4"]},
+      "source": "Geyer datasheet for KX-7 model"
+    }, {
+      "package": {"type": "CrystalSMD", "spec": "thin"},
+      "title": "KX-9",
+      "body": {"size": [5.0, 3.2, 1.0]},
+      "pads": {"size": [1.6, 1.25]},
+      "pins": {"pitch": [3.7, 2.2], "names": ["1", "2", "3", "4"]},
+      "source": "Geyer datasheet for KX-9 model"
+    }, {
+      "package": {"type": "CrystalSMD", "spec": "thick"},
+      "title": "KX-13",
+      "body": {"size": [7.0, 5.0, 1.3]},
+      "pads": {"size": [2.2, 1.4]},
+      "pins": {"pitch": [6.4, 2.5], "names": ["1", "2", "3", "4"]},
+      "source": "Geyer datasheet for KX-13 model"
+    }, {
+      "package": {"type": "CrystalSMD", "spec": "thin"},
+      "title": "KX-327L",
+      "body": {"size": [6.7, 1.5, 1.4]},
+      "pads": {"size": [1.2, 0.6]},
+      "pins": {"pitch": [6.3, 0.9], "names": ["1", "2", "4", "3"]},
+      "source": "Geyer datasheet for KX-327 model"
+    }, {
+      "package": {"type": "CrystalTH", "spec": "thick"},
+      "title": "HC-49S",
+      "body": {"size": [11.4, 5.0]},
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "pins": {"count": 2, "pitch": 5.08}
+    }, {
+      "package": {"type": "CrystalTH", "spec": "thick"},
+      "title": "CDALA",
+      "body": {"size": [8.0, 3.0]},
+      "pads": {"diameter": 1.2, "drill": 0.6},
+      "pins": {"count": 2, "pitch": 5.0}
+    }, {
+      "package": {"type": "CrystalTH", "spec": "thick"},
+      "title": "SFELA",
+      "body": {"size": [7.0, 3.0]},
+      "pads": {"diameter": 1.2, "drill": 0.6},
+      "pins": {"count": 3, "pitch": 2.5}
+    }
+  ]
+}
