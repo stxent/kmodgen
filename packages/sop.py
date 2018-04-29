@@ -7,6 +7,7 @@
 
 import copy
 import math
+import numpy
 import re
 
 from wrlconv import model
@@ -22,58 +23,61 @@ def lookup(meshList, meshName):
 class SmallOutlinePackage:
     @staticmethod
     def buildPackageBody(materials, modelBody, modelMark, modelPin, markOffset, count, size, pitch, name):
-        DEFAULT_WIDTH = metricToImperial(2.0)
-
-        halfCount = int(count / 2)
-        offset = pitch / 2. if halfCount % 2 == 0 else pitch
-        dot = (-(size[0] / 2. - markOffset[0]), -(size[1] / 2. - markOffset[1]))
-
-        cornerTranslation = ((size[0] - DEFAULT_WIDTH) / 2., (size[1] - DEFAULT_WIDTH) / 2.)
-        corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
-        center = model.Transform()
-        center.translate([dot[0], dot[1], 0.])
-        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.])
-        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.])
-        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.])
-        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.])
-        transforms = [model.Transform()] + [center] + corners
-        body = copy.deepcopy(modelBody)
-        body.applyTransforms(transforms)
-        body.translate([0., 0., 0.001])
-        if 'Body' in materials.keys():
-            body.appearance().material = materials['Body']
-
-        mark = copy.deepcopy(modelMark)
-        mark.translate([dot[0], dot[1], 0.001])
-        if 'Mark' in materials.keys():
-            mark.appearance().material = materials['Mark']
+        DEFAULT_WIDTH = model.metricToImperial(2.0)
 
         def makePin(x, y, angle, number):
-            pin = model.Mesh(parent=modelPin, name='%s%uPin%u' % (name, count, number))
+            pin = model.Mesh(parent=modelPin, name='{:s}Pin{:d}'.format(name, number))
             pin.translate([x, y, 0.001])
-            pin.rotate([0., 0., 1.], angle * math.pi / 180.)
+            pin.rotate([0.0, 0.0, 1.0], angle * math.pi / 180.0)
             if 'Pin' in materials.keys():
                 pin.appearance().material = materials['Pin']
             return pin
 
-        pins = []
-        for i in range(0, halfCount):
-            x = (i - int(halfCount / 2) + 1) * pitch - offset
-            y = size[1] / 2.
+        rows = int(count / 2)
+        firstPinOffset = float(rows - 1) * pitch / 2.0
+        dotPosition = markOffset - size[0:2] / 2.0
 
-            pins.append(makePin(x, y, 180., i + 1 + halfCount))
-            pins.append(makePin(-x, -y, 0., i + 1))
+        # Body
+        cornerTranslation = (size - DEFAULT_WIDTH) / 2.0
+        corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
+        center = model.Transform()
+        center.translate([dotPosition[0], dotPosition[1], 0.0])
+        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.0])
+        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.0])
+        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.0])
+        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.0])
+        transforms = [model.Transform()] + [center] + corners
+        body = copy.deepcopy(modelBody)
+        body.applyTransforms(transforms)
+        body.translate([0.0, 0.0, 0.001])
+        if 'Body' in materials.keys():
+            body.appearance().material = materials['Body']
+
+        # First pin mark
+        mark = copy.deepcopy(modelMark)
+        mark.translate([dotPosition[0], dotPosition[1], 0.001])
+        if 'Mark' in materials.keys():
+            mark.appearance().material = materials['Mark']
+
+        pins = []
+
+        # Pins
+        y = size[1] / 2.0
+        for i in range(0, rows):
+            x = float(i) * pitch - firstPinOffset
+            pins.append(makePin(x, y, 180.0, i + 1 + rows))
+            pins.append(makePin(-x, -y, 0.0, i + 1))
 
         return [body, mark] + pins
 
     @staticmethod
     def build(materials, templates, descriptor):
         regions = [
-                ((( 0.15,  0.15, 1.0), (-0.15, -0.15, -1.0)), 1),
-                ((( 1.0,   1.0,  1.0), ( 0.15,  0.15, -1.0)), 2),
-                (((-1.0,   1.0,  1.0), (-0.15,  0.15, -1.0)), 3),
-                ((( 1.0,  -1.0,  1.0), ( 0.15, -0.15, -1.0)), 4),
-                (((-1.0,  -1.0,  1.0), (-0.15, -0.15, -1.0)), 5)]
+                (((0.15,  0.15, 1.0), (-0.15, -0.15, -1.0)), 1),
+                ((( 1.0,  1.0,  1.0), ( 0.15,  0.15, -1.0)), 2),
+                (((-1.0,  1.0,  1.0), (-0.15,  0.15, -1.0)), 3),
+                ((( 1.0, -1.0,  1.0), ( 0.15, -0.15, -1.0)), 4),
+                (((-1.0, -1.0,  1.0), (-0.15, -0.15, -1.0)), 5)]
 
         referenceObject = None
 
@@ -105,9 +109,9 @@ class SmallOutlinePackage:
         return SmallOutlinePackage.buildPackageBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2],
-                model.metricToImperial(referenceObject[3]),
+                numpy.array(model.metricToImperial(referenceObject[3])),
                 descriptor['pins']['count'],
-                model.metricToImperial(descriptor['body']['size']),
+                numpy.array(model.metricToImperial(descriptor['body']['size'])),
                 model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 

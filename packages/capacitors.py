@@ -11,9 +11,6 @@ import numpy
 from wrlconv import curves
 from wrlconv import model
 
-def metricToImperial(value):
-    return value / 2.54 # Convert millimeters to hundreds of mils
-
 
 class RadialCapacitor:
     @staticmethod
@@ -269,13 +266,13 @@ class RadialCapacitor:
 
         meshes = []
         bodyCurve = RadialCapacitor.buildCapacitorCurve(
-                metricToImperial(descriptor['body']['diameter']) / 2.0,
-                metricToImperial(descriptor['body']['height']),
-                metricToImperial(descriptor['body']['curvature']),
-                metricToImperial(descriptor['body']['band']),
-                metricToImperial(descriptor['caps']['diameter']) / 2.0,
-                metricToImperial(descriptor['caps']['depth']),
-                metricToImperial(descriptor['caps']['chamfer']),
+                model.metricToImperial(descriptor['body']['diameter']) / 2.0,
+                model.metricToImperial(descriptor['body']['height']),
+                model.metricToImperial(descriptor['body']['curvature']),
+                model.metricToImperial(descriptor['body']['band']),
+                model.metricToImperial(descriptor['caps']['diameter']) / 2.0,
+                model.metricToImperial(descriptor['caps']['depth']),
+                model.metricToImperial(descriptor['caps']['chamfer']),
                 bodyDetails,
                 bodyDetails + 1)
 
@@ -286,22 +283,22 @@ class RadialCapacitor:
                 materials,
                 title,
                 capSections,
-                metricToImperial(descriptor['caps']['diameter']) / 2.0,
-                metricToImperial(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.0,
-                metricToImperial(descriptor['body']['curvature']),
-                metricToImperial(descriptor['body']['curvature']) / 2.0)
+                model.metricToImperial(descriptor['caps']['diameter']) / 2.0,
+                model.metricToImperial(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.0,
+                model.metricToImperial(descriptor['body']['curvature']),
+                model.metricToImperial(descriptor['body']['curvature']) / 2.0)
         meshes.extend(bodyMesh)
 
         pinCurve = RadialCapacitor.buildPinCurve(
-                metricToImperial(descriptor['pins']['diameter']) / 2.0,
-                metricToImperial(descriptor['pins']['height']),
-                metricToImperial(descriptor['pins']['curvature']))
+                model.metricToImperial(descriptor['pins']['diameter']) / 2.0,
+                model.metricToImperial(descriptor['pins']['height']),
+                model.metricToImperial(descriptor['pins']['curvature']))
 
         pinMesh = RadialCapacitor.buildCapacitorPin(pinCurve, descriptor['pins']['edges'])
         pinMesh.appearance().material = RadialCapacitor.mat(materials, 'Pin')
         pinMesh.ident = title + 'Pin'
 
-        spacing = metricToImperial(descriptor['pins']['spacing']) / 2.0
+        spacing = model.metricToImperial(descriptor['pins']['spacing']) / 2.0
         posPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Pos')
         posPin.translate([-spacing, 0.0, 0.0])
         meshes.append(posPin)

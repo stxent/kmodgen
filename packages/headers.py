@@ -17,9 +17,6 @@ def lookup(meshList, meshName):
             return entry
     raise Exception()
 
-def metricToImperial(value):
-    return value / 2.54 # Convert millimeters to hundreds of mils
-
 
 class PinHeader:
     @staticmethod
@@ -88,7 +85,7 @@ class PinHeader:
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
-                metricToImperial(descriptor['pins']['pitch']),
+                model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 
 
@@ -131,7 +128,7 @@ class RightAnglePinHeader(PinHeader):
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
-                metricToImperial(descriptor['pins']['pitch']),
+                model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 
 
@@ -188,7 +185,7 @@ class BoxHeader:
                 materials,
                 bhAttributedBody, bhPin,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
-                model.metricToImperial(descriptor['body']['length']),
+                model.metricToImperial(descriptor['body']['size'][0]),
                 model.metricToImperial(descriptor['pins']['pitch']),
                 descriptor['title'])
 

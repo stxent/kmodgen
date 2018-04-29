@@ -48,7 +48,7 @@ class SmallOutlinePackage(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal offset of the first pin
-        firstPinOffset = (float(self.rows) - 3.0) * self.pitch / 2.0 + self.sidePitch
+        firstPinOffset = float(self.rows - 3) * self.pitch / 2.0 + self.sidePitch
 
         # Body outline
         outlineMargin = numpy.array([0.0, (self.margin - self.gap) * 2.0 - self.thickness, 0.0])
@@ -73,7 +73,7 @@ class SmallOutlinePackage(exporter.Footprint):
         # Horizontal pads
         y = (self.bodySize[1] + self.padSize[1]) / 2.0 + self.margin
         for i in range(0, self.rows):
-            x = -firstPinOffset + self.spacing(i, self.rows)
+            x = self.spacing(i, self.rows) - firstPinOffset
             pads.append(exporter.SmdPad(i + 1, self.pad(i, self.rows), (x, y)))
             pads.append(exporter.SmdPad(i + 1 + self.rows, self.pad(i, self.rows), (-x, -y)))
 

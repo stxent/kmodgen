@@ -7,6 +7,7 @@
 
 import copy
 import math
+import numpy
 import re
 
 from wrlconv import model
@@ -22,53 +23,56 @@ def lookup(meshList, meshName):
 class QuadFlatPackage:
     @staticmethod
     def buildPackageBody(materials, modelBody, modelMark, modelPin, count, size, pitch, name):
-        DEFAULT_WIDTH = metricToImperial(5.0)
-        margin = (size[0] / 2., size[1] / 2.)
-
-        offset = (pitch / 2. if count[0] % 2 == 0 else pitch, pitch / 2. if count[1] % 2 == 0 else pitch)
-        dot = ((-count[0] / 2. + 1.5) * pitch - offset[0], (-count[1] / 2. + 1.5) * pitch - offset[1])
-
-        cornerTranslation = ((size[0] - DEFAULT_WIDTH) / 2., (size[1] - DEFAULT_WIDTH) / 2.)
-        corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
-        center = model.Transform()
-        center.translate([dot[0], dot[1], 0.])
-        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.])
-        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.])
-        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.])
-        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.])
-        transforms = [model.Transform()] + [center] + corners
-        body = copy.deepcopy(modelBody)
-        body.applyTransforms(transforms)
-        body.translate([0., 0., 0.001])
-        if 'Body' in materials.keys():
-            body.appearance().material = materials['Body']
-
-        mark = copy.deepcopy(modelMark)
-        mark.translate([dot[0], dot[1], 0.001])
-        if 'Mark' in materials.keys():
-            mark.appearance().material = materials['Mark']
+        DEFAULT_WIDTH = model.metricToImperial(5.0)
 
         def makePin(x, y, angle, number):
-            pin = model.Mesh(parent=modelPin, name='%s%uPin%u' % (name, count[0] * 2 + count[1] * 2, number))
+            pin = model.Mesh(parent=modelPin, name='{:s}Pin{:d}'.format(name, number))
             pin.translate([x, y, 0.001])
-            pin.rotate([0., 0., 1.], angle * math.pi / 180.)
+            pin.rotate([0.0, 0.0, 1.0], angle * math.pi / 180.0)
             if 'Pin' in materials.keys():
                 pin.appearance().material = materials['Pin']
             return pin
 
+        firstPinOffset = (numpy.asfarray(count) - 1.0) * pitch / 2.0
+        dotPosition = -firstPinOffset + pitch / 2.0
+
+        # Body
+        cornerTranslation = (size - DEFAULT_WIDTH) / 2.0
+        corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
+        center = model.Transform()
+        center.translate([dotPosition[0], dotPosition[1], 0.0])
+        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.0])
+        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.0])
+        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.0])
+        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.0])
+        transforms = [model.Transform()] + [center] + corners
+        body = copy.deepcopy(modelBody)
+        body.applyTransforms(transforms)
+        body.translate([0.0, 0.0, 0.001])
+        if 'Body' in materials.keys():
+            body.appearance().material = materials['Body']
+
+        # First pin mark
+        mark = copy.deepcopy(modelMark)
+        mark.translate([dotPosition[0], dotPosition[1], 0.001])
+        if 'Mark' in materials.keys():
+            mark.appearance().material = materials['Mark']
+
         pins = []
+
+        # Horizontal pins
+        y = size[1] / 2.0
         for i in range(0, count[0]):
-            x = (i - int(count[0] / 2) + 1) * pitch - offset[0]
-            y = margin[1]
+            x = float(i) * pitch - firstPinOffset[0]
+            pins.append(makePin(x, y, 180.0, i + 1))
+            pins.append(makePin(-x, -y, 0.0, i + 1 + count[0] + count[1]))
 
-            pins.append(makePin(x, y, 180., i + 1))
-            pins.append(makePin(-x, -y, 0., i + 1 + count[0] + count[1]))
+        # Vertical pins
+        x = size[0] / 2.0
         for i in range(0, count[1]):
-            x = margin[0]
-            y = (i - int(count[1] / 2) + 1) * pitch - offset[1]
-
-            pins.append(makePin(x, -y, 90., i + 1 + count[0]))
-            pins.append(makePin(-x, y, -90., i + 1 + count[0] * 2 + count[1]))
+            y = float(i) * pitch - firstPinOffset[1]
+            pins.append(makePin(x, -y, 90.0, i + 1 + count[0]))
+            pins.append(makePin(-x, y, -90.0, i + 1 + count[0] * 2 + count[1]))
 
         return [body, mark] + pins
 
@@ -98,9 +102,9 @@ class QuadFlatPackage:
         return QuadFlatPackage.buildPackageBody(
                 materials,
                 qfpAttributedBody, qfpBodyMark, modelPin,
-                (descriptor['pins']['columns'], descriptor['pins']['rows']),
-                model.metricToImperial(descriptor['body']['size']),
-                model.metricToImperial(descriptor['pins']['pitch']),
+                numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']]),
+                numpy.array(model.metricToImperial(descriptor['body']['size'])),
+                numpy.array(model.metricToImperial(descriptor['pins']['pitch'])),
                 descriptor['title'])
 
 

@@ -75,7 +75,7 @@ class QuadFlatPackage(exporter.Footprint):
         y = (self.bodySize[1] + self.padSize[1]) / 2.0 + self.margin
         pad = lambda x: self.pad(x, self.count[0], False)
         for i in range(0, self.count[0]):
-            x = -firstPinOffset[0] + self.spacing(i, self.count[0])
+            x = self.spacing(i, self.count[0]) - firstPinOffset[0]
             pads.append(exporter.SmdPad(1 + i, pad(i), (x, y)))
             pads.append(exporter.SmdPad(1 + i + self.count[0] + self.count[1], pad(i), (-x, -y)))
 
@@ -83,7 +83,7 @@ class QuadFlatPackage(exporter.Footprint):
         x = (self.bodySize[0] + self.padSize[1]) / 2.0 + self.margin
         pad = lambda x: self.pad(x, self.count[1], True)
         for j in range(0, self.count[1]):
-            y = -firstPinOffset[1] + self.spacing(j, self.count[1])
+            y = self.spacing(j, self.count[1]) - firstPinOffset[1]
             pads.append(exporter.SmdPad(1 + j + self.count[0], pad(j), (x, -y)))
             pads.append(exporter.SmdPad(1 + j + 2 * self.count[0] + self.count[1], pad(j), (-x, y)))
 
