@@ -21,8 +21,10 @@ def lookup(meshList, meshName):
 
 
 class SmallOutlinePackage:
-    @staticmethod
-    def buildPackageBody(materials, modelBody, modelMark, modelPin, markOffset, count, size, pitch, name):
+    def __init__(self):
+        pass
+
+    def generatePackageBody(self, materials, modelBody, modelMark, modelPin, markOffset, count, size, pitch, name):
         DEFAULT_WIDTH = model.metricToImperial(2.0)
 
         def makePin(x, y, angle, number):
@@ -70,8 +72,7 @@ class SmallOutlinePackage:
 
         return [body, mark] + pins
 
-    @staticmethod
-    def build(materials, templates, descriptor):
+    def generate(self, materials, templates, descriptor):
         regions = [
                 (((0.15,  0.15, 1.0), (-0.15, -0.15, -1.0)), 1),
                 ((( 1.0,  1.0,  1.0), ( 0.15,  0.15, -1.0)), 2),
@@ -106,7 +107,7 @@ class SmallOutlinePackage:
         else:
             raise Exception()
 
-        return SmallOutlinePackage.buildPackageBody(
+        return self.generatePackageBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2],
                 numpy.array(model.metricToImperial(referenceObject[3])),

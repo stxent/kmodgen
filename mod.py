@@ -93,11 +93,7 @@ for filename in options.files:
     for part in filter(lambda x: pattern.search(x['title']) is not None, desc['parts']):
         package = next(filter(lambda x: x.__name__ == part['package']['type'], types), None)
         if package is not None:
-            models.append((package.build(materials, templates, part), part['title']))
-        else:
-            group = generic.GenericModelFilter.build(materials, templates, part)
-            if group is not None:
-                models.append((group, part['title']))
+            models.append((package().generate(materials, templates, part), part['title']))
 
 if options.output != '':
     libraryPath = options.output

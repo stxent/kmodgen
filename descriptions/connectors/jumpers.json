@@ -1,0 +1,32 @@
+{
+  "templates": [
+    "headers.x3d"
+  ],
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "Jumper", "spec": "thick"},
+      "title": "MJ-2",
+      "pads": {"diameter": 1.6, "drill": 1.0},
+      "pins": {"columns": 2, "rows": 1, "pitch": 2.54}
+    }, {
+      "package": {"type": "Jumper", "spec": "thick"},
+      "title": "MJ-3",
+      "pads": {"diameter": 1.6, "drill": 1.0},
+      "pins": {"columns": 3, "rows": 1, "pitch": 2.54}
+    }, {
+      "package": {"type": "Jumper", "spec": "thick"},
+      "title": "MJ2-2",
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "pins": {"columns": 2, "rows": 1, "pitch": 2.0}
+    }, {
+      "package": {"type": "Jumper", "spec": "thick"},
+      "title": "MJ2-3",
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "pins": {"columns": 3, "rows": 1, "pitch": 2.0}
+    }
+  ]
+}

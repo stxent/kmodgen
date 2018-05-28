@@ -28,7 +28,7 @@ class FlexibleFlatCableConnector(exporter.Footprint):
 
     def generate(self):
         silkscreen, pads = [], []
-        silkscreen.append(exporter.Label(self.name, self.center, self.thickness, self.font))
+        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         totalPadsWidth = float(self.count - 1) * self.pitch
 
@@ -62,7 +62,7 @@ class FlexibleFlatCableConnector(exporter.Footprint):
         if 'description' in descriptor.keys():
             return descriptor['description']
         else:
-            round1f = lambda x: '{:d}'.format(x) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
+            round1f = lambda x: '{:d}'.format(int(x)) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
             pitchStr = round1f(descriptor['pins']['pitch'])
             return 'FFC/FPC connector, {:s} mm pitch, surface mount, {:s} contact style, {:d} circuits'.format(
                     pitchStr, descriptor['pins']['style'], descriptor['pins']['count'])
@@ -269,11 +269,11 @@ class MiniUSB(exporter.Footprint):
 
     def generate(self):
         silkscreen, pads = [], []
-        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
+        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # First pin mark
         dotMarkPosition = (self.padOffset + self.padSize[0] / 2.0 + self.gap + self.thickness, -2.0 * self.padPitch)
-        objects.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
+        silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 
         # Pads
         for i in range(0, 5):

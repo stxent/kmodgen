@@ -71,4 +71,9 @@ class BoxHeader(PinHeader):
         self.bodySize = numpy.array(descriptor['body']['size'])
 
 
-types = [PinHeader, RightAnglePinHeader, BoxHeader]
+class Jumper(PinHeader):
+    def __init__(self, spec, descriptor):
+        PinHeader.__init__(self, spec, descriptor)
+
+
+types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper]

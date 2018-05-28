@@ -11,6 +11,10 @@ import re
 
 from wrlconv import model
 
+def eq(a, b):
+    TOLERANCE = 0.001
+    return a - TOLERANCE <= b <= a + TOLERANCE
+
 def lookup(meshList, meshName):
     for entry in meshList:
         if re.search(meshName, entry.ident, re.S) is not None:
@@ -19,8 +23,10 @@ def lookup(meshList, meshName):
 
 
 class PinHeader:
-    @staticmethod
-    def buildHeaderBody(materials, modelBody, modelEdge, modelPin, bodyTransform, count, pitch, name):
+    def __init__(self):
+        pass
+
+    def generateHeaderBody(self, materials, modelBody, modelEdge, modelPin, bodyTransform, count, pitch, name):
         shift = pitch / 2.0 if count[1] > 1 else 0.0
 
         body = model.Mesh(name='{:s}_{:d}Body'.format(name, count[0] * count[1]))
@@ -53,12 +59,7 @@ class PinHeader:
 
         return [body] + pins
 
-    @staticmethod
-    def build(materials, templates, descriptor):
-        def eq(a, b):
-            TOLERANCE = 0.001
-            return a - TOLERANCE <= b <= a + TOLERANCE
-
+    def generate(self, materials, templates, descriptor):
         transform = model.Transform()
         pitch200 = eq(descriptor['pins']['pitch'], 2.0)
         pitch254 = eq(descriptor['pins']['pitch'], 2.54)
@@ -81,7 +82,7 @@ class PinHeader:
 
         referenceObject = [lookup(templates, name).parent for name in objectNames]
 
-        return PinHeader.buildHeaderBody(
+        return self.generateHeaderBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
@@ -89,13 +90,31 @@ class PinHeader:
                 descriptor['title'])
 
 
-class RightAnglePinHeader(PinHeader):
-    @staticmethod
-    def build(materials, templates, descriptor):
-        def eq(a, b):
-            TOLERANCE = 0.001
-            return a - TOLERANCE <= b <= a + TOLERANCE
+class Jumper(PinHeader):
+    def __init__(self):
+        PinHeader.__init__(self)
 
+    def generate(self, materials, templates, descriptor):
+        objects = PinHeader.generate(self, materials, templates, descriptor)
+
+        pitch200 = eq(descriptor['pins']['pitch'], 2.0)
+        pitch254 = eq(descriptor['pins']['pitch'], 2.54)
+
+        if pitch200:
+            body = lookup(templates, 'PatPLS2Jumper').parent
+        elif pitch254:
+            body = lookup(templates, 'PatPLSJumper').parent
+        else:
+            raise Exception()
+
+        return objects + [body]
+
+
+class RightAnglePinHeader(PinHeader):
+    def __init__(self):
+        PinHeader.__init__(self)
+
+    def generate(self, materials, templates, descriptor):
         transform = model.Transform()
         pitch200 = eq(descriptor['pins']['pitch'], 2.0)
         pitch254 = eq(descriptor['pins']['pitch'], 2.54)
@@ -124,7 +143,7 @@ class RightAnglePinHeader(PinHeader):
 
         referenceObject = [lookup(templates, name).parent for name in objectNames]
 
-        return RightAnglePinHeader.buildHeaderBody(
+        return self.generateHeaderBody(
                 materials,
                 referenceObject[0], referenceObject[1], referenceObject[2], transform,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
@@ -133,8 +152,10 @@ class RightAnglePinHeader(PinHeader):
 
 
 class BoxHeader:
-    @staticmethod
-    def buildHeaderBody(materials, modelBody, modelPin, count, length, pitch, name):
+    def __init__(self):
+        pass
+
+    def generateHeaderBody(self, materials, modelBody, modelPin, count, length, pitch, name):
         DEFAULT_WIDTH = model.metricToImperial(20.34)
         delta = (length - DEFAULT_WIDTH) / 2.0
 
@@ -158,12 +179,7 @@ class BoxHeader:
 
         return [body] + pins
 
-    @staticmethod
-    def build(materials, templates, descriptor):
-        def eq(a, b):
-            TOLERANCE = 0.001
-            return a - TOLERANCE <= b <= a + TOLERANCE
-
+    def generate(self, materials, templates, descriptor):
         if descriptor['pins']['rows'] != 2:
             raise Exception()
         if not eq(descriptor['pins']['pitch'], 2.54):
@@ -181,7 +197,7 @@ class BoxHeader:
         bhAttributedBody.append(bhBody)
         bhAttributedBody.visualAppearance = bhBody.appearance()
 
-        return BoxHeader.buildHeaderBody(
+        return self.generateHeaderBody(
                 materials,
                 bhAttributedBody, bhPin,
                 (descriptor['pins']['columns'], descriptor['pins']['rows']),
@@ -190,4 +206,4 @@ class BoxHeader:
                 descriptor['title'])
 
 
-types = [PinHeader, RightAnglePinHeader, BoxHeader]
+types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper]

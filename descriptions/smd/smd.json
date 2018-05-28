@@ -1,4 +1,10 @@
 {
+  "templates": [
+    "smd_led.x3d",
+    "smd_sot.x3d",
+    "smd_tantalum.x3d",
+    "smd.x3d"
+  ],
   "specs": {
     "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
     "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}

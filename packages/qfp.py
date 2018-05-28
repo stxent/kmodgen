@@ -21,8 +21,10 @@ def lookup(meshList, meshName):
 
 
 class QuadFlatPackage:
-    @staticmethod
-    def buildPackageBody(materials, modelBody, modelMark, modelPin, count, size, pitch, name):
+    def __init__(self):
+        pass
+
+    def generatePackageBody(self, materials, modelBody, modelMark, modelPin, count, size, pitch, name):
         DEFAULT_WIDTH = model.metricToImperial(5.0)
 
         def makePin(x, y, angle, number):
@@ -76,8 +78,7 @@ class QuadFlatPackage:
 
         return [body, mark] + pins
 
-    @staticmethod
-    def build(materials, templates, descriptor):
+    def generate(self, materials, templates, descriptor):
         qfpBody = lookup(templates, 'PatQFPBody')[0].parent
         qfpBodyMark = lookup(templates, 'PatQFPBody')[1].parent
 
@@ -99,7 +100,7 @@ class QuadFlatPackage:
         else:
             modelPin = qfpNarrowPin
 
-        return QuadFlatPackage.buildPackageBody(
+        return self.generatePackageBody(
                 materials,
                 qfpAttributedBody, qfpBodyMark, modelPin,
                 numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']]),

@@ -1,0 +1,36 @@
+{
+  "templates": [
+    "buttons.x3d"
+  ],
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "Button", "spec": "thick"},
+      "title": "IT-1102W",
+      "body": {"size": [6.0, 6.0]},
+      "pads": {"size": [1.6, 1.3]},
+      "pins": {"pitch": [3.8, 2.25], "shielding": false}
+    }, {
+      "package": {"type": "Button", "spec": "thick"},
+      "title": "IT-1127",
+      "body": {"size": [4.2, 4.5]},
+      "pads": {"size": [1.3, 0.9]},
+      "pins": {"pitch": [2.75, 1.5], "shielding": false}
+    }, {
+      "package": {"type": "Button", "spec": "thick"},
+      "title": "IT-1157",
+      "body": {"size": [6.2, 6.4]},
+      "pads": {"size": [1.4, 1.1]},
+      "pins": {"pitch": [3.8, 2.25], "shielding": true}
+    }, {
+      "package": {"type": "Button", "spec": "thick"},
+      "title": "IT-1187U",
+      "body": {"size": [5.2, 5.2]},
+      "pads": {"size": [1.3, 0.9]},
+      "pins": {"pitch": [2.1, 1.85], "shielding": false}
+    }
+  ]
+}

@@ -13,8 +13,10 @@ from wrlconv import model
 
 
 class RadialCapacitor:
-    @staticmethod
-    def buildBumpedCap(slices, beginning, sections, sectionWidth, capRadius, bodyRadius):
+    def __init__(self):
+        pass
+
+    def buildBumpedCap(self, slices, beginning, sections, sectionWidth, capRadius, bodyRadius):
         if sections < 2:
             raise Exception()
 
@@ -144,8 +146,7 @@ class RadialCapacitor:
 
         return mesh
 
-    @staticmethod
-    def buildCapacitorCurve(radius, height, curvature, bandOffset, capRadius, capDepth, chamfer,
+    def buildCapacitorCurve(self, radius, height, curvature, bandOffset, capRadius, capDepth, chamfer,
             edgeDetails=3, bandDetails=4):
 
         if capRadius is not None and capDepth is not None and chamfer is None:
@@ -185,8 +186,7 @@ class RadialCapacitor:
 
         return curve
 
-    @staticmethod
-    def buildPinCurve(radius, height, curvature, edgeDetails=2):
+    def buildPinCurve(self, radius, height, curvature, edgeDetails=2):
         curve = []
 
         curve.append(curves.Bezier((radius - curvature, 0.0, -height), (curvature / 2.0, 0.0, 0.0),
@@ -195,46 +195,44 @@ class RadialCapacitor:
 
         return curve
 
-    @staticmethod
-    def buildCapacitorBody(curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
+    def buildCapacitorBody(self, curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
             capSectionWidth, capBumpDepth):
         slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
         meshes = []
 
         bottomCap = curves.createTriCapMesh(slices, True)
-        bottomCap.appearance().material = RadialCapacitor.mat(materials, 'Bottom')
+        bottomCap.appearance().material = self.mat(materials, 'Bottom')
         bottomCap.ident = name + 'BottomCap'
         meshes.append(bottomCap)
 
         if capSections == 1:
             topCap = curves.createTriCapMesh(slices, False)
         else:
-            topCap = RadialCapacitor.buildBumpedCap(slices=slices, beginning=False, sections=capSections,
+            topCap = self.buildBumpedCap(slices=slices, beginning=False, sections=capSections,
                     sectionWidth=capSectionWidth, capRadius=capInnerRadius, bodyRadius=capOuterRadius)
-        topCap.appearance().material = RadialCapacitor.mat(materials, 'Top')
+        topCap.appearance().material = self.mat(materials, 'Top')
         topCap.ident = name + 'TopCap'
         meshes.append(topCap)
 
         if polarized:
             body = curves.createRotationMesh(slices[1:], False)
-            body.appearance().material = RadialCapacitor.mat(materials, 'Body')
+            body.appearance().material = self.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
             mark = curves.createRotationMesh([slices[-1]] + slices[0:2], False)
-            mark.appearance().material = RadialCapacitor.mat(materials, 'Mark')
+            mark.appearance().material = self.mat(materials, 'Mark')
             mark.ident = name + 'Mark'
             meshes.append(mark)
         else:
             body = curves.createRotationMesh(slices, True)
-            body.appearance().material = RadialCapacitor.mat(materials, 'Body')
+            body.appearance().material = self.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
         return meshes
 
-    @staticmethod
-    def buildCapacitorPin(curve, edges):
+    def buildCapacitorPin(self, curve, edges):
         slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
 
         pin = curves.createRotationMesh(slices, True)
@@ -243,12 +241,10 @@ class RadialCapacitor:
 
         return pin
 
-    @staticmethod
-    def demangle(title):
+    def demangle(self, title):
         return title.replace('C-', 'Cap').replace('CP-', 'Cap').replace('R-', 'Radial').replace('A-', 'Axial')
 
-    @staticmethod
-    def mat(materials, name):
+    def mat(self, materials, name):
         if name in materials.keys():
             return materials[name]
         else:
@@ -256,16 +252,15 @@ class RadialCapacitor:
             result.color.ident = name
             return result
 
-    @staticmethod
-    def build(materials, templates, descriptor):
-        title = RadialCapacitor.demangle(descriptor['title'])
+    def generate(self, materials, templates, descriptor):
+        title = self.demangle(descriptor['title'])
 
         bodyDetails = descriptor['body']['details'] if 'details' in descriptor['body'].keys() else 3
         bodyEdges = descriptor['body']['edges'] if 'edges' in descriptor['body'].keys() else 24
         capSections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'].keys() else 1
 
         meshes = []
-        bodyCurve = RadialCapacitor.buildCapacitorCurve(
+        bodyCurve = self.buildCapacitorCurve(
                 model.metricToImperial(descriptor['body']['diameter']) / 2.0,
                 model.metricToImperial(descriptor['body']['height']),
                 model.metricToImperial(descriptor['body']['curvature']),
@@ -276,7 +271,7 @@ class RadialCapacitor:
                 bodyDetails,
                 bodyDetails + 1)
 
-        bodyMesh = RadialCapacitor.buildCapacitorBody(
+        bodyMesh = self.buildCapacitorBody(
                 bodyCurve,
                 bodyEdges,
                 descriptor['body']['stripe'],
@@ -289,13 +284,13 @@ class RadialCapacitor:
                 model.metricToImperial(descriptor['body']['curvature']) / 2.0)
         meshes.extend(bodyMesh)
 
-        pinCurve = RadialCapacitor.buildPinCurve(
+        pinCurve = self.buildPinCurve(
                 model.metricToImperial(descriptor['pins']['diameter']) / 2.0,
                 model.metricToImperial(descriptor['pins']['height']),
                 model.metricToImperial(descriptor['pins']['curvature']))
 
-        pinMesh = RadialCapacitor.buildCapacitorPin(pinCurve, descriptor['pins']['edges'])
-        pinMesh.appearance().material = RadialCapacitor.mat(materials, 'Pin')
+        pinMesh = self.buildCapacitorPin(pinCurve, descriptor['pins']['edges'])
+        pinMesh.appearance().material = self.mat(materials, 'Pin')
         pinMesh.ident = title + 'Pin'
 
         spacing = model.metricToImperial(descriptor['pins']['spacing']) / 2.0
