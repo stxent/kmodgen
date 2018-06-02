@@ -66,10 +66,6 @@ class RadialCapacitor:
             angle = lambda v: math.atan2((v - center)[1], (v - center)[0])
             belongs = lambda v, a, b: v >= a and v <= b if b >= a else v >= a or v <= b
 
-            def comparator(a, b):
-                aAngle, bAngle = angle(a), angle(b)
-                return 0 if aAngle == bAngle else -1 if aAngle <= bAngle else 1
-
             innerRange = (outerPoints[rot(i - 1, sections)][0], outerPoints[i][3])
             outerRange = (outerPoints[rot(i - 1, sections)][3], outerPoints[i][0])
             inner = (angle(innerRange[0]), angle(innerRange[1]))
@@ -103,10 +99,10 @@ class RadialCapacitor:
                     points.append(intersection)
 
             if inner[1] >= inner[0]:
-                points = sorted(points, comparator)
+                points = sorted(points, key=lambda p: angle(p))
             else:
-                points = sorted(filter(lambda x: angle(x) >= 0.0, points), comparator)\
-                        + sorted(filter(lambda x: angle(x) < 0.0, points), comparator)
+                points = sorted(filter(lambda x: angle(x) >= 0.0, points), key=lambda p: angle(p))\
+                        + sorted(filter(lambda x: angle(x) < 0.0, points), key=lambda p: angle(p))
             edgePoints.append(points)
 
         fcp = lambda a: rot(a, sections)
