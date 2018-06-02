@@ -2,11 +2,11 @@
 <!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
 <X3D version="3.0" profile="Immersive" xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance" xsd:noNamespaceSchemaLocation="http://www.web3d.org/specifications/x3d-3.0.xsd">
 	<head>
-		<meta name="filename" content="ipx.x3d" />
+		<meta name="filename" content="rf_ipx.x3d" />
 		<meta name="generator" content="Blender 2.79 (sub 0)" />
 	</head>
 	<Scene>
-		<NavigationInfo headlight="false"
+		<NavigationInfo headlight="true"
 		                visibilityLimit="0.0"
 		                type='"EXAMINE", "ANY"'
 		                avatarSize="0.25, 1.75, 0.75"
@@ -64,31 +64,6 @@
 					</Shape>
 				</Group>
 			</Transform>
-		</Transform>
-		<Transform DEF="Lamp_TRANSFORM"
-		           translation="4.076245 1.005454 5.903862"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="0.205942 0.331517 0.920698 1.926274"
-		           >
-			<PointLight DEF="LA_Lamp"
-			            ambientIntensity="0.0000"
-			            color="1.0000 1.0000 1.0000"
-			            intensity="0.5714"
-			            radius="30.0000" 
-			            location="-0.0000 -0.0000 0.0000"
-			            />
-		</Transform>
-		<Transform DEF="Camera_TRANSFORM"
-		           translation="7.481132 -6.507640 5.343665"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="0.772239 0.341341 0.535848 1.347139"
-		           >
-			<Viewpoint DEF="CA_Camera"
-			           centerOfRotation="0 0 0"
-			           position="0.00 0.00 -0.00"
-			           orientation="-0.92 0.35 0.17 0.00"
-			           fieldOfView="0.858"
-			           />
 		</Transform>
 	</Scene>
 </X3D>

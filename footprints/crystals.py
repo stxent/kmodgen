@@ -25,10 +25,18 @@ class CrystalSMD(exporter.Footprint):
 
         # Pads
         axisOffsets = self.pitch / 2.0
-        pads.append(exporter.SmdPad(self.mapping[0], self.padSize, (-axisOffsets[0], axisOffsets[1])))
-        pads.append(exporter.SmdPad(self.mapping[1], self.padSize, (axisOffsets[0], axisOffsets[1])))
-        pads.append(exporter.SmdPad(self.mapping[2], self.padSize, (axisOffsets[0], -axisOffsets[1])))
-        pads.append(exporter.SmdPad(self.mapping[3], self.padSize, (-axisOffsets[0], -axisOffsets[1])))
+
+        if len(self.mapping) == 2:
+            pads.append(exporter.SmdPad(self.mapping[0], self.padSize, (-axisOffsets[0], 0.0)))
+            pads.append(exporter.SmdPad(self.mapping[1], self.padSize, (axisOffsets[0], 0.0)))
+        elif len(self.mapping) == 4:
+            pads.append(exporter.SmdPad(self.mapping[0], self.padSize, (-axisOffsets[0], axisOffsets[1])))
+            pads.append(exporter.SmdPad(self.mapping[1], self.padSize, (axisOffsets[0], axisOffsets[1])))
+            pads.append(exporter.SmdPad(self.mapping[2], self.padSize, (axisOffsets[0], -axisOffsets[1])))
+            pads.append(exporter.SmdPad(self.mapping[3], self.padSize, (-axisOffsets[0], -axisOffsets[1])))
+        else:
+            # Unsupported pin configuration
+            raise Exception()
 
         # First pin mark
         dotMarkPosition = numpy.array([

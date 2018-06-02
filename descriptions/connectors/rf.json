@@ -1,7 +1,7 @@
 {
   "templates": [
-    "ipx.x3d",
-    "sma-em.x3d"
+    "rf_ipx.x3d",
+    "rf_sma-em.x3d"
   ],
   "specs": {
     "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},

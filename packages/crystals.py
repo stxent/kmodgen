@@ -12,7 +12,12 @@ class CrystalSMD(generic.GenericModelFilter):
     def __init__(self):
         generic.GenericModelFilter.__init__(self, CrystalSMD.PIVOT_BOUNDING_BOX_CENTER)
 
+class CrystalTH(generic.GenericModelFilter):
+    def __init__(self):
+        generic.GenericModelFilter.__init__(self, CrystalTH.PIVOT_BOUNDING_BOX_CENTER)
+
 
 types = [
-        CrystalSMD
+        CrystalSMD,
+        CrystalTH
 ]

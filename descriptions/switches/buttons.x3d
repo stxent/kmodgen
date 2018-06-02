@@ -6,7 +6,7 @@
 		<meta name="generator" content="Blender 2.79 (sub 0)" />
 	</head>
 	<Scene>
-		<NavigationInfo headlight="false"
+		<NavigationInfo headlight="true"
 		                visibilityLimit="0.0"
 		                type='"EXAMINE", "ANY"'
 		                avatarSize="0.25, 1.75, 0.75"
@@ -15,18 +15,12 @@
 		            groundColor="0.051 0.051 0.051"
 		            skyColor="0.051 0.051 0.051"
 		            />
-		<Transform DEF="ButtonMicroPinForm_TRANSFORM"
-		           translation="6.810000 -1.590000 0.045000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="0.000000 0.000000 1.000000 1.570796"
-		           >
-		</Transform>
-		<Transform DEF="IT-1187U_Body_TRANSFORM"
+		<Transform DEF="IT-1187UN_Body_TRANSFORM"
 		           translation="8.000000 -4.000000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1187U_Body_ifs_TRANSFORM"
+			<Transform DEF="IT-1187UN_Body_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -248,12 +242,12 @@
 				</Group>
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157S_Body_TRANSFORM"
+		<Transform DEF="IT-1157AP_Body_TRANSFORM"
 		           translation="4.000000 -4.000000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="-1.000000 0.000000 0.000000 1.570797"
 		           >
-			<Transform DEF="IT-1157S_Body_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AP_Body_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -284,12 +278,12 @@
 				</Group>
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157S_Pin4_TRANSFORM"
+		<Transform DEF="IT-1157AP_Pin4_TRANSFORM"
 		           translation="5.220000 -4.886000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="0.000000 0.000000 1.000000 3.141594"
 		           >
-			<Transform DEF="IT-1157S_Pin4_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AP_Pin4_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -310,12 +304,12 @@
 				</Group>
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157S_Pin1_TRANSFORM"
+		<Transform DEF="IT-1157AP_Pin1_TRANSFORM"
 		           translation="2.780000 -3.114000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1157S_Pin1_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AP_Pin1_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -323,12 +317,12 @@
 				<Group USE="group_ME_ButtonPin" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157S_Pin3_TRANSFORM"
+		<Transform DEF="IT-1157AP_Pin3_TRANSFORM"
 		           translation="2.780000 -4.886000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1157S_Pin3_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AP_Pin3_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -336,12 +330,12 @@
 				<Group USE="group_ME_ButtonPin" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157S_Pin2_TRANSFORM"
+		<Transform DEF="IT-1157AP_Pin2_TRANSFORM"
 		           translation="5.220000 -3.114000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="0.000000 0.000000 1.000000 3.141594"
 		           >
-			<Transform DEF="IT-1157S_Pin2_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AP_Pin2_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -349,12 +343,12 @@
 				<Group USE="group_ME_ButtonPin" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157S_Stem_TRANSFORM"
+		<Transform DEF="IT-1157AP_Stem_TRANSFORM"
 		           translation="4.000000 -4.000000 0.787000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1157S_Stem_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AP_Stem_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -362,12 +356,12 @@
 				<Group USE="group_ME_StemMesh" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157_Stem_TRANSFORM"
+		<Transform DEF="IT-1157AD_Stem_TRANSFORM"
 		           translation="4.000000 0.000000 0.787000"
 		           scale="1.000407 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1157_Stem_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AD_Stem_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -480,12 +474,12 @@
 				<Group USE="group_ME_Bumper" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157_Pin2_TRANSFORM"
+		<Transform DEF="IT-1157AD_Pin2_TRANSFORM"
 		           translation="5.220000 0.886000 -0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="0.000000 0.000000 1.000000 3.141594"
 		           >
-			<Transform DEF="IT-1157_Pin2_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AD_Pin2_ifs_TRANSFORM"
 			           translation="-0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -493,12 +487,12 @@
 				<Group USE="group_ME_ButtonPin" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157_Pin3_TRANSFORM"
+		<Transform DEF="IT-1157AD_Pin3_TRANSFORM"
 		           translation="2.780000 -0.886000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1157_Pin3_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AD_Pin3_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -506,12 +500,12 @@
 				<Group USE="group_ME_ButtonPin" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157_Pin1_TRANSFORM"
+		<Transform DEF="IT-1157AD_Pin1_TRANSFORM"
 		           translation="2.780000 0.886000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="1.000000 0.000000 0.000000 0.000000"
 		           >
-			<Transform DEF="IT-1157_Pin1_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AD_Pin1_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -581,12 +575,12 @@
 				<Group USE="group_ME_StemMesh" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157_Pin4_TRANSFORM"
+		<Transform DEF="IT-1157AD_Pin4_TRANSFORM"
 		           translation="5.220000 -0.886000 -0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="0.000000 0.000000 1.000000 3.141594"
 		           >
-			<Transform DEF="IT-1157_Pin4_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AD_Pin4_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -594,12 +588,12 @@
 				<Group USE="group_ME_ButtonPin" />
 			</Transform>
 		</Transform>
-		<Transform DEF="IT-1157_Body_TRANSFORM"
+		<Transform DEF="IT-1157AD_Body_TRANSFORM"
 		           translation="4.000000 0.000000 0.000000"
 		           scale="1.000000 1.000000 1.000000"
 		           rotation="-1.000000 0.000000 0.000000 1.570797"
 		           >
-			<Transform DEF="IT-1157_Body_ifs_TRANSFORM"
+			<Transform DEF="IT-1157AD_Body_ifs_TRANSFORM"
 			           translation="0.000000 0.000000 0.000000"
 			           scale="1.000000 1.000000 1.000000"
 			           rotation="1.000000 0.000000 0.000000 0.000000"
@@ -655,19 +649,6 @@
 					</Shape>
 				</Group>
 			</Transform>
-		</Transform>
-		<Transform DEF="Point_TRANSFORM"
-		           translation="5.000000 -6.000000 5.000000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="1.000000 0.000000 0.000000 0.000000"
-		           >
-			<PointLight DEF="LA_Point"
-			            ambientIntensity="0.0000"
-			            color="1.0000 1.0000 1.0000"
-			            intensity="0.5714"
-			            radius="25.0000" 
-			            location="0.0000 0.0000 0.0000"
-			            />
 		</Transform>
 		<Transform DEF="DefButton_Pin1_TRANSFORM"
 		           translation="1.000000 -4.000000 0.000000"
@@ -740,92 +721,6 @@
 						                coordIndex="15 1 12 21 -1 0 14 20 16 -1 21 12 13 23 -1 16 20 22 17 -1 23 13 2 18 -1 17 22 19 3 -1 1 15 8 -1 14 0 9 -1 13 12 8 10 -1 2 13 10 -1 12 1 8 -1 3 19 11 -1 18 2 10 -1 16 17 11 9 -1 0 16 9 -1 17 3 11 -1 19 22 25 24 -1 23 18 27 26 -1 22 20 28 25 -1 21 23 26 29 -1 20 14 30 28 -1 15 21 29 31 -1 25 26 27 24 -1 28 29 26 25 -1 30 31 29 28 -1 10 11 24 27 -1 11 19 24 -1 10 27 18 -1 8 31 30 9 -1 8 15 31 -1 9 30 14 -1 "
 						                >
 							<Coordinate USE="coords_ME_Cube_001" />
-						</IndexedFaceSet>
-					</Shape>
-				</Group>
-			</Transform>
-		</Transform>
-		<Transform DEF="Camera_TRANSFORM"
-		           translation="6.500000 -5.500000 4.500000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="0.753892 0.341124 0.561499 1.356594"
-		           >
-			<Viewpoint DEF="CA_Camera"
-			           centerOfRotation="0 0 0"
-			           position="-0.00 0.00 -0.00"
-			           orientation="-0.49 -0.75 -0.44 0.00"
-			           fieldOfView="0.858"
-			           />
-		</Transform>
-		<Transform DEF="ButtonPinForm_TRANSFORM"
-		           translation="-1.540000 -1.886000 0.060000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="0.000000 0.000000 1.000000 1.570796"
-		           >
-		</Transform>
-		<Transform DEF="ButtonMicroPinPath_TRANSFORM"
-		           translation="7.170000 -1.590000 0.000000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="1.000000 0.000000 0.000000 0.000000"
-		           >
-			<Transform DEF="ButtonMicroPinPath_ifs_TRANSFORM"
-			           translation="0.000000 0.000000 0.000000"
-			           scale="1.000000 1.000000 1.000000"
-			           rotation="1.000000 0.000000 0.000000 0.000000"
-			           >
-				<Group DEF="group_ME_ButtonMicroPinPath">
-					<Shape>
-						<Appearance>
-							<Material DEF="MA_Pins_001"
-							          diffuseColor="0.830 0.830 0.830"
-							          specularColor="0.401 0.401 0.401"
-							          emissiveColor="0.000 0.000 0.000"
-							          ambientIntensity="0.333"
-							          shininess="0.098"
-							          transparency="0.0"
-							          />
-						</Appearance>
-						<IndexedFaceSet solid="true"
-						                creaseAngle="4.0000"
-						                coordIndex="0 2 1 -1 0 3 2 -1 7 5 6 -1 7 4 5 -1 8 12 15 11 -1 9 13 12 8 -1 10 14 13 9 -1 11 15 14 10 -1 12 16 19 15 -1 13 17 16 12 -1 14 18 17 13 -1 15 19 18 14 -1 16 20 23 19 -1 17 21 20 16 -1 18 22 21 17 -1 19 23 22 18 -1 20 24 27 23 -1 21 25 24 20 -1 22 26 25 21 -1 23 27 26 22 -1 24 28 31 27 -1 25 29 28 24 -1 26 30 29 25 -1 27 31 30 26 -1 28 32 35 31 -1 29 33 32 28 -1 30 34 33 29 -1 31 35 34 30 -1 32 36 39 35 -1 33 37 36 32 -1 34 38 37 33 -1 35 39 38 34 -1 36 40 43 39 -1 37 41 40 36 -1 38 42 41 37 -1 39 43 42 38 -1 40 44 47 43 -1 41 45 44 40 -1 42 46 45 41 -1 43 47 46 42 -1 "
-						                >
-							<Coordinate DEF="coords_ME_ButtonMicroPinPath"
-							            point="0.000000 0.098000 0.250000 0.000000 0.098000 0.160000 -0.000000 -0.098000 0.160000 -0.000000 -0.098000 0.250000 -0.360000 0.098000 0.090000 -0.360000 0.098000 -0.000000 -0.360000 -0.098000 -0.000000 -0.360000 -0.098000 0.090000 -0.360000 0.098000 0.090000 -0.360000 0.098000 -0.000000 -0.360000 -0.098000 -0.000000 -0.360000 -0.098000 0.090000 -0.296365 0.098000 0.090476 -0.289476 0.098000 0.000740 -0.289476 -0.098000 0.000740 -0.296365 -0.098000 0.090476 -0.266559 0.098000 0.093967 -0.235885 0.098000 0.009356 -0.235885 -0.098000 0.009356 -0.266559 -0.098000 0.093967 -0.250512 0.098000 0.104492 -0.193916 0.098000 0.034515 -0.193916 -0.098000 0.034515 -0.250512 -0.098000 0.104492 -0.217436 0.098000 0.139674 -0.151121 0.098000 0.078827 -0.151121 -0.098000 0.078827 -0.217436 -0.098000 0.139673 -0.180797 0.098000 0.181230 -0.113097 0.098000 0.121929 -0.113097 -0.098000 0.121929 -0.180797 -0.098000 0.181230 -0.152844 0.098000 0.212792 -0.093113 0.098000 0.145469 -0.093113 -0.098000 0.145469 -0.152844 -0.098000 0.212792 -0.114585 0.098000 0.238075 -0.080344 0.098000 0.154843 -0.080344 -0.098000 0.154843 -0.114585 -0.098000 0.238075 -0.063731 0.098000 0.248361 -0.054405 0.098000 0.158846 -0.054405 -0.098000 0.158846 -0.063731 -0.098000 0.248361 0.000000 0.098000 0.250000 0.000000 0.098000 0.160000 -0.000000 -0.098000 0.160000 -0.000000 -0.098000 0.250000 "
-							            />
-						</IndexedFaceSet>
-					</Shape>
-				</Group>
-			</Transform>
-		</Transform>
-		<Transform DEF="ButtonPinPath_TRANSFORM"
-		           translation="-1.180000 -1.886000 0.000000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="1.000000 0.000000 0.000000 0.000000"
-		           >
-			<Transform DEF="ButtonPinPath_ifs_TRANSFORM"
-			           translation="0.000000 0.000000 0.000000"
-			           scale="1.000000 1.000000 1.000000"
-			           rotation="1.000000 0.000000 0.000000 0.000000"
-			           >
-				<Group DEF="group_ME_ButtonPinPath">
-					<Shape>
-						<Appearance>
-							<Material DEF="MA_Pins_001"
-							          diffuseColor="0.830 0.830 0.830"
-							          specularColor="0.401 0.401 0.401"
-							          emissiveColor="0.000 0.000 0.000"
-							          ambientIntensity="0.333"
-							          shininess="0.098"
-							          transparency="0.0"
-							          />
-						</Appearance>
-						<IndexedFaceSet solid="true"
-						                creaseAngle="4.0000"
-						                coordIndex="0 2 1 -1 0 3 2 -1 6 4 5 -1 7 4 6 -1 8 12 15 11 -1 9 13 12 8 -1 10 14 13 9 -1 11 15 14 10 -1 12 16 19 15 -1 13 17 16 12 -1 14 18 17 13 -1 15 19 18 14 -1 16 20 23 19 -1 17 21 20 16 -1 18 22 21 17 -1 19 23 22 18 -1 20 24 27 23 -1 21 25 24 20 -1 22 26 25 21 -1 23 27 26 22 -1 24 28 31 27 -1 25 29 28 24 -1 26 30 29 25 -1 27 31 30 26 -1 28 32 35 31 -1 29 33 32 28 -1 30 34 33 29 -1 31 35 34 30 -1 32 36 39 35 -1 33 37 36 32 -1 34 38 37 33 -1 35 39 38 34 -1 36 40 43 39 -1 37 41 40 36 -1 38 42 41 37 -1 39 43 42 38 -1 40 44 47 43 -1 41 45 44 40 -1 42 46 45 41 -1 43 47 46 42 -1 "
-						                >
-							<Coordinate DEF="coords_ME_ButtonPinPath"
-							            point="0.000000 0.138000 0.280000 0.000000 0.138000 0.160000 -0.000000 -0.138000 0.160000 -0.000000 -0.138000 0.280000 -0.360000 0.138000 0.120000 -0.360000 0.138000 -0.000000 -0.360000 -0.138000 0.000000 -0.360000 -0.138000 0.120000 -0.360000 0.138000 0.120000 -0.360000 0.138000 -0.000000 -0.360000 -0.138000 0.000000 -0.360000 -0.138000 0.120000 -0.289812 0.138000 0.122446 -0.276517 0.138000 0.003184 -0.276517 -0.138000 0.003184 -0.289812 -0.138000 0.122446 -0.257845 0.138000 0.128185 -0.221981 0.138000 0.013670 -0.221981 -0.138000 0.013670 -0.257845 -0.138000 0.128185 -0.243582 0.138000 0.134303 -0.178673 0.138000 0.033373 -0.178673 -0.138000 0.033373 -0.243582 -0.138000 0.134303 -0.219758 0.138000 0.155717 -0.131526 0.138000 0.074384 -0.131526 -0.138000 0.074384 -0.219758 -0.138000 0.155717 -0.192659 0.138000 0.192655 -0.096778 0.138000 0.120497 -0.096778 -0.138000 0.120497 -0.192659 -0.138000 0.192655 -0.158488 0.138000 0.236074 -0.077070 0.138000 0.147920 -0.077070 -0.138000 0.147920 -0.158489 -0.138000 0.236074 -0.109386 0.138000 0.267360 -0.065178 0.138000 0.155800 -0.065178 -0.138000 0.155800 -0.109386 -0.138000 0.267360 -0.054077 0.138000 0.278581 -0.041698 0.138000 0.159222 -0.041698 -0.138000 0.159222 -0.054077 -0.138000 0.278581 0.000000 0.138000 0.280000 0.000000 0.138000 0.160000 -0.000000 -0.138000 0.160000 -0.000000 -0.138000 0.280000 "
-							            />
 						</IndexedFaceSet>
 					</Shape>
 				</Group>

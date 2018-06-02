@@ -1,6 +1,8 @@
 {
   "templates": [
-    "crystals_kx.x3d"
+    "crystals_kx-smd.x3d",
+    "crystals_kx-th.x3d",
+    "filters_murata.x3d"
   ],
   "specs": {
     "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
@@ -36,8 +38,15 @@
       "pins": {"pitch": [6.3, 0.9], "names": ["1", "2", "4", "3"]},
       "source": "Geyer datasheet for KX-327 model"
     }, {
+      "package": {"type": "CrystalSMD", "spec": "thin"},
+      "title": "KX-KS",
+      "body": {"size": [11.4, 4.5, 3.2]},
+      "pads": {"size": [5.5, 2.08]},
+      "pins": {"pitch": [9.5, 0.0], "names": ["1", "2"]},
+      "source": "Geyer datasheet for KX-KS model"
+    }, {
       "package": {"type": "CrystalTH", "spec": "thick"},
-      "title": "HC-49S",
+      "title": "KX-3H",
       "body": {"size": [11.4, 5.0]},
       "pads": {"diameter": 1.4, "drill": 0.8},
       "pins": {"count": 2, "pitch": 5.08}

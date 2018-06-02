@@ -32,8 +32,8 @@ class Button(exporter.Footprint):
             pads.append(exporter.SmdPad(5, self.padSize, self.pitch / 2.0 * numpy.array([1.0, 0.0])))
 
         # Body outline
-        margin = numpy.array([0.0, self.pitch[1] + self.padSize[1] + self.thickness + 2.0 * self.gap])
-        outlineSize = numpy.maximum(self.bodySize, self.bodySize + margin)
+        boundingBox = numpy.array([0.0, self.pitch[1] + self.padSize[1] + self.gap * 2.0 + self.thickness])
+        outlineSize = numpy.maximum(self.bodySize, boundingBox)
         outline = exporter.Rect(outlineSize / 2.0, -outlineSize / 2.0, self.thickness)
         processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
         [silkscreen.extend(processFunc(line)) for line in outline.lines]

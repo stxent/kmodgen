@@ -6,7 +6,7 @@
 		<meta name="generator" content="Blender 2.79 (sub 0)" />
 	</head>
 	<Scene>
-		<NavigationInfo headlight="false"
+		<NavigationInfo headlight="true"
 		                visibilityLimit="0.0"
 		                type='"EXAMINE", "ANY"'
 		                avatarSize="0.25, 1.75, 0.75"
@@ -213,31 +213,6 @@
 					</Shape>
 				</Group>
 			</Transform>
-		</Transform>
-		<Transform DEF="Point_TRANSFORM"
-		           translation="5.000000 -6.000000 5.000000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="1.000000 0.000000 0.000000 0.000000"
-		           >
-			<PointLight DEF="LA_Point"
-			            ambientIntensity="0.0000"
-			            color="1.0000 1.0000 1.0000"
-			            intensity="0.5714"
-			            radius="25.0000" 
-			            location="0.0000 0.0000 0.0000"
-			            />
-		</Transform>
-		<Transform DEF="Camera_TRANSFORM"
-		           translation="6.500000 -5.500000 4.500000"
-		           scale="1.000000 1.000000 1.000000"
-		           rotation="0.753892 0.341124 0.561499 1.356594"
-		           >
-			<Viewpoint DEF="CA_Camera"
-			           centerOfRotation="0 0 0"
-			           position="-0.00 0.00 -0.00"
-			           orientation="-0.49 -0.75 -0.44 0.00"
-			           fieldOfView="0.858"
-			           />
 		</Transform>
 	</Scene>
 </X3D>

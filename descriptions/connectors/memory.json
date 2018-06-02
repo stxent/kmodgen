@@ -1,6 +1,6 @@
 {
   "templates": [
-    "tfp09-2-12b.x3d"
+    "memory_tfp09-2-12b.x3d"
   ],
   "specs": {
     "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
