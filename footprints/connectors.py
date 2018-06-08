@@ -14,20 +14,29 @@ class FlexibleFlatCableConnector(exporter.Footprint):
         exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=FlexibleFlatCableConnector.describe(descriptor), spec=spec)
 
-        self.mountPadSize = numpy.array([descriptor['pads']['mountWidth'], descriptor['pads']['mountHeight']])
-        self.mountPadSpacing = numpy.array([
-                descriptor['mount']['horizontalSpacing'],
-                descriptor['mount']['verticalSpacing']
-        ])
+        if 'body' in descriptor.keys():
+            self.bodySize = numpy.array([descriptor['body']['width'], descriptor['body']['height']])
+            self.bodyOffset = numpy.array([0.0, descriptor['pads']['offset']])
+        else:
+            self.bodySize = None
+            self.bodyOffset = None
+
+        if 'mount' in descriptor.keys():
+            self.mountPadSize = numpy.array([descriptor['pads']['mountWidth'], descriptor['pads']['mountHeight']])
+            self.mountPadSpacing = numpy.array([
+                    descriptor['mount']['horizontalSpacing'],
+                    descriptor['mount']['verticalSpacing']
+            ])
+        else:
+            self.mountPadSize = None
+            self.mountPadSpacing = None
+
         self.signalPadSize = numpy.array([descriptor['pads']['width'], descriptor['pads']['height']])
-        self.signalPadOffset = descriptor['pads']['offset']
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
-        self.bodyHeight = descriptor['body']['height']
-        self.bodyWidthIncrease = descriptor['body']['widthIncrease']
 
     def generate(self):
-        silkscreen, pads = [], []
+        silkscreen, pads, cutouts = [], [], []
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         totalPadsWidth = float(self.count - 1) * self.pitch
@@ -35,25 +44,29 @@ class FlexibleFlatCableConnector(exporter.Footprint):
         # First pin mark
         dotMarkPosition = numpy.array([
                 -totalPadsWidth / 2.0,
-                -(self.signalPadOffset + self.signalPadSize[1] / 2.0 + self.gap + self.thickness)
+                -(self.signalPadSize[1] / 2.0 + self.gap + self.thickness)
         ])
         silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
-
-        # Mounting pads
-        mountPadOffset = self.mountPadSpacing + numpy.array([totalPadsWidth / 2.0, self.signalPadOffset])
-        pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([+1.0, -1.0])))
-        pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([-1.0, -1.0])))
 
         # Signal pads
         for i in range(0, self.count):
             x = -totalPadsWidth / 2.0 + i * self.pitch
-            pads.append(exporter.SmdPad(i + 1, self.signalPadSize, (x, -self.signalPadOffset)))
+            pads.append(exporter.SmdPad(i + 1, self.signalPadSize, (x, 0.0)))
+
+        # Mounting pads
+        if self.mountPadSize is not None:
+            mountPadOffset = numpy.array([totalPadsWidth / 2.0, 0.0]) + self.mountPadSpacing
+            pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([+1.0, 1.0])))
+            pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([-1.0, 1.0])))
+            cutouts.append(exporter.Cutout((mountPadOffset[0] * 2.0 - self.mountPadSize[0],
+                    self.mountPadSize[1]), (0.0, mountPadOffset[1])))
 
         # Body outline
-        topCorner = numpy.array([totalPadsWidth / 2.0 + self.bodyWidthIncrease, self.bodyHeight / 2.0])
-        outline = exporter.Rect(topCorner, -topCorner, self.thickness)
-        processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
-        [silkscreen.extend(processFunc(line)) for line in outline.lines]
+        if self.bodySize is not None:
+            outline = exporter.Rect(self.bodySize / 2.0 + self.bodyOffset, -self.bodySize / 2.0 + self.bodyOffset,
+                    self.thickness)
+            processFunc = lambda x: exporter.collideLine(x, pads + cutouts, self.thickness, self.gap)
+            [silkscreen.extend(processFunc(line)) for line in outline.lines]
 
         return silkscreen + pads
 
@@ -136,7 +149,7 @@ class MemoryCard(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # First pin mark
-        dotMarkPosition = self.signalPadOffset + numpy.array([0.0, self.signalPadSize[1] / 2.0
+        dotMarkPosition = self.signalPadOffset - numpy.array([0.0, self.signalPadSize[1] / 2.0
                 + self.gap + self.thickness])
         silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 

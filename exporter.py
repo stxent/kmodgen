@@ -122,6 +122,12 @@ class SmdPad(AbstractPad):
                 AbstractPad.LAYERS_FRONT, AbstractPad.LAYERS_FRONT)
 
 
+class Cutout:
+    def __init__(self, size, position):
+        self.size = size
+        self.position = position
+
+
 class Poly:
     LAYER_COPPER, LAYER_SILK = range(0, 2)
 
