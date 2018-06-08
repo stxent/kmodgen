@@ -9,10 +9,9 @@ import numpy
 import exporter
 
 
-class QuadFlatPackage(exporter.Footprint):
+class QFP(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=QuadFlatPackage.describe(descriptor), spec=spec)
+        exporter.Footprint.__init__(self, name=descriptor['title'], description=QFP.describe(descriptor), spec=spec)
 
         if 'regularPadSize' in descriptor['pads'].keys():
             self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
@@ -105,4 +104,4 @@ class QuadFlatPackage(exporter.Footprint):
                     pinCount, sizeStr[0], sizeStr[1], heightStr, pitchStr)
 
 
-types = [QuadFlatPackage]
+types = [QFP]

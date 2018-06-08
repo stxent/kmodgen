@@ -20,7 +20,7 @@ def lookup(meshList, meshName):
     return found
 
 
-class SmallOutlinePackage:
+class SOP:
     def __init__(self):
         pass
 
@@ -117,4 +117,4 @@ class SmallOutlinePackage:
                 descriptor['title'])
 
 
-types = [SmallOutlinePackage]
+types = [SOP]

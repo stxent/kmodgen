@@ -9,10 +9,10 @@ import numpy
 import exporter
 
 
-class SmallOutlinePackage(exporter.Footprint):
+class SOP(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=SmallOutlinePackage.describe(descriptor), spec=spec)
+                description=SOP.describe(descriptor), spec=spec)
 
         if 'regularPadSize' in descriptor['pads'].keys():
             self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
@@ -93,4 +93,4 @@ class SmallOutlinePackage(exporter.Footprint):
                     descriptor['pins']['count'], widthStr, pitchStr)
 
 
-types = [SmallOutlinePackage]
+types = [SOP]

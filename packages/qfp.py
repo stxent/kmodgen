@@ -20,7 +20,7 @@ def lookup(meshList, meshName):
     return found
 
 
-class QuadFlatPackage:
+class QFP:
     def __init__(self):
         pass
 
@@ -109,4 +109,4 @@ class QuadFlatPackage:
                 descriptor['title'])
 
 
-types = [QuadFlatPackage]
+types = [QFP]
