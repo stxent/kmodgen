@@ -9,10 +9,10 @@ import numpy
 import exporter
 
 
-class FlexibleFlatCableConnector(exporter.Footprint):
+class FFC(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=FlexibleFlatCableConnector.describe(descriptor), spec=spec)
+                description=FFC.describe(descriptor), spec=spec)
 
         if 'body' in descriptor.keys():
             self.bodySize = numpy.array([descriptor['body']['width'], descriptor['body']['height']])
@@ -34,6 +34,7 @@ class FlexibleFlatCableConnector(exporter.Footprint):
         self.signalPadSize = numpy.array([descriptor['pads']['width'], descriptor['pads']['height']])
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
+        self.inversion = -1.0 if 'inversion' in descriptor['pins'].keys() and descriptor['pins']['inversion'] else 1.0
 
     def generate(self):
         silkscreen, pads, cutouts = [], [], []
@@ -43,14 +44,14 @@ class FlexibleFlatCableConnector(exporter.Footprint):
 
         # First pin mark
         dotMarkPosition = numpy.array([
-                -totalPadsWidth / 2.0,
+                (totalPadsWidth / 2.0) * self.inversion,
                 -(self.signalPadSize[1] / 2.0 + self.gap + self.thickness)
         ])
         silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
 
         # Signal pads
         for i in range(0, self.count):
-            x = -totalPadsWidth / 2.0 + i * self.pitch
+            x = (totalPadsWidth / 2.0 - i * self.pitch) * self.inversion
             pads.append(exporter.SmdPad(i + 1, self.signalPadSize, (x, 0.0)))
 
         # Mounting pads
@@ -58,8 +59,8 @@ class FlexibleFlatCableConnector(exporter.Footprint):
             mountPadOffset = numpy.array([totalPadsWidth / 2.0, 0.0]) + self.mountPadSpacing
             pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([+1.0, 1.0])))
             pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([-1.0, 1.0])))
-            cutouts.append(exporter.Cutout((mountPadOffset[0] * 2.0 - self.mountPadSize[0],
-                    self.mountPadSize[1]), (0.0, mountPadOffset[1])))
+            cutouts.append(exporter.Cutout(numpy.array([totalPadsWidth, self.gap * 2.0]) + self.signalPadSize,
+                    (0.0, 0.0)))
 
         # Body outline
         if self.bodySize is not None:
@@ -75,10 +76,14 @@ class FlexibleFlatCableConnector(exporter.Footprint):
         if 'description' in descriptor.keys():
             return descriptor['description']
         else:
-            round1f = lambda x: '{:d}'.format(int(x)) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
-            pitchStr = round1f(descriptor['pins']['pitch'])
-            return 'FFC/FPC connector, {:s} mm pitch, surface mount, {:s} contact style, {:d} circuits'.format(
-                    pitchStr, descriptor['pins']['style'], descriptor['pins']['count'])
+            round2f = lambda x: '{:.1f}'.format(x) if int(x * 100) == int(x * 10) * 10 else '{:.2f}'.format(x)
+            pitchStr = round2f(descriptor['pins']['pitch'])
+            if 'style' in descriptor['pins'].keys():
+                styleStr = '{:s} contact style, '.format(descriptor['pins']['style'])
+            else:
+                styleStr = ''
+            return 'FFC/FPC connector, {:s} mm pitch, surface mount, {:s}{:d} circuits'.format(
+                    pitchStr, styleStr, descriptor['pins']['count'])
 
 
 class IpxFootprint(exporter.Footprint):
@@ -330,28 +335,34 @@ class USB:
 
 # Aliases
 
-class EastRisingHB(FlexibleFlatCableConnector):
+class EastRisingHB(FFC):
     def __init__(self, spec, descriptor):
-        FlexibleFlatCableConnector.__init__(self, spec, descriptor)
+        FFC.__init__(self, spec, descriptor)
 
 
-class EastRisingHT(FlexibleFlatCableConnector):
+class EastRisingHT(FFC):
     def __init__(self, spec, descriptor):
-        FlexibleFlatCableConnector.__init__(self, spec, descriptor)
+        FFC.__init__(self, spec, descriptor)
 
 
-class Molex52271(FlexibleFlatCableConnector):
+class Molex52271(FFC):
     def __init__(self, spec, descriptor):
-        FlexibleFlatCableConnector.__init__(self, spec, descriptor)
+        FFC.__init__(self, spec, descriptor)
+
+
+class Molex53261(FFC):
+    def __init__(self, spec, descriptor):
+        FFC.__init__(self, spec, descriptor)
 
 
 types = [
-        FlexibleFlatCableConnector,
+        FFC,
         IPX,
         MemoryCard,
         SMA,
         USB,
         EastRisingHB,
         EastRisingHT,
-        Molex52271
+        Molex52271,
+        Molex53261
 ]

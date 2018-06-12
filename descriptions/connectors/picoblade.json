@@ -1,0 +1,128 @@
+{
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0271",
+      "body": {"height": 4.2, "width": 7.25},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 2, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0371",
+      "body": {"height": 4.2, "width": 8.5},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 3, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0471",
+      "body": {"height": 4.2, "width": 9.75},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 4, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0571",
+      "body": {"height": 4.2, "width": 11.0},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 5, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0671",
+      "body": {"height": 4.2, "width": 12.25},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 6, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0771",
+      "body": {"height": 4.2, "width": 13.5},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 7, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0871",
+      "body": {"height": 4.2, "width": 14.75},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 8, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-0971",
+      "body": {"height": 4.2, "width": 16.0},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 9, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1071",
+      "body": {"height": 4.2, "width": 17.25},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 10, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1171",
+      "body": {"height": 4.2, "width": 18.5},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 11, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1271",
+      "body": {"height": 4.2, "width": 19.75},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 12, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1371",
+      "body": {"height": 4.2, "width": 21.0},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 13, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1471",
+      "body": {"height": 4.2, "width": 22.25},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 14, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1571",
+      "body": {"height": 4.2, "width": 23.5},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 15, "pitch": 1.25}
+    },
+    {
+      "package": {"type": "Molex53261", "spec": "thick"},
+      "title": "MOLEX-53261-1771",
+      "body": {"height": 4.2, "width": 26.0},
+      "mount": {"horizontalSpacing": 2.55, "verticalSpacing": 2.9},
+      "pads": {"width": 0.8, "height": 1.6, "mountWidth": 2.1, "mountHeight": 3.0, "offset": 2.9},
+      "pins": {"count": 17, "pitch": 1.25}
+    }
+  ]
+}
