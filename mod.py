@@ -96,20 +96,19 @@ for filename in options.files:
             models.append((package().generate(materials, templates, part), part['title']))
 
 if options.output != '':
-    libraryPath = options.output
-    if libraryPath[-1] != '/':
-        libraryPath += '/'
     if options.library is not None:
-        libraryPath += options.library + '/'
+        libraryPath = os.path.join(options.output, options.library)
+    else:
+        libraryPath = options.output
     if not os.path.exists(libraryPath):
         os.makedirs(libraryPath)
 
-    exportSuffix = 'wrl' if options.vrml else 'x3d'
+    extension = '.wrl' if options.vrml else '.x3d'
     exportFunc = vrml_export_kicad.store if options.vrml else x3d_export.store
     for group in models:
-        exportFunc(group[0], libraryPath + group[1] + '.' + exportSuffix)
+        exportFunc(group[0], os.path.join(libraryPath, group[1] + extension))
         if options.debug:
-            print('Model %s.%s was exported' % (group[1], exportSuffix))
+            print('Model {:s}:{:s} was exported'.format(group[1], extension))
 
 if options.normals or options.smooth:
     for group in models:

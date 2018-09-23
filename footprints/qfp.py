@@ -47,7 +47,7 @@ class QFP(exporter.Footprint):
         silkscreen, pads = [], []
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        # Horizontal and vertical offsets of first pins on each side
+        # Horizontal and vertical offsets to first pins on each side
         firstPinOffset = (numpy.asfarray(self.count) - 3.0) * self.pitch / 2.0 + self.sidePitch
 
         # Body outline

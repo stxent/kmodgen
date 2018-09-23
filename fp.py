@@ -25,15 +25,10 @@ class Generator:
         self.verbose = verbose
         self.types = Generator.load()
 
-        if libraryPath is not None:
-            self.libraryPath = libraryPath
-            if self.libraryPath[-1] != '/':
-                self.libraryPath += '/'
-        else:
-            self.libraryPath = None
+        self.libraryPath = libraryPath
         self.libraryName = libraryName if libraryName is not None else 'untitled'
 
-        modelPath = self.libraryName + '/'
+        modelPath = self.libraryName
         modelType = 'wrl' if useVrml else 'x3d'
 
         if self.legacy:
@@ -50,18 +45,21 @@ class Generator:
         footprints.sort(key=lambda x: x.name)
 
         if self.libraryPath is not None:
-            makeFileName = lambda entry: libraryPath + '/' + entry.name + ('.mod.obj' if self.legacy else '.kicad_mod')
-            libraryPath = self.libraryPath + self.libraryName + ('.obj' if self.legacy else '.pretty')
-            if not os.path.exists(libraryPath):
-                os.makedirs(libraryPath)
+            dirExtension = '.obj' if self.legacy else '.pretty'
+            fileExtension = '.mod.obj' if self.legacy else '.kicad_mod'
+
+            libDirPath = os.path.join(self.libraryPath, self.libraryName + dirExtension)
+            makeFilePath = lambda entry: os.path.join(libDirPath, entry.name + fileExtension)
+            if not os.path.exists(libDirPath):
+                os.makedirs(libDirPath)
 
         for footprint in footprints:
             footprintData = self.converter.generate(footprint)
 
             if self.libraryPath is not None:
-                open(makeFileName(footprint), 'wb').write(footprintData.encode('utf-8'))
+                open(makeFilePath(footprint), 'wb').write(footprintData.encode('utf-8'))
                 if self.verbose:
-                    print('Footprint %s:%s was exported' % (self.libraryName, footprints.name))
+                    print('Footprint {:s}:{:s} was exported'.format(self.libraryName, footprints.name))
             else:
                 print(footprintData)
 

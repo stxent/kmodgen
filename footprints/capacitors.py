@@ -46,8 +46,8 @@ class RadialCapacitor(exporter.Footprint):
             description += 'radial '
         if re.search('CP-', descriptor['title'], re.S) is not None:
             description += 'polarized '
-        description += 'capacitor, pin spacing %.1f mm, diameter %u mm, height %u mm' % (descriptor['pins']['spacing'],
-                int(descriptor['body']['diameter']), int(descriptor['body']['height']))
+        description += 'capacitor, pin spacing {:.1f} mm, diameter {:d} mm, height {:d} mm'.format(
+                descriptor['pins']['spacing'], int(descriptor['body']['diameter']), int(descriptor['body']['height']))
         description = description[0].upper() + description[1:]
         return description
 

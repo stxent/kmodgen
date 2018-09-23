@@ -16,7 +16,7 @@ class Converter:
     def __init__(self, modelPath, libraryPath=None, libraryName=None, modelType='wrl'):
         if modelType != 'wrl' and modelType != 'x3d':
             raise Exception()
-        self.pathToModels = modelPath
+        self.modelPath = modelPath
         self.modelType = modelType
         self.libraryPath = libraryPath if libraryName is not None else None
         self.libraryName = libraryName if libraryPath is not None else None
@@ -61,8 +61,7 @@ class Converter:
     def padToText(self, pad):
         style = 'R' if pad.style == exporter.AbstractPad.STYLE_RECT else 'C'
 
-        out = ''
-        out += '$PAD\n'
+        out = '$PAD\n'
         out += 'Sh "{:s}" {:s} {:g} {:g} 0 0 0\n'.format(str(pad.number), style, *pad.size)
         if pad.family == exporter.AbstractPad.FAMILY_SMD:
             out += 'Dr 0 0 0\n'
@@ -86,9 +85,8 @@ class Converter:
 
     def footprintToText(self, footprint):
         timestamp = time.time()
-        out = ''
 
-        out += '$MODULE {:s}\n'.format(footprint.name)
+        out = '$MODULE {:s}\n'.format(footprint.name)
         out += 'Po 0 0 0 15 {:08X} 00000000 ~~\n'.format(int(timestamp))
         out += 'Li {:s}\n'.format(footprint.name)
         if footprint.description is not None:
@@ -116,7 +114,7 @@ class Converter:
             out += self.padToText(obj)
 
         out += '$SHAPE3D\n'
-        out += 'Na "{:s}{:s}.{:s}"\n'.format(self.pathToModels, footprint.model, self.modelType)
+        out += 'Na "{:s}/{:s}.{:s}"\n'.format(self.modelPath, footprint.model, self.modelType)
         out += 'Sc 1 1 1\n'
         out += 'Of 0 0 0\n'
         out += 'Ro 0 0 0\n'
@@ -141,8 +139,7 @@ class Converter:
         names = list(footprints.keys())
         names.sort()
 
-        out = ''
-        out += 'PCBNEW-LibModule-V1 {:s}\n'.format(timestring)
+        out = 'PCBNEW-LibModule-V1 {:s}\n'.format(timestring)
         out += '# encoding utf-8\n'
         out += 'Units mm\n'
         out += '$INDEX\n'
@@ -151,6 +148,6 @@ class Converter:
         out += '$EndINDEX\n'
         for name in names:
             out += footprints[name]
-        out += '$EndLIBRARY'
+        out += '$EndLIBRARY\n'
 
         return out

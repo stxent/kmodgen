@@ -47,7 +47,7 @@ class SOP(exporter.Footprint):
         silkscreen, pads = [], []
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        # Horizontal offset of the first pin
+        # Horizontal offset to the first pin
         firstPinOffset = float(self.rows - 3) * self.pitch / 2.0 + self.sidePitch
 
         # Body outline

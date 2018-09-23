@@ -92,8 +92,7 @@ class Converter:
         if label is None:
             return ''
 
-        out = ''
-        out += '  (fp_text reference REF (at {:g} {:g}) (layer {:s})\n'.format(*label.position,
+        out = '  (fp_text reference REF (at {:g} {:g}) (layer {:s})\n'.format(*label.position,
                 Converter.layersToText(label.layer))
         out += '    (effects (font (size {:g} {:g}) (thickness {:g})))\n'.format(label.font, label.font,
                 label.thickness)
@@ -105,8 +104,7 @@ class Converter:
         return out
 
     def stringToText(self, string):
-        out = ''
-        out += '  (fp_text user {:s} (at {:g} {:g}) (layer {:s})\n'.format(string.value, *string.position,
+        out = '  (fp_text user {:s} (at {:g} {:g}) (layer {:s})\n'.format(string.value, *string.position,
                 Converter.layersToText(string.layer))
         out += '    (effects (font (size {:g} {:g}) (thickness {:g})))\n'.format(string.font, string.font,
                 string.thickness)
@@ -126,8 +124,7 @@ class Converter:
     def padToText(self, pad):
         padName = str(pad.number) if len(str(pad.number)) else '""'
 
-        out = ''
-        out += '  (pad {:s}'.format(padName)
+        out = '  (pad {:s}'.format(padName)
         out += ' {:s} {:s}'.format(Converter.padTypeToText(pad.family), Converter.padStyleToText(pad.style))
         out += ' (at {:g} {:g})'.format(*pad.position)
         out += ' (size {:g} {:g})'.format(*pad.size)
@@ -138,8 +135,7 @@ class Converter:
         return out
 
     def polyToText(self, poly):
-        out = ''
-        out += '  (fp_poly (pts'
+        out = '  (fp_poly (pts'
         for vertex in poly.vertices:
             out += ' (xy {:g} {:g})'.format(*vertex)
         out += ') (layer {:s}) (width {:g}))\n'.format(Converter.layersToText(poly.layer), poly.thickness)
@@ -170,7 +166,7 @@ class Converter:
         for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):
             out += self.padToText(obj)
 
-        out += '  (model {:s}{:s}.{:s}\n'.format(self.modelPath, footprint.model, self.modelType)
+        out += '  (model {:s}/{:s}.{:s}\n'.format(self.modelPath, footprint.model, self.modelType)
         out += '    (at (xyz 0 0 0))\n'
         out += '    (scale (xyz 1 1 1))\n'
         out += '    (rotate (xyz 0 0 0))\n'
