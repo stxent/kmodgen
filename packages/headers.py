@@ -47,14 +47,14 @@ class PinHeader:
 
             pin = model.Mesh(parent=modelPin, name='{:s}_{:d}Pin{:d}'.format(name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, shift, 0.001])
-            if 'Pin' in materials.keys():
+            if 'Pin' in materials:
                 pin.appearance().material = materials['Pin']
             pins.append(pin)
 
         body.transform = copy.deepcopy(bodyTransform)
         body.translate([0.0, 0.0, 0.001])
         body.optimize()
-        if 'Body' in materials.keys():
+        if 'Body' in materials:
             body.appearance().material = materials['Body']
 
         return [body] + pins
@@ -166,14 +166,14 @@ class BoxHeader:
         body = copy.deepcopy(modelBody)
         body.applyTransforms(transforms)
         body.translate([delta, pitch / 2.0, 0.001])
-        if 'Body' in materials.keys():
+        if 'Body' in materials:
             body.appearance().material = materials['Body']
 
         pins = []
         for i in range(0, count[0]):
             pin = model.Mesh(parent=modelPin, name='{:s}_{:d}Pin{:d}'.format(name, count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, pitch / 2.0, 0.001])
-            if 'Pin' in materials.keys():
+            if 'Pin' in materials:
                 pin.appearance().material = materials['Pin']
             pins.append(pin)
 

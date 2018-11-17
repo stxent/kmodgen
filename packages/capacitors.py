@@ -241,7 +241,7 @@ class RadialCapacitor:
         return title.replace('C-', 'Cap').replace('CP-', 'Cap').replace('R-', 'Radial').replace('A-', 'Axial')
 
     def mat(self, materials, name):
-        if name in materials.keys():
+        if name in materials:
             return materials[name]
         else:
             result = model.Material()
@@ -251,9 +251,9 @@ class RadialCapacitor:
     def generate(self, materials, templates, descriptor):
         title = self.demangle(descriptor['title'])
 
-        bodyDetails = descriptor['body']['details'] if 'details' in descriptor['body'].keys() else 3
-        bodyEdges = descriptor['body']['edges'] if 'edges' in descriptor['body'].keys() else 24
-        capSections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'].keys() else 1
+        bodyDetails = descriptor['body']['details'] if 'details' in descriptor['body'] else 3
+        bodyEdges = descriptor['body']['edges'] if 'edges' in descriptor['body'] else 24
+        capSections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'] else 1
 
         meshes = []
         bodyCurve = self.buildCapacitorCurve(

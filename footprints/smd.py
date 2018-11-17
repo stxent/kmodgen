@@ -16,13 +16,13 @@ class Chip(exporter.Footprint):
         self.bodySize = numpy.array(descriptor['body']['size'])
         self.padSize = numpy.array(descriptor['pads']['size'])
         self.pitch = descriptor['pins']['pitch']
-        self.mapping = descriptor['pins']['names'] if 'names' in descriptor['pins'].keys() else ['1', '2']
+        self.mapping = descriptor['pins']['names'] if 'names' in descriptor['pins'] else ['1', '2']
 
-        self.markArrow = descriptor['mark']['arrow'] if 'arrow' in descriptor['mark'].keys() else False
-        self.markBar = descriptor['mark']['bar'] if 'bar' in descriptor['mark'].keys() else False
-        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'].keys() else False
-        self.markVertical = descriptor['mark']['vertical'] if 'vertical' in descriptor['mark'].keys() else False
-        self.markWrap = descriptor['mark']['wrap'] if 'wrap' in descriptor['mark'].keys() else False
+        self.markArrow = descriptor['mark']['arrow'] if 'arrow' in descriptor['mark'] else False
+        self.markBar = descriptor['mark']['bar'] if 'bar' in descriptor['mark'] else False
+        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'] else False
+        self.markVertical = descriptor['mark']['vertical'] if 'vertical' in descriptor['mark'] else False
+        self.markWrap = descriptor['mark']['wrap'] if 'wrap' in descriptor['mark'] else False
 
         self.centeredArrow, self.filledArrow, self.verification = True, False, True
 
@@ -144,7 +144,7 @@ class Chip(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor else None
 
 
 class SOT23(exporter.Footprint):

@@ -44,9 +44,9 @@ elif options.models:
 else:
     for filename in options.files:
         description = json.loads(open(filename, 'rb').read())
-        if 'parts' not in description.keys():
+        if 'parts' not in description:
             raise Exception()
         for part in description['parts']:
-            if 'title' not in part.keys() or 'package' not in part.keys() or 'type' not in part['package'].keys():
+            if 'title' not in part or 'package' not in part or 'type' not in part['package']:
                 raise Exception()
             print(part['package']['type'] + ' ' + part['title'])

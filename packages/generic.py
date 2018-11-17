@@ -28,7 +28,7 @@ class GenericModelFilter:
         if len(meshes) > 0 and self.alignment != GenericModelFilter.PIVOT_NONE:
             if self.alignment == GenericModelFilter.PIVOT_MEDIAN_CENTER:
                 # Find median point of the group of objects
-                pivot = numpy.array([0.0, 0.0, 0.0])
+                pivot = numpy.zeros(3)
                 for mesh in meshes:
                     pivot += mesh.transform.value.getA()[:,3][0:3]
                 pivot *= numpy.array([1.0 / len(meshes), 1.0 / len(meshes), 0.0])

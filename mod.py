@@ -31,17 +31,17 @@ def loadMaterials(entries):
     def decodeMaterial(desc, title):
         material = model.Material()
         material.color.ident = title.capitalize()
-        if 'shininess' in desc.keys():
+        if 'shininess' in desc:
             material.color.shininess = float(desc['shininess'])
-        if 'transparency' in desc.keys():
+        if 'transparency' in desc:
             material.color.transparency = float(desc['transparency'])
-        if 'diffuse' in desc.keys():
+        if 'diffuse' in desc:
             material.color.diffuse = numpy.array(desc['diffuse'])
-        if 'specular' in desc.keys():
+        if 'specular' in desc:
             material.color.specular = numpy.array(desc['specular'])
-        if 'emissive' in desc.keys():
+        if 'emissive' in desc:
             material.color.emissive = numpy.array(desc['emissive'])
-        if 'ambient' in desc.keys():
+        if 'ambient' in desc:
             material.color.ambient = numpy.array(desc['ambient'])
         return material
 
@@ -87,8 +87,8 @@ pattern = re.compile(options.pattern, re.S)
 for filename in options.files:
     desc = json.load(open(filename, 'rb'))
 
-    materials = loadMaterials(desc['materials']) if 'materials' in desc.keys() else {}
-    templates = loadTemplates(desc['templates'], os.path.dirname(filename)) if 'templates' in desc.keys() else []
+    materials = loadMaterials(desc['materials']) if 'materials' in desc else {}
+    templates = loadTemplates(desc['templates'], os.path.dirname(filename)) if 'templates' in desc else []
 
     for part in filter(lambda x: pattern.search(x['title']) is not None, desc['parts']):
         package = next(filter(lambda x: x.__name__ == part['package']['type'], types), None)

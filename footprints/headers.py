@@ -17,7 +17,7 @@ class PinHeader(exporter.Footprint):
         self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
         self.pitch = descriptor['pins']['pitch']
         self.bodySize = numpy.asfarray(self.count) * self.pitch
-        self.bodyCenter = numpy.asfarray(self.count - 1) * numpy.array([1.0, -1.0]) * self.pitch / 2.0
+        self.bodyCenter = numpy.asfarray(self.count - 1) * [1, -1] * (self.pitch / 2.0)
         self.padSize = numpy.array([descriptor['pads']['diameter'], descriptor['pads']['diameter']])
         self.padDrill = descriptor['pads']['drill']
 
@@ -43,7 +43,7 @@ class PinHeader(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor else None
 
 
 class RightAnglePinHeader(PinHeader):

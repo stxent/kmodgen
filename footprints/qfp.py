@@ -13,14 +13,14 @@ class QFP(exporter.Footprint):
     def __init__(self, spec, descriptor):
         exporter.Footprint.__init__(self, name=descriptor['title'], description=QFP.describe(descriptor), spec=spec)
 
-        if 'regularPadSize' in descriptor['pads'].keys():
+        try:
             self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
-        else:
+        except:
             self.padSize = numpy.array(descriptor['pads']['size'])
 
-        if 'sidePadSize' in descriptor['pads'].keys():
+        try:
             self.sidePadSize = numpy.array(descriptor['pads']['sidePadSize'])
-        else:
+        except:
             self.sidePadSize = self.padSize
 
         self.bodySize = numpy.array(descriptor['body']['size'])
@@ -91,7 +91,7 @@ class QFP(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if 'description' in descriptor.keys():
+        if 'description' in descriptor:
             return descriptor['description']
         else:
             pinCount = (descriptor['pins']['columns'] + descriptor['pins']['rows']) * 2

@@ -53,7 +53,7 @@ class CrystalSMD(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if 'description' in descriptor.keys():
+        if 'description' in descriptor:
             return descriptor['description']
         else:
             round1f = lambda x: '{:d}'.format(int(x)) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
@@ -94,7 +94,7 @@ class CrystalTH(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else ''
+        return descriptor['description'] if 'description' in descriptor else ''
 
 
 types = [

@@ -23,13 +23,13 @@ class Button(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # Pads
-        pads.append(exporter.SmdPad(1, self.padSize, self.pitch / 2.0 * numpy.array([-1.0, +1.0])))
-        pads.append(exporter.SmdPad(2, self.padSize, self.pitch / 2.0 * numpy.array([+1.0, +1.0])))
-        pads.append(exporter.SmdPad(3, self.padSize, self.pitch / 2.0 * numpy.array([+1.0, -1.0])))
-        pads.append(exporter.SmdPad(4, self.padSize, self.pitch / 2.0 * numpy.array([-1.0, -1.0])))
+        pads.append(exporter.SmdPad(1, self.padSize, self.pitch / 2.0 * [-1, +1]))
+        pads.append(exporter.SmdPad(2, self.padSize, self.pitch / 2.0 * [+1, +1]))
+        pads.append(exporter.SmdPad(3, self.padSize, self.pitch / 2.0 * [+1, -1]))
+        pads.append(exporter.SmdPad(4, self.padSize, self.pitch / 2.0 * [-1, -1]))
 
         if self.shielding:
-            pads.append(exporter.SmdPad(5, self.padSize, self.pitch / 2.0 * numpy.array([1.0, 0.0])))
+            pads.append(exporter.SmdPad(5, self.padSize, self.pitch / 2.0 * [1, 0]))
 
         # Body outline
         boundingBox = numpy.array([0.0, self.pitch[1] + self.padSize[1] + self.gap * 2.0 + self.thickness])
@@ -45,7 +45,7 @@ class Button(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else ''
+        return descriptor['description'] if 'description' in descriptor else ''
 
 
 types = [

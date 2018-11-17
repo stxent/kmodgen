@@ -14,27 +14,27 @@ class FFC(exporter.Footprint):
         exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=FFC.describe(descriptor), spec=spec)
 
-        if 'body' in descriptor.keys():
+        try:
             self.bodySize = numpy.array([descriptor['body']['width'], descriptor['body']['height']])
             self.bodyOffset = numpy.array([0.0, descriptor['pads']['offset']])
-        else:
+        except:
             self.bodySize = None
             self.bodyOffset = None
 
-        if 'mount' in descriptor.keys():
+        try:
             self.mountPadSize = numpy.array([descriptor['pads']['mountWidth'], descriptor['pads']['mountHeight']])
             self.mountPadSpacing = numpy.array([
                     descriptor['mount']['horizontalSpacing'],
                     descriptor['mount']['verticalSpacing']
             ])
-        else:
+        except:
             self.mountPadSize = None
             self.mountPadSpacing = None
 
         self.signalPadSize = numpy.array([descriptor['pads']['width'], descriptor['pads']['height']])
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
-        self.inversion = -1.0 if 'inversion' in descriptor['pins'].keys() and descriptor['pins']['inversion'] else 1.0
+        self.inversion = -1.0 if 'inversion' in descriptor['pins'] and descriptor['pins']['inversion'] else 1.0
 
     def generate(self):
         silkscreen, pads, cutouts = [], [], []
@@ -57,8 +57,8 @@ class FFC(exporter.Footprint):
         # Mounting pads
         if self.mountPadSize is not None:
             mountPadOffset = numpy.array([totalPadsWidth / 2.0, 0.0]) + self.mountPadSpacing
-            pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([+1.0, 1.0])))
-            pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * numpy.array([-1.0, 1.0])))
+            pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * [+1, 1]))
+            pads.append(exporter.SmdPad('', self.mountPadSize, mountPadOffset * [-1, 1]))
             cutouts.append(exporter.Cutout(numpy.array([totalPadsWidth, self.gap * 2.0]) + self.signalPadSize,
                     (0.0, 0.0)))
 
@@ -73,14 +73,14 @@ class FFC(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if 'description' in descriptor.keys():
+        if 'description' in descriptor:
             return descriptor['description']
         else:
             round2f = lambda x: '{:.1f}'.format(x) if int(x * 100) == int(x * 10) * 10 else '{:.2f}'.format(x)
             pitchStr = round2f(descriptor['pins']['pitch'])
-            if 'style' in descriptor['pins'].keys():
+            try:
                 styleStr = '{:s} contact style, '.format(descriptor['pins']['style'])
-            else:
+            except:
                 styleStr = ''
             return 'FFC/FPC connector, {:s} mm pitch, surface mount, {:s}{:d} circuits'.format(
                     pitchStr, styleStr, descriptor['pins']['count'])
@@ -182,7 +182,7 @@ class MemoryCard(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else ''
+        return descriptor['description'] if 'description' in descriptor else ''
 
 
 class AngularSmaFootprint(exporter.Footprint):
@@ -243,7 +243,7 @@ class AngularSmaFootprint(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else ''
+        return descriptor['description'] if 'description' in descriptor else ''
 
 
 class SMA:
@@ -315,7 +315,7 @@ class MiniUSB(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else ''
+        return descriptor['description'] if 'description' in descriptor else ''
 
 
 class USB:

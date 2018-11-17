@@ -14,14 +14,14 @@ class SOP(exporter.Footprint):
         exporter.Footprint.__init__(self, name=descriptor['title'],
                 description=SOP.describe(descriptor), spec=spec)
 
-        if 'regularPadSize' in descriptor['pads'].keys():
+        try:
             self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
-        else:
+        except:
             self.padSize = numpy.array(descriptor['pads']['size'])
 
-        if 'sidePadSize' in descriptor['pads'].keys():
+        try:
             self.sidePadSize = numpy.array(descriptor['pads']['sidePadSize'])
-        else:
+        except:
             self.sidePadSize = self.padSize
 
         self.bodySize = numpy.array(descriptor['body']['size'])
@@ -82,7 +82,7 @@ class SOP(exporter.Footprint):
 
     @staticmethod
     def describe(descriptor):
-        if 'description' in descriptor.keys():
+        if 'description' in descriptor:
             return descriptor['description']
         else:
             round1f = lambda x: '{:d}'.format(int(x)) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
