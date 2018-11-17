@@ -10,6 +10,7 @@ import numpy
 
 from wrlconv import curves
 from wrlconv import model
+import primitives
 
 
 class RadialCapacitor:
@@ -257,13 +258,13 @@ class RadialCapacitor:
 
         meshes = []
         bodyCurve = self.buildCapacitorCurve(
-                model.metricToImperial(descriptor['body']['diameter']) / 2.0,
-                model.metricToImperial(descriptor['body']['height']),
-                model.metricToImperial(descriptor['body']['curvature']),
-                model.metricToImperial(descriptor['body']['band']),
-                model.metricToImperial(descriptor['caps']['diameter']) / 2.0,
-                model.metricToImperial(descriptor['caps']['depth']),
-                model.metricToImperial(descriptor['caps']['chamfer']),
+                primitives.hmils(descriptor['body']['diameter']) / 2.0,
+                primitives.hmils(descriptor['body']['height']),
+                primitives.hmils(descriptor['body']['curvature']),
+                primitives.hmils(descriptor['body']['band']),
+                primitives.hmils(descriptor['caps']['diameter']) / 2.0,
+                primitives.hmils(descriptor['caps']['depth']),
+                primitives.hmils(descriptor['caps']['chamfer']),
                 bodyDetails,
                 bodyDetails + 1)
 
@@ -274,22 +275,22 @@ class RadialCapacitor:
                 materials,
                 title,
                 capSections,
-                model.metricToImperial(descriptor['caps']['diameter']) / 2.0,
-                model.metricToImperial(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.0,
-                model.metricToImperial(descriptor['body']['curvature']),
-                model.metricToImperial(descriptor['body']['curvature']) / 2.0)
+                primitives.hmils(descriptor['caps']['diameter']) / 2.0,
+                primitives.hmils(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.0,
+                primitives.hmils(descriptor['body']['curvature']),
+                primitives.hmils(descriptor['body']['curvature']) / 2.0)
         meshes.extend(bodyMesh)
 
         pinCurve = self.buildPinCurve(
-                model.metricToImperial(descriptor['pins']['diameter']) / 2.0,
-                model.metricToImperial(descriptor['pins']['height']),
-                model.metricToImperial(descriptor['pins']['curvature']))
+                primitives.hmils(descriptor['pins']['diameter']) / 2.0,
+                primitives.hmils(descriptor['pins']['height']),
+                primitives.hmils(descriptor['pins']['curvature']))
 
         pinMesh = self.buildCapacitorPin(pinCurve, descriptor['pins']['edges'])
         pinMesh.appearance().material = self.mat(materials, 'Pin')
         pinMesh.ident = title + 'Pin'
 
-        spacing = model.metricToImperial(descriptor['pins']['spacing']) / 2.0
+        spacing = primitives.hmils(descriptor['pins']['spacing']) / 2.0
         posPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Pos')
         posPin.translate([-spacing, 0.0, 0.0])
         meshes.append(posPin)
