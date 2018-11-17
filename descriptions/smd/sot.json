@@ -1,0 +1,197 @@
+{
+  "materials": {
+    "Body": {
+      "shininess": 0.059,
+      "diffuse": [0.15, 0.15, 0.15],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Mark": {
+      "shininess": 0.059,
+      "diffuse": [0.6, 0.6, 0.6],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Pin": {
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.401, 0.401, 0.401],
+      "ambient": [0.333, 0.333, 0.333]
+    }
+  },
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-23",
+      "body": {"size": [3.0, 1.4, 1.0]},
+      "band": {"inverse": true},
+      "pads": {
+          "default": {"size": [0.6, 0.7], "offset": [0.0, 0.3]},
+          "3": {"name": "2"},
+          "5": {"name": "3"}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.95,
+
+          "default": {"shape": [0.43, 0.12], "length": 0.55},
+          "2": null,
+          "4": null,
+          "6": null
+      },
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-23-5",
+      "band": {"offset": 0.04},
+      "body": {"size": [3.1, 1.7, 1.0]},
+      "pads": {
+          "default": {"size": [0.55, 0.8], "offset": [0.0, 0.35]},
+          "6": {"name": "5"}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.95,
+
+          "default": {"shape": [0.325, 0.18], "length": 0.65},
+          "5": null
+      },
+      "mark": {"dot": true, "tri": true},
+      "description": "SOT-753",
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-23-6",
+      "band": {"offset": 0.04},
+      "body": {"size": [3.1, 1.7, 1.0]},
+      "pads": {
+          "default": {"size": [0.55, 0.8], "offset": [0.0, 0.35]}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.95,
+
+          "default": {"shape": [0.325, 0.18], "length": 0.65}
+      },
+      "mark": {"dot": true, "tri": true},
+      "description": "SOT-457",
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-23-BEC",
+      "band": {"inverse": true},
+      "body": {"size": [3.0, 1.4, 1.0]},
+      "pads": {
+          "default": {"size": [0.6, 0.7], "offset": [0.0, 0.3]},
+          "3": {"name": "2"},
+          "5": {"name": "3"}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.95,
+
+          "default": {"shape": [0.43, 0.12], "length": 0.55},
+          "2": null,
+          "4": null,
+          "6": null
+      },
+      "description": "BJT transistors in SOT23 case with BEC pin configuration",
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-23-GSD",
+      "band": {"inverse": true},
+      "body": {"size": [3.0, 1.4, 1.0]},
+      "pads": {
+          "default": {"size": [0.6, 0.7], "offset": [0.0, 0.3]},
+          "3": {"name": "2"},
+          "5": {"name": "3"}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.95,
+
+          "default": {"shape": [0.43, 0.12], "length": 0.55},
+          "2": null,
+          "4": null,
+          "6": null
+      },
+      "description": "FET transistors in SOT23 case with GSD pin configuration",
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-323",
+      "band": {"offset": 0.145},
+      "body": {"size": [2.2, 1.35, 1.0]},
+      "pads": {
+          "default": {"size": [0.6, 0.55], "offset": [0.0, 0.25]},
+          "3": {"name": "2"},
+          "5": {"name": "3"}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.65,
+          "slope": 5.0,
+
+          "default": {"shape": [0.35, 0.175], "length": 0.425},
+          "2": null,
+          "4": null,
+          "6": null
+      },
+      "description": "SC-70-3",
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-353",
+      "band": {"offset": 0.145},
+      "body": {"size": [2.2, 1.35, 1.0]},
+      "pads": {
+          "default": {"size": [0.6, 0.6], "offset": [0.0, 0.225]},
+          "1": {"offset": [-0.1, 0.225]},
+          "2": {"size": [0.4, 0.6]},
+          "3": {"offset": [0.1, 0.225]},
+          "4": {"offset": [0.1, 0.225]},
+          "6": {"offset": [-0.1, 0.225], "name": "5"}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.65,
+          "slope": 5.0,
+
+          "default": {"shape": [0.25, 0.175], "length": 0.425},
+          "5": null
+      },
+      "mark": {"dot": true, "tri": true},
+      "description": "SC-70-5",
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-363",
+      "band": {"offset": 0.145},
+      "body": {"size": [2.2, 1.35, 1.0]},
+      "pads": {
+          "default": {"size": [0.6, 0.6], "offset": [0.0, 0.225]},
+          "1": {"offset": [-0.1, 0.225]},
+          "2": {"size": [0.4, 0.6]},
+          "3": {"offset": [0.1, 0.225]},
+          "4": {"offset": [0.1, 0.225]},
+          "5": {"size": [0.4, 0.6]},
+          "6": {"offset": [-0.1, 0.225]}
+      },
+      "pins": {
+          "count": 6,
+          "pitch": 0.65,
+          "slope": 5.0,
+
+          "default": {"shape": [0.25, 0.175], "length": 0.425}
+      },
+      "mark": {"dot": true, "tri": true},
+      "description": "SC-70-6",
+      "source": "NXP specifications for reflow soldering"
+    }
+  ]
+}

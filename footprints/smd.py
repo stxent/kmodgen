@@ -147,126 +147,143 @@ class Chip(exporter.Footprint):
         return descriptor['description'] if 'description' in descriptor else None
 
 
-class SOT23(exporter.Footprint):
+class SOT(exporter.Footprint):
+    class PadDesc:
+        def __init__(self, number, position, side, pattern, descriptor=None):
+            if descriptor is None and pattern is None:
+                # Not enough information
+                raise Exception()
+            if number is None != position is None:
+                raise Exception()
+
+            if number is not None:
+                self.number = number
+
+            try:
+                self.name = descriptor['name']
+            except (KeyError, TypeError):
+                if number is not None:
+                    self.name = str(number)
+
+            try:
+                self.offset = numpy.array(descriptor['offset'])
+            except (KeyError, TypeError):
+                self.offset = pattern.offset if pattern is not None else numpy.zeros(2)
+
+            try:
+                self.size = numpy.array(descriptor['size'])
+            except (KeyError, TypeError):
+                self.size = pattern.size
+
+            if position is not None:
+                self.position = position + self.offset * [1, side]
+
+        @classmethod
+        def makePattern(cls, descriptor):
+            if descriptor is None:
+                raise Exception()
+
+            return cls(None, None, None, None, descriptor)
+
+
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=SOT23.describe(descriptor),
-                model=SOT23.model(descriptor), spec=spec)
+        exporter.Footprint.__init__(self, name=descriptor['title'], description=SOT.describe(descriptor),
+                model=SOT.model(descriptor), spec=spec)
 
-        if 'regularPadSize' in descriptor['pads'].keys():
-            self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
-        else:
-            self.padSize = numpy.array(descriptor['pads']['size'])
+        self.count = descriptor['pins']['count']
+        self.pitch = descriptor['pins']['pitch']
+        self.bodySize = numpy.array(descriptor['body']['size'])
 
-        if 'centralPadSize' in descriptor['pads'].keys():
-            self.centralPadSize = numpy.array(descriptor['pads']['centralPadSize'])
-        else:
-            self.centralPadSize = self.padSize
+        try:
+            self.markDot = descriptor['mark']['dot']
+        except:
+            self.markDot = False
+        try:
+            self.markTri = descriptor['mark']['tri']
+        except:
+            self.markTri = False
 
-        self.pitch = numpy.array(descriptor['pins']['pitch'])
-        self.mapping = descriptor['pins']['names']
-        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'].keys() else False
-        self.markTri = descriptor['mark']['tri'] if 'tri' in descriptor['mark'].keys() else False
+        try:
+            padPattern = SOT.PadDesc.makePattern(descriptor['pads']['default'])
+        except KeyError:
+            padPattern = None
+
+        self.pads = []
+        for i in range(1, self.count + 1):
+            position = self.calcPadPosition(i - 1)
+            side = self.calcPadSide(i - 1)
+
+            key = str(i)
+            if key not in descriptor['pins'] or descriptor['pins'][key] is not None:
+                try:
+                    self.pads.append(SOT.PadDesc(i, position, side, padPattern, descriptor['pads'][key]))
+                except KeyError:
+                    self.pads.append(SOT.PadDesc(i, position, side, padPattern))
+            elif key in descriptor['pads']:
+                # Pin deleted, pad is ignored
+                raise Exception()
 
         # Vertical border
-        verticalPadMargin = (self.pitch[1] - self.padSize[1]) / 2.0 - self.gap - self.thickness / 2.0
-        self.bodySize = numpy.array([descriptor['body']['size'][0], verticalPadMargin * 2.0])
+        lowerPads, upperPads = [], []
+        for pad in self.pads:
+            if pad.number < int(self.count / 2):
+                lowerPads.append(pad)
+            else:
+                upperPads.append(pad)
+
+        lowerBound = max([pad.position[1] - pad.size[1] / 2.0 for pad in lowerPads])
+        upperBound = min([pad.position[1] + pad.size[1] / 2.0 for pad in upperPads])
+        self.borderSize = numpy.array([self.bodySize[0], lowerBound - upperBound - self.gap * 2.0 - self.thickness])
+        self.borderCenter = numpy.array([0.0, lowerBound + upperBound])
+
+    def calcPadPosition(self, number):
+        columns = int(self.count / 2)
+        position = numpy.array([
+                self.pitch * (number % columns - (columns - 1) / 2.0),
+                self.bodySize[1] / 2.0])
+        return position * self.calcPadSide(number)
+
+    def calcPadSide(self, number):
+        return -1 if int(number / int(self.count / 2)) else 1
 
     def generate(self):
         silkscreen, pads = [], []
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
-        yOffset = self.pitch[1] / 2.0
-
         # Body outline
-        topCorner = self.bodySize / 2.0
-        silkscreen.append(exporter.Rect(topCorner, -topCorner, self.thickness))
+        silkscreen.append(exporter.Rect(self.borderSize / 2.0 + self.borderCenter,
+                -self.borderSize / 2.0 + self.borderCenter, self.thickness))
 
         # Outer polarity mark
         if self.markDot:
-            dotMarkOffset = self.pitch[0] + self.padSize[0] / 2.0 + self.gap + self.thickness
-            silkscreen.append(exporter.Circle((-dotMarkOffset, yOffset), self.thickness / 2.0, self.thickness))
+            # Assume that it is at least one pin at lower side
+            firstPad = self.pads[0]
+            dotMarkOffset = firstPad.position[0] - (firstPad.size[0] / 2.0 + self.gap + self.thickness)
+            silkscreen.append(exporter.Circle((dotMarkOffset, firstPad.position[1]),
+                    self.thickness / 2.0, self.thickness))
 
         # Inner polarity mark
         if self.markTri:
+            topCorner = self.borderSize / 2.0 + self.borderCenter
             points = [
                     (-topCorner[0], 0.0),
                     (-topCorner[0], topCorner[1]),
                     (-topCorner[0] + topCorner[1], topCorner[1])]
             silkscreen.append(exporter.Poly(points, self.thickness, exporter.Layer.SILK_FRONT))
 
-        for i in range(0, 3):
-            pad = self.padSize if i != 1 else self.centralPadSize
-            xOffset = self.pitch[0] * (i - 1)
-            # Bottom row
-            if self.mapping[i] != '':
-                pads.append(exporter.SmdPad(self.mapping[i], pad, (xOffset, yOffset)))
-            # Top row
-            if self.mapping[i + 3] != '':
-                pads.append(exporter.SmdPad(self.mapping[i + 3], pad, (-xOffset, -yOffset)))
+        for entry in self.pads:
+            pads.append(exporter.SmdPad(entry.name, entry.size, entry.position))
 
         pads.sort(key=lambda x: x.number)
         return silkscreen + pads
 
     @staticmethod
     def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else None
+        return descriptor['description'] if 'description' in descriptor else None
 
     @staticmethod
     def model(descriptor):
-        return descriptor['body']['model'] if 'model' in descriptor['body'].keys() else None
+        return descriptor['body']['model'] if 'model' in descriptor['body'] else None
 
 
-class SOT223(exporter.Footprint):
-    def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=SOT223.describe(descriptor),
-                model=SOT223.model(descriptor), spec=spec)
-
-        self.bodySize = numpy.array(descriptor['body']['size'])
-        self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
-        self.powerPadSize = numpy.array(descriptor['pads']['powerPadSize'])
-        self.pitch = numpy.array(descriptor['pins']['pitch'])
-
-        self.mapping = descriptor['pins']['names']
-        self.markDot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'].keys() else False
-        self.markTri = descriptor['mark']['tri'] if 'tri' in descriptor['mark'].keys() else False
-
-    def generate(self):
-        objects = []
-        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
-
-        yOffset = self.pitch[1] / 2.0
-
-        # Body outline
-        topCorner = self.bodySize / 2.0
-        objects.append(exporter.Rect(topCorner, -topCorner, self.thickness))
-
-        # Outer polarity mark
-        if self.markDot:
-            dotMarkOffset = self.pitch[0] + self.padSize[0] / 2.0 + self.gap + self.thickness
-            objects.append(exporter.Circle((-dotMarkOffset, yOffset), self.thickness / 2.0, self.thickness))
-
-        # Inner polarity mark
-        if self.markTri:
-            triMarkOffset = 1.0
-            triMarkPoints = [
-                    (-topCorner[0], topCorner[1] - triMarkOffset),
-                    (-topCorner[0], topCorner[1]),
-                    (-topCorner[0] + triMarkOffset, topCorner[1])]
-            objects.append(exporter.Poly(triMarkPoints, self.thickness, exporter.Layer.SILK_FRONT))
-
-        for i in range(0, 3):
-            objects.append(exporter.SmdPad(self.mapping[i], self.padSize, (self.pitch[0] * (i - 1), yOffset)))
-        objects.append(exporter.SmdPad(self.mapping[3], self.powerPadSize, (0.0, -yOffset)))
-
-        return objects
-
-    @staticmethod
-    def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor.keys() else None
-
-    @staticmethod
-    def model(descriptor):
-        return descriptor['body']['model'] if 'model' in descriptor['body'].keys() else None
-
-
-types = [Chip, SOT23, SOT223]
+types = [Chip, SOT]
