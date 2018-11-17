@@ -26,9 +26,10 @@ class SOP(exporter.Footprint):
 
         self.bodySize = numpy.array(descriptor['body']['size'])
         self.rows = int(descriptor['pins']['count'] / 2)
-        self.margin = descriptor['pins']['margin']
+        self.margin = descriptor['pads']['margin']
         self.pitch = descriptor['pins']['pitch']
         self.sidePitch = self.pitch + (self.sidePadSize[0] - self.padSize[0]) / 2.0
+        self.title = '{:s}-{:d}'.format(descriptor['package']['subtype'], descriptor['pins']['count'])
 
     def pad(self, position, count):
         return self.sidePadSize if position == 0 or position == count - 1 else self.padSize
@@ -45,7 +46,7 @@ class SOP(exporter.Footprint):
 
     def generate(self):
         silkscreen, pads = [], []
-        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
+        silkscreen.append(exporter.Label(self.title, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal offset to the first pin
         firstPinOffset = float(self.rows - 3) * self.pitch / 2.0 + self.sidePitch

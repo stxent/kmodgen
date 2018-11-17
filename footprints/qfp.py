@@ -25,9 +25,10 @@ class QFP(exporter.Footprint):
 
         self.bodySize = numpy.array(descriptor['body']['size'])
         self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
-        self.margin = descriptor['pins']['margin']
+        self.margin = descriptor['pads']['margin']
         self.pitch = descriptor['pins']['pitch']
         self.sidePitch = self.pitch + (self.sidePadSize[0] - self.padSize[0]) / 2.0
+        self.title = 'QFP-{:d}'.format(sum(self.count) * 2)
 
     def pad(self, position, count, rev):
         x, y = self.sidePadSize if position == 0 or position == count - 1 else self.padSize
@@ -45,7 +46,7 @@ class QFP(exporter.Footprint):
 
     def generate(self):
         silkscreen, pads = [], []
-        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
+        silkscreen.append(exporter.Label(self.title, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal and vertical offsets to first pins on each side
         firstPinOffset = (numpy.asfarray(self.count) - 3.0) * self.pitch / 2.0 + self.sidePitch

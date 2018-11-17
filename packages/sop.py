@@ -5,116 +5,86 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import copy
 import math
 import numpy
-import re
 
 from wrlconv import model
-
-def lookup(meshList, meshName):
-    found = []
-    for entry in meshList:
-        if re.search(meshName, entry.ident, re.S) is not None:
-            found.append(entry)
-    return found
+import primitives
 
 
 class SOP:
     def __init__(self):
         pass
 
-    def generatePackageBody(self, materials, modelBody, modelMark, modelPin, markOffset, count, size, pitch, name):
-        DEFAULT_WIDTH = model.metricToImperial(2.0)
-
+    def generatePackagePins(self, pattern, count, size, offset, pitch):
         def makePin(x, y, angle, number):
-            pin = model.Mesh(parent=modelPin, name='{:s}Pin{:d}'.format(name, number))
-            pin.translate([x, y, 0.001])
-            pin.rotate([0.0, 0.0, 1.0], angle * math.pi / 180.0)
-            if 'Pin' in materials.keys():
-                pin.appearance().material = materials['Pin']
+            pin = model.Mesh(parent=pattern, name='Pin{:d}'.format(number))
+            pin.translate([x, y, 0.0])
+            pin.rotate([0.0, 0.0, 1.0], angle - math.pi / 2.0)
             return pin
 
         rows = int(count / 2)
-        firstPinOffset = float(rows - 1) * pitch / 2.0
-        dotPosition = markOffset - size[0:2] / 2.0
-
-        # Body
-        cornerTranslation = (size - DEFAULT_WIDTH) / 2.0
-        corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
-        center = model.Transform()
-        center.translate([dotPosition[0], dotPosition[1], 0.0])
-        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.0])
-        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.0])
-        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.0])
-        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.0])
-        transforms = [model.Transform()] + [center] + corners
-        body = copy.deepcopy(modelBody)
-        body.applyTransforms(transforms)
-        body.translate([0.0, 0.0, 0.001])
-        if 'Body' in materials.keys():
-            body.appearance().material = materials['Body']
-
-        # First pin mark
-        mark = copy.deepcopy(modelMark)
-        mark.translate([dotPosition[0], dotPosition[1], 0.001])
-        if 'Mark' in materials.keys():
-            mark.appearance().material = materials['Mark']
-
         pins = []
 
         # Pins
-        y = size[1] / 2.0
+        y = size[1] / 2.0 + offset
         for i in range(0, rows):
-            x = float(i) * pitch - firstPinOffset
-            pins.append(makePin(x, y, 180.0, i + 1 + rows))
+            x = pitch * (i - (rows - 1) / 2.0)
+            pins.append(makePin(x, y, math.pi, i + 1 + rows))
             pins.append(makePin(-x, -y, 0.0, i + 1))
 
-        return [body, mark] + pins
+        return pins
 
     def generate(self, materials, templates, descriptor):
-        regions = [
-                (((0.15,  0.15, 1.0), (-0.15, -0.15, -1.0)), 1),
-                ((( 1.0,  1.0,  1.0), ( 0.15,  0.15, -1.0)), 2),
-                (((-1.0,  1.0,  1.0), (-0.15,  0.15, -1.0)), 3),
-                ((( 1.0, -1.0,  1.0), ( 0.15, -0.15, -1.0)), 4),
-                (((-1.0, -1.0,  1.0), (-0.15, -0.15, -1.0)), 5)]
+        BODY_OFFSET_Z = primitives.hmils(0.1)
+        BAND_OFFSET = primitives.hmils(0.0)
+        BAND_WIDTH = primitives.hmils(0.1)
+        CHAMFER = primitives.hmils(0.1)
 
-        referenceObject = None
+        bodySize = primitives.hmils(descriptor['body']['size'])
+        pinHeight = bodySize[2] / 2.0 + BODY_OFFSET_Z
 
-        if descriptor['package']['subtype'] == 'SO':
-            soBody = lookup(templates, 'PatSOBody')[0].parent
-            soBodyMark = lookup(templates, 'PatSOBody')[1].parent
-            soPin = lookup(templates, 'PatSOPin')[0].parent
+        bandWidthProj = BAND_WIDTH * math.sqrt(0.5)
+        bodySlope = 2.0 * bandWidthProj / bodySize[2]
+        pinOffset = bandWidthProj - bodySlope * primitives.hmils(descriptor['pins']['shape'][1]) / 2.0
 
-            # Modified SO models
-            soAttributedBody = model.AttributedMesh(name='SOBody', regions=regions)
-            soAttributedBody.append(soBody)
-            soAttributedBody.visualAppearance = soBody.appearance()
+        bodyTransform = model.Transform()
+        bodyTransform.rotate([0.0, 0.0, 1.0], math.pi)
+        bodyTransform.translate([0.0, 0.0, pinHeight])
 
-            referenceObject = (soAttributedBody, soBodyMark, soPin, (0.75, 1.0))
-        elif descriptor['package']['subtype'] == 'TSSOP':
-            tssopBody = lookup(templates, 'PatTSSOPBody')[0].parent
-            tssopBodyMark = lookup(templates, 'PatTSSOPBody')[1].parent
-            tssopPin = lookup(templates, 'PatTSSOPPin')[0].parent
+        bodyMesh = primitives.makeSlopedBox(
+                size=bodySize,
+                chamfer=CHAMFER,
+                slope=math.pi / 4.0,
+                slopeHeight=bodySize[2] / 5.0,
+                seamResolution=3,
+                lineResolution=1,
+                band=BAND_OFFSET,
+                bandWidth=BAND_WIDTH)
 
-            # TSSOP model uses same regions
-            tssopAttributedBody = model.AttributedMesh(name='TSSOPBody', regions=regions)
-            tssopAttributedBody.append(tssopBody)
-            tssopAttributedBody.visualAppearance = tssopBody.appearance()
+        if 'Body' in materials:
+            bodyMesh.appearance().material = materials['Body']
+        bodyMesh.apply(bodyTransform)
+        bodyMesh.rename('Body')
 
-            referenceObject = (tssopAttributedBody, tssopBodyMark, tssopPin, (0.75, 0.75))
-        else:
-            raise Exception()
+        pinMesh = primitives.makePinMesh(
+                pinShapeSize=primitives.hmils(descriptor['pins']['shape']),
+                pinHeight=pinHeight,
+                pinLength=primitives.hmils(descriptor['pins']['length']),
+                endSlope=math.atan(bodySlope),
+                chamferSegments=1,
+                slopeSegments=3)
+        if 'Pin' in materials:
+            pinMesh.appearance().material = materials['Pin']
 
-        return self.generatePackageBody(
-                materials,
-                referenceObject[0], referenceObject[1], referenceObject[2],
-                numpy.array(model.metricToImperial(referenceObject[3])),
-                descriptor['pins']['count'],
-                numpy.array(model.metricToImperial(descriptor['body']['size'])),
-                model.metricToImperial(descriptor['pins']['pitch']),
-                descriptor['title'])
+        pins = self.generatePackagePins(
+                pattern=pinMesh,
+                count=descriptor['pins']['count'],
+                size=bodySize,
+                offset=pinOffset,
+                pitch=primitives.hmils(descriptor['pins']['pitch']))
+
+        return pins + [bodyMesh]
 
 
 types = [SOP]

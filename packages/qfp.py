@@ -5,108 +5,108 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import copy
 import math
 import numpy
-import re
 
 from wrlconv import model
-
-def lookup(meshList, meshName):
-    found = []
-    for entry in meshList:
-        if re.search(meshName, entry.ident, re.S) is not None:
-            found.append(entry)
-    return found
+import primitives
 
 
 class QFP:
     def __init__(self):
         pass
 
-    def generatePackageBody(self, materials, modelBody, modelMark, modelPin, count, size, pitch, name):
-        DEFAULT_WIDTH = model.metricToImperial(5.0)
-
+    def generatePackagePins(self, pattern, count, size, offset, pitch):
         def makePin(x, y, angle, number):
-            pin = model.Mesh(parent=modelPin, name='{:s}Pin{:d}'.format(name, number))
-            pin.translate([x, y, 0.001])
-            pin.rotate([0.0, 0.0, 1.0], angle * math.pi / 180.0)
-            if 'Pin' in materials.keys():
-                pin.appearance().material = materials['Pin']
+            pin = model.Mesh(parent=pattern, name='Pin{:d}'.format(number))
+            pin.translate([x, y, 0.0])
+            pin.rotate([0.0, 0.0, 1.0], angle - math.pi / 2.0)
             return pin
-
-        firstPinOffset = (numpy.asfarray(count) - 1.0) * pitch / 2.0
-        dotPosition = -firstPinOffset + pitch / 2.0
-
-        # Body
-        cornerTranslation = (size - DEFAULT_WIDTH) / 2.0
-        corners = [model.Transform(), model.Transform(), model.Transform(), model.Transform()]
-        center = model.Transform()
-        center.translate([dotPosition[0], dotPosition[1], 0.0])
-        corners[0].translate([ cornerTranslation[0],  cornerTranslation[1], 0.0])
-        corners[1].translate([-cornerTranslation[0],  cornerTranslation[1], 0.0])
-        corners[2].translate([ cornerTranslation[0], -cornerTranslation[1], 0.0])
-        corners[3].translate([-cornerTranslation[0], -cornerTranslation[1], 0.0])
-        transforms = [model.Transform()] + [center] + corners
-        body = copy.deepcopy(modelBody)
-        body.applyTransforms(transforms)
-        body.translate([0.0, 0.0, 0.001])
-        if 'Body' in materials.keys():
-            body.appearance().material = materials['Body']
-
-        # First pin mark
-        mark = copy.deepcopy(modelMark)
-        mark.translate([dotPosition[0], dotPosition[1], 0.001])
-        if 'Mark' in materials.keys():
-            mark.appearance().material = materials['Mark']
 
         pins = []
 
         # Horizontal pins
-        y = size[1] / 2.0
+        y = size[1] / 2.0 + offset
         for i in range(0, count[0]):
-            x = float(i) * pitch - firstPinOffset[0]
-            pins.append(makePin(x, y, 180.0, i + 1))
+            x = pitch * (i - (count[0] - 1) / 2.0)
+            pins.append(makePin(x, y, math.pi, i + 1))
             pins.append(makePin(-x, -y, 0.0, i + 1 + count[0] + count[1]))
 
         # Vertical pins
-        x = size[0] / 2.0
+        x = size[0] / 2.0 + offset
         for i in range(0, count[1]):
-            y = float(i) * pitch - firstPinOffset[1]
-            pins.append(makePin(x, -y, 90.0, i + 1 + count[0]))
-            pins.append(makePin(-x, y, -90.0, i + 1 + count[0] * 2 + count[1]))
+            y = pitch * (i - (count[1] - 1) / 2.0)
+            pins.append(makePin(x, -y, math.pi / 2.0, i + 1 + count[0]))
+            pins.append(makePin(-x, y, -math.pi / 2.0, i + 1 + count[0] * 2 + count[1]))
 
-        return [body, mark] + pins
+        return pins
 
     def generate(self, materials, templates, descriptor):
-        qfpBody = lookup(templates, 'PatQFPBody')[0].parent
-        qfpBodyMark = lookup(templates, 'PatQFPBody')[1].parent
+        BODY_OFFSET_Z = primitives.hmils(0.1)
+        BODY_ROUNDNESS = primitives.hmils(0.5)
+        BAND_OFFSET = primitives.hmils(0.0)
+        BAND_WIDTH = primitives.hmils(0.1)
+        CHAMFER = primitives.hmils(0.1)
+        MARK_RADIUS = primitives.hmils(0.5)
 
-        qfpNarrowPin = lookup(templates, 'PatQFPNarrowPin')[0].parent
-        qfpWidePin = lookup(templates, 'PatQFPWidePin')[0].parent
+        bodySize = primitives.hmils(descriptor['body']['size'])
+        pinCount = [descriptor['pins']['columns'], descriptor['pins']['rows']]
+        pinHeight = bodySize[2] / 2.0 + BODY_OFFSET_Z
+        pinPitch = primitives.hmils(descriptor['pins']['pitch'])
+        pinShape = primitives.hmils(descriptor['pins']['shape'])
+        markOffset = self.calcMarkOffset(pinCount, pinPitch)
 
-        regions = [
-                ((( 0.5,  0.5, 1.0), (-0.5, -0.5, -1.0)), 1),
-                ((( 1.5,  1.5, 1.0), ( 0.5,  0.5, -1.0)), 2),
-                (((-1.5,  1.5, 1.0), (-0.5,  0.5, -1.0)), 3),
-                ((( 1.5, -1.5, 1.0), ( 0.5, -0.5, -1.0)), 4),
-                (((-1.5, -1.5, 1.0), (-0.5, -0.5, -1.0)), 5)]
-        qfpAttributedBody = model.AttributedMesh(name='QFPBody', regions=regions)
-        qfpAttributedBody.append(qfpBody)
-        qfpAttributedBody.visualAppearance = qfpBody.appearance()
+        bandWidthProj = BAND_WIDTH * math.sqrt(0.5)
+        bodySlope = 2.0 * bandWidthProj / bodySize[2]
+        pinOffset = bandWidthProj - bodySlope * pinShape[1] / 2.0
 
-        if descriptor['pins']['pitch'] >= 0.65:
-            modelPin = qfpWidePin
-        else:
-            modelPin = qfpNarrowPin
+        bodyTransform = model.Transform()
+        bodyTransform.translate([0.0, 0.0, pinHeight])
 
-        return self.generatePackageBody(
-                materials,
-                qfpAttributedBody, qfpBodyMark, modelPin,
-                numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']]),
-                numpy.array(model.metricToImperial(descriptor['body']['size'])),
-                numpy.array(model.metricToImperial(descriptor['pins']['pitch'])),
-                descriptor['title'])
+        bodyMesh, markMesh = primitives.makeRoundedBox(
+                size=bodySize,
+                roundness=BODY_ROUNDNESS,
+                chamfer=CHAMFER,
+                seamResolution=3,
+                lineResolution=1,
+                band=BAND_OFFSET,
+                bandWidth=BAND_WIDTH,
+                markRadius=MARK_RADIUS,
+                markOffset=markOffset,
+                markResolution=24)
+
+        if 'Body' in materials:
+            bodyMesh.appearance().material = materials['Body']
+        bodyMesh.apply(bodyTransform)
+        bodyMesh.rename('Body')
+
+        if 'Mark' in materials:
+            markMesh.appearance().material = materials['Mark']
+        markMesh.apply(bodyTransform)
+        markMesh.rename('Mark')
+
+        pinMesh = primitives.makePinMesh(
+                pinShapeSize=pinShape,
+                pinHeight=pinHeight,
+                pinLength=primitives.hmils(descriptor['pins']['length']),
+                endSlope=math.atan(bodySlope),
+                chamferSegments=1,
+                slopeSegments=3)
+        if 'Pin' in materials:
+            pinMesh.appearance().material = materials['Pin']
+
+        pins = self.generatePackagePins(
+                pattern=pinMesh,
+                count=pinCount,
+                size=bodySize,
+                offset=pinOffset,
+                pitch=pinPitch)
+
+        return pins + [bodyMesh] + [markMesh]
+
+    def calcMarkOffset(self, count, pitch):
+        firstPinOffset = (numpy.asfarray(count) - 1.0) * pitch / 2.0
+        return -firstPinOffset + pitch / 2.0
 
 
 types = [QFP]
