@@ -13,6 +13,20 @@ import primitives
 
 
 class QFP:
+    BODY_CHAMFER = primitives.hmils(0.1)
+    BODY_OFFSET_Z = primitives.hmils(0.1)
+    BODY_ROUNDNESS = primitives.hmils(0.5)
+
+    BAND_OFFSET = primitives.hmils(0.0)
+    BAND_WIDTH = primitives.hmils(0.1)
+
+    MARK_RADIUS = primitives.hmils(0.5)
+
+    CHAMFER_RESOLUTION = 1
+    LINE_RESOLUTION = 1
+    EDGE_RESOLUTION = 3
+
+
     def __init__(self):
         pass
 
@@ -42,36 +56,29 @@ class QFP:
         return pins
 
     def generate(self, materials, templates, descriptor):
-        BODY_OFFSET_Z = primitives.hmils(0.1)
-        BODY_ROUNDNESS = primitives.hmils(0.5)
-        BAND_OFFSET = primitives.hmils(0.0)
-        BAND_WIDTH = primitives.hmils(0.1)
-        CHAMFER = primitives.hmils(0.1)
-        MARK_RADIUS = primitives.hmils(0.5)
-
         bodySize = primitives.hmils(descriptor['body']['size'])
         pinCount = [descriptor['pins']['columns'], descriptor['pins']['rows']]
-        pinHeight = bodySize[2] / 2.0 + BODY_OFFSET_Z
+        pinHeight = bodySize[2] / 2.0 + QFP.BODY_OFFSET_Z
         pinPitch = primitives.hmils(descriptor['pins']['pitch'])
         pinShape = primitives.hmils(descriptor['pins']['shape'])
         markOffset = self.calcMarkOffset(pinCount, pinPitch)
 
-        bandWidthProj = BAND_WIDTH * math.sqrt(0.5)
-        bodySlope = 2.0 * bandWidthProj / bodySize[2]
-        pinOffset = bandWidthProj - bodySlope * pinShape[1] / 2.0
+        bandWidthProj = QFP.BAND_WIDTH * math.sqrt(0.5)
+        bodySlope = math.atan(2.0 * bandWidthProj / bodySize[2])
+        pinOffset = pinShape[1] * math.sin(bodySlope) / 2.0
 
         bodyTransform = model.Transform()
         bodyTransform.translate([0.0, 0.0, pinHeight])
 
         bodyMesh, markMesh = primitives.makeRoundedBox(
                 size=bodySize,
-                roundness=BODY_ROUNDNESS,
-                chamfer=CHAMFER,
-                seamResolution=3,
-                lineResolution=1,
-                band=BAND_OFFSET,
-                bandWidth=BAND_WIDTH,
-                markRadius=MARK_RADIUS,
+                roundness=QFP.BODY_ROUNDNESS,
+                chamfer=QFP.BODY_CHAMFER,
+                edgeResolution=QFP.EDGE_RESOLUTION,
+                lineResolution=QFP.LINE_RESOLUTION,
+                band=QFP.BAND_OFFSET,
+                bandWidth=QFP.BAND_WIDTH,
+                markRadius=QFP.MARK_RADIUS,
                 markOffset=markOffset,
                 markResolution=24)
 
@@ -87,11 +94,11 @@ class QFP:
 
         pinMesh = primitives.makePinMesh(
                 pinShapeSize=pinShape,
-                pinHeight=pinHeight,
-                pinLength=primitives.hmils(descriptor['pins']['length']),
-                endSlope=math.atan(bodySlope),
-                chamferSegments=1,
-                slopeSegments=3)
+                pinHeight=pinHeight + pinShape[1] * math.cos(bodySlope) / 2.0,
+                pinLength=primitives.hmils(descriptor['pins']['length']) + pinOffset,
+                endSlope=bodySlope,
+                chamferResolution=QFP.CHAMFER_RESOLUTION,
+                edgeResolution=QFP.EDGE_RESOLUTION)
         if 'Pin' in materials:
             pinMesh.appearance().material = materials['Pin']
 
@@ -99,7 +106,7 @@ class QFP:
                 pattern=pinMesh,
                 count=pinCount,
                 size=bodySize,
-                offset=pinOffset,
+                offset=bandWidthProj - pinOffset,
                 pitch=pinPitch)
 
         return pins + [bodyMesh] + [markMesh]

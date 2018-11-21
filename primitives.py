@@ -458,7 +458,7 @@ def makeRoundedEdge(beg, end, resolution, inversion=False):
                     endPosN + endDirN
             ), resolution, inversion)
 
-def roundModelEdges(vertices, edges, faces, chamfer, sharpness, seamResolution=4, lineResolution=1):
+def roundModelEdges(vertices, edges, faces, chamfer, sharpness, edgeResolution=4, lineResolution=1):
     meshes = []
     tesselatedEdges = []
     processedEdges = []
@@ -483,7 +483,7 @@ def roundModelEdges(vertices, edges, faces, chamfer, sharpness, seamResolution=4
         neighbors = []
         [neighbors.append(reorderPoints(e, v)[1]) for e in tesselatedEdges if v in e]
         joints[v] = TriJoint(vertices, v, *neighbors, chamfer)
-        mesh = joints[v].mesh(seamResolution)
+        mesh = joints[v].mesh(edgeResolution)
         if mesh is not None:
             meshes.append(mesh)
 
@@ -494,7 +494,7 @@ def roundModelEdges(vertices, edges, faces, chamfer, sharpness, seamResolution=4
         neighbors = []
         [neighbors.append(reorderPoints(e, v)[1]) for e in tesselatedEdges if v in e]
         joints[v] = QuadJoint(vertices, v, neighbors, chamfer, sharpness)
-        mesh = joints[v].mesh((seamResolution, seamResolution))
+        mesh = joints[v].mesh((edgeResolution, edgeResolution))
         if mesh is not None:
             meshes.append(mesh)
 
@@ -506,7 +506,7 @@ def roundModelEdges(vertices, edges, faces, chamfer, sharpness, seamResolution=4
             else:
                 continue
 
-            mesh = makeRoundedEdge(joints[v], joints[key], (lineResolution, seamResolution))
+            mesh = makeRoundedEdge(joints[v], joints[key], (lineResolution, edgeResolution))
             if mesh is not None:
                 meshes.append(mesh)
 
@@ -540,7 +540,7 @@ def roundModelEdges(vertices, edges, faces, chamfer, sharpness, seamResolution=4
 
     return mesh
 
-def makeBox(size, chamfer, seamResolution=4, lineResolution=1, band=None, bandWidth=0.0,
+def makeBox(size, chamfer, edgeResolution=4, lineResolution=1, band=None, bandWidth=0.0,
         markRadius=None, markOffset=numpy.array([0.0, 0.0]), markResolution=24):
     x, y, z = numpy.array(size) / 2.0
     if band is not None:
@@ -603,7 +603,7 @@ def makeBox(size, chamfer, seamResolution=4, lineResolution=1, band=None, bandWi
             [11, 8, 4, 7]]
 
     body = roundModelEdges(vertices=vs, edges=es, faces=fs, chamfer=chamfer, sharpness=math.pi * (5.0 / 6.0),
-            seamResolution=seamResolution, lineResolution=lineResolution)
+            edgeResolution=edgeResolution, lineResolution=lineResolution)
 
     if markRadius is not None:
         mark = makeBodyMark(markRadius, markResolution)
@@ -613,7 +613,7 @@ def makeBox(size, chamfer, seamResolution=4, lineResolution=1, band=None, bandWi
         mark = None
     return (body, mark)
 
-def makeRoundedBox(size, roundness, chamfer, seamResolution=4, lineResolution=1,
+def makeRoundedBox(size, roundness, chamfer, edgeResolution=4, lineResolution=1,
         band=None, bandWidth=0.0, markRadius=None, markOffset=numpy.array([0.0, 0.0]), markResolution=24):
     x, y, z = numpy.array(size) / 2.0
     r = roundness * math.sqrt(0.5)
@@ -709,7 +709,7 @@ def makeRoundedBox(size, roundness, chamfer, seamResolution=4, lineResolution=1,
             [23, 16, 8, 15]]
 
     body = roundModelEdges(vertices=vs, edges=es, faces=fs, chamfer=chamfer, sharpness=math.pi * (5.0 / 6.0),
-            seamResolution=seamResolution, lineResolution=lineResolution)
+            edgeResolution=edgeResolution, lineResolution=lineResolution)
 
     if markRadius is not None:
         mark = makeBodyMark(markRadius, markResolution)
@@ -719,7 +719,7 @@ def makeRoundedBox(size, roundness, chamfer, seamResolution=4, lineResolution=1,
         mark = None
     return (body, mark)
 
-def makeSlopedBox(size, chamfer, slope, slopeHeight, seamResolution=4, lineResolution=1, band=None, bandWidth=0.0):
+def makeSlopedBox(size, chamfer, slope, slopeHeight, edgeResolution=4, lineResolution=1, band=None, bandWidth=0.0):
     x, y, z = numpy.array(size) / 2.0
     mz = z - slopeHeight
     sy = y - slopeHeight / math.tan(slope)
@@ -777,7 +777,7 @@ def makeSlopedBox(size, chamfer, slope, slopeHeight, seamResolution=4, lineResol
     ]
 
     return roundModelEdges(vertices=vs, edges=es, faces=fs, chamfer=chamfer, sharpness=math.pi * (5.0 / 6.0),
-            seamResolution=seamResolution, lineResolution=lineResolution)
+            edgeResolution=edgeResolution, lineResolution=lineResolution)
 
 def makeRoundedRect(size, roundness, segments):
     dx, dy = size[0] / 2.0, size[1] / 2.0
@@ -796,24 +796,24 @@ def makeRoundedRect(size, roundness, segments):
     return shape
 
 def makePinCurve(pinShapeSize, pinHeight, pinLength, pinSlope, chamfer, roundness,
-        pivot=0.5, outerRadiusK=0.35, innerRadiusK=0.3, chamferSegments=2, slopeSegments=3):
+        pivot=0.5, outerRadiusK=0.35, innerRadiusK=0.3, chamferResolution=2, edgeResolution=3):
     curve = []
 
     rLimit = min(pinHeight, pinLength)
     r1 = outerRadiusK * rLimit
     r2 = innerRadiusK * rLimit
     xMean = pinLength * pivot
-    yMean = (pinHeight + pinShapeSize[1]) / 2.0
+    yMean = pinHeight / 2.0
 
     a1 = yMean - pinShapeSize[1] / 2.0 - r1 * (1.0 - math.sin(pinSlope))
-    a2 = yMean - pinShapeSize[1] / 2.0 - r2 * (1.0 - math.sin(pinSlope))
+    a2 = yMean - r2 * (1.0 - math.sin(pinSlope))
 
     y0 = pinShapeSize[1] / 2.0
     y1 = y0
     y2 = y1
     y3 = yMean - a1
     y4 = yMean + a2
-    y5 = pinHeight + pinShapeSize[1] / 2.0
+    y5 = pinHeight
     y6 = y5
 
     x0 = pinLength
@@ -846,11 +846,11 @@ def makePinCurve(pinShapeSize, pinHeight, pinLength, pinSlope, chamfer, roundnes
     p4t5 = lp4p5 * model.normalize(p4 - p3) * roundness
     p5t4 = numpy.array([lp4p5, 0.0, 0.0]) * roundness
 
-    curve.append(curves.Bezier(p0, p0t1, p1, p1t0, chamferSegments))
+    curve.append(curves.Bezier(p0, p0t1, p1, p1t0, chamferResolution))
     curve.append(curves.Line(p1, p2, 1))
-    curve.append(curves.Bezier(p2, p2t3, p3, p3t2, slopeSegments))
+    curve.append(curves.Bezier(p2, p2t3, p3, p3t2, edgeResolution))
     curve.append(curves.Line(p3, p4, 1))
-    curve.append(curves.Bezier(p4, p4t5, p5, p5t4, slopeSegments))
+    curve.append(curves.Bezier(p4, p4t5, p5, p5t4, edgeResolution))
     curve.append(curves.Line(p5, p6, 1))
 
     return curve
@@ -892,18 +892,18 @@ def calcMedianPoint(vertices):
     return (maxPos + minPos) / 2.0
 
 def makePinMesh(pinShapeSize, pinHeight, pinLength, pinSlope=math.pi * (10.0 / 180.0), endSlope=0.0,
-        chamferSegments=2, slopeSegments=3):
+        chamferResolution=2, edgeResolution=3):
     chamfer = pinShapeSize[1] / 10.0
-    curveRoundness = roundness(angle=math.pi / 2.0 - pinSlope)
+    curveRoundness = roundness(angle=math.pi / 2.0 + pinSlope)
 
-    shape = makeRoundedRect(size=pinShapeSize, roundness=chamfer, segments=chamferSegments)
+    shape = makeRoundedRect(size=pinShapeSize, roundness=chamfer, segments=chamferResolution)
     shapePoints = []
     [shapePoints.extend(element.tesselate()) for element in shape]
     shapePoints = curves.optimize(shapePoints)
 
     path = makePinCurve(pinShapeSize=pinShapeSize, pinHeight=pinHeight, pinLength=pinLength, pinSlope=pinSlope,
             chamfer=chamfer, roundness=curveRoundness, pivot=0.45,
-            chamferSegments=chamferSegments, slopeSegments=slopeSegments)
+            chamferResolution=chamferResolution, edgeResolution=edgeResolution)
     pathPoints = []
     [pathPoints.extend(element.tesselate()) for element in path]
     pathPoints = curves.optimize(pathPoints)
@@ -916,13 +916,13 @@ def makePinMesh(pinShapeSize, pinHeight, pinLength, pinSlope=math.pi * (10.0 / 1
             return numpy.zeros(3)
 
     def meshScalingFunc(t):
-        if chamferSegments >= 1:
+        if chamferResolution >= 1:
             current = int(t * (len(pathPoints) - 1))
 
-            if current < chamferSegments:
+            if current < chamferResolution:
                 size = numpy.array(pinShapeSize)
                 scale = (size - chamfer * 2.0) / size
-                tSeg = math.sin((math.pi / 2.0) * (current / chamferSegments))
+                tSeg = math.sin((math.pi / 2.0) * (current / chamferResolution))
                 tScale = scale + (numpy.array([1.0, 1.0]) - scale) * tSeg
                 return numpy.array([*tScale, 1.0])
             else:

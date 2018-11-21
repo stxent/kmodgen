@@ -226,14 +226,19 @@ class SOT(exporter.Footprint):
         # Vertical border
         lowerPads, upperPads = [], []
         for pad in self.pads:
-            if pad.number < int(self.count / 2):
+            if pad.number <= int(self.count / 2):
                 lowerPads.append(pad)
             else:
                 upperPads.append(pad)
 
-        lowerBound = max([pad.position[1] - pad.size[1] / 2.0 for pad in lowerPads])
-        upperBound = min([pad.position[1] + pad.size[1] / 2.0 for pad in upperPads])
-        self.borderSize = numpy.array([self.bodySize[0], lowerBound - upperBound - self.gap * 2.0 - self.thickness])
+        lowerBound = min([pad.position[1] - pad.size[1] / 2.0 for pad in lowerPads])
+        upperBound = max([pad.position[1] + pad.size[1] / 2.0 for pad in upperPads])
+        lowerBound -= self.gap + self.thickness / 2.0
+        upperBound += self.gap + self.thickness / 2.0
+        lowerBound = min(self.bodySize[1] / 2.0, lowerBound)
+        upperBound = max(-self.bodySize[1] / 2.0, upperBound)
+
+        self.borderSize = numpy.array([self.bodySize[0], lowerBound - upperBound])
         self.borderCenter = numpy.array([0.0, lowerBound + upperBound])
 
     def calcPadPosition(self, number):
@@ -264,11 +269,12 @@ class SOT(exporter.Footprint):
 
         # Inner polarity mark
         if self.markTri:
+            triMarkOffset = min(1.0, self.borderSize[1] / 2.0)
             topCorner = self.borderSize / 2.0 + self.borderCenter
             points = [
-                    (-topCorner[0], 0.0),
+                    (-topCorner[0], topCorner[1] - triMarkOffset),
                     (-topCorner[0], topCorner[1]),
-                    (-topCorner[0] + topCorner[1], topCorner[1])]
+                    (-topCorner[0] + triMarkOffset, topCorner[1])]
             silkscreen.append(exporter.Poly(points, self.thickness, exporter.Layer.SILK_FRONT))
 
         for entry in self.pads:

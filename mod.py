@@ -117,6 +117,10 @@ if options.normals or options.smooth:
             entry.appearance().smooth = options.smooth
 
 if options.view:
+    if not len(models):
+        print('Empty set of models')
+        exit()
+
     from wrlconv import helpers
     from wrlconv import render_ogl41
 

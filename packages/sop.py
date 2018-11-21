@@ -13,6 +13,17 @@ import primitives
 
 
 class SOP:
+    BODY_CHAMFER = primitives.hmils(0.1)
+    BODY_OFFSET_Z = primitives.hmils(0.1)
+
+    BAND_OFFSET = primitives.hmils(0.0)
+    BAND_WIDTH = primitives.hmils(0.1)
+
+    CHAMFER_RESOLUTION = 1
+    LINE_RESOLUTION = 1
+    EDGE_RESOLUTION = 3
+
+
     def __init__(self):
         pass
 
@@ -36,17 +47,13 @@ class SOP:
         return pins
 
     def generate(self, materials, templates, descriptor):
-        BODY_OFFSET_Z = primitives.hmils(0.1)
-        BAND_OFFSET = primitives.hmils(0.0)
-        BAND_WIDTH = primitives.hmils(0.1)
-        CHAMFER = primitives.hmils(0.1)
-
         bodySize = primitives.hmils(descriptor['body']['size'])
-        pinHeight = bodySize[2] / 2.0 + BODY_OFFSET_Z
+        pinHeight = bodySize[2] / 2.0 + SOP.BODY_OFFSET_Z
+        pinShape = primitives.hmils(descriptor['pins']['shape'])
 
-        bandWidthProj = BAND_WIDTH * math.sqrt(0.5)
-        bodySlope = 2.0 * bandWidthProj / bodySize[2]
-        pinOffset = bandWidthProj - bodySlope * primitives.hmils(descriptor['pins']['shape'][1]) / 2.0
+        bandWidthProj = SOP.BAND_WIDTH * math.sqrt(0.5)
+        bodySlope = math.atan(2.0 * bandWidthProj / bodySize[2])
+        pinOffset = pinShape[1] * math.sin(bodySlope) / 2.0
 
         bodyTransform = model.Transform()
         bodyTransform.rotate([0.0, 0.0, 1.0], math.pi)
@@ -54,13 +61,13 @@ class SOP:
 
         bodyMesh = primitives.makeSlopedBox(
                 size=bodySize,
-                chamfer=CHAMFER,
+                chamfer=SOP.BODY_CHAMFER,
                 slope=math.pi / 4.0,
                 slopeHeight=bodySize[2] / 5.0,
-                seamResolution=3,
-                lineResolution=1,
-                band=BAND_OFFSET,
-                bandWidth=BAND_WIDTH)
+                edgeResolution=SOP.EDGE_RESOLUTION,
+                lineResolution=SOP.LINE_RESOLUTION,
+                band=SOP.BAND_OFFSET,
+                bandWidth=SOP.BAND_WIDTH)
 
         if 'Body' in materials:
             bodyMesh.appearance().material = materials['Body']
@@ -68,12 +75,12 @@ class SOP:
         bodyMesh.rename('Body')
 
         pinMesh = primitives.makePinMesh(
-                pinShapeSize=primitives.hmils(descriptor['pins']['shape']),
-                pinHeight=pinHeight,
-                pinLength=primitives.hmils(descriptor['pins']['length']),
-                endSlope=math.atan(bodySlope),
-                chamferSegments=1,
-                slopeSegments=3)
+                pinShapeSize=pinShape,
+                pinHeight=pinHeight + pinShape[1] * math.cos(bodySlope) / 2.0,
+                pinLength=primitives.hmils(descriptor['pins']['length']) + pinOffset,
+                endSlope=bodySlope,
+                chamferResolution=SOP.CHAMFER_RESOLUTION,
+                edgeResolution=SOP.EDGE_RESOLUTION)
         if 'Pin' in materials:
             pinMesh.appearance().material = materials['Pin']
 
@@ -81,7 +88,7 @@ class SOP:
                 pattern=pinMesh,
                 count=descriptor['pins']['count'],
                 size=bodySize,
-                offset=pinOffset,
+                offset=bandWidthProj - pinOffset,
                 pitch=primitives.hmils(descriptor['pins']['pitch']))
 
         return pins + [bodyMesh]

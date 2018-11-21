@@ -28,18 +28,19 @@ class SOT:
 
     CHAMFER_RESOLUTION = 1
     LINE_RESOLUTION = 1
-    SEAM_RESOLUTION = 3
+    EDGE_RESOLUTION = 3
 
 
     class PinDesc:
-        def __init__(self, pattern, offsetFunctor=None, descriptor=None):
+        def __init__(self, pattern, slope=None, descriptor=None):
             if pattern is None and descriptor is None:
                 # Not enough information
                 raise Exception()
 
             if pattern is not None:
                 self.length = pattern.length
-                self.offset = pattern.offset
+                self.planarOffset = pattern.planarOffset
+                self.verticalOffset = pattern.verticalOffset
                 self.shape = pattern.shape
 
             if descriptor is not None:
@@ -47,17 +48,21 @@ class SOT:
                     self.length = primitives.hmils(descriptor['length'])
                 if 'shape' in descriptor:
                     self.shape = primitives.hmils(descriptor['shape'])
-                    self.offset = offsetFunctor(self.shape)
+                    self.planarOffset = -abs(self.shape[1] * math.sin(slope) / 2.0)
+                    self.verticalOffset = self.shape[1] * math.cos(slope) / 2.0
+                    if slope < 0:
+                        self.verticalOffset = -self.verticalOffset
+                self.length -= self.planarOffset
 
         def __hash__(self):
             return hash((self.length, *self.shape))
 
         @classmethod
-        def makePattern(cls, offsetFunctor, descriptor):
-            if offsetFunctor is None or descriptor is None:
+        def makePattern(cls, slope, descriptor):
+            if slope is None or descriptor is None:
                 raise Exception()
 
-            return cls(None, offsetFunctor, descriptor)
+            return cls(None, slope, descriptor)
 
 
     def __init__(self):
@@ -80,13 +85,13 @@ class SOT:
         bodyMesh, markMesh = primitives.makeBox(
                 size=bodySize,
                 chamfer=SOT.BODY_CHAMFER,
-                seamResolution=SOT.SEAM_RESOLUTION,
+                edgeResolution=SOT.EDGE_RESOLUTION,
                 lineResolution=SOT.LINE_RESOLUTION,
                 band=bandOffset,
                 bandWidth=SOT.BAND_WIDTH,
                 markRadius=markRadius,
                 markOffset=markOffset,
-                markResolution=SOT.SEAM_RESOLUTION * 8)
+                markResolution=SOT.EDGE_RESOLUTION * 8)
 
         bodyTransform = model.Transform()
         bodyTransform.translate([0.0, 0.0, bodySize[2] / 2.0 + SOT.BODY_OFFSET_Z])
@@ -124,12 +129,14 @@ class SOT:
 
         bodySize = primitives.hmils(descriptor['body']['size'])
         bandWidthProj = SOT.BAND_WIDTH * math.sqrt(0.5)
-        bodySlope = 2.0 * bandWidthProj / bodySize[2]
-        pinOffsetFunctor = lambda shape: numpy.array([0.0, bandWidthProj - bodySlope * shape[1] / 2.0])
-        pinHeight = bodySize[2] / 2.0 + SOT.BODY_OFFSET_Z + bandOffset
+        if bandInversion:
+            bodySlope = -math.atan(bandWidthProj / (bodySize[2] / 2.0 + bandOffset))
+        else:
+            bodySlope = math.atan(bandWidthProj / (bodySize[2] / 2.0 - bandOffset))
+        pinHeight = bodySize[2] / 2.0 + bandOffset + SOT.BODY_OFFSET_Z
 
         try:
-            pinPattern = SOT.PinDesc.makePattern(pinOffsetFunctor, descriptor['pins']['default'])
+            pinPattern = SOT.PinDesc.makePattern(bodySlope, descriptor['pins']['default'])
         except KeyError:
             pinPattern = None
 
@@ -138,7 +145,7 @@ class SOT:
             key = str(i)
             try:
                 if descriptor['pins'][key] is not None:
-                    pinEntries[i] = SOT.PinDesc(pinPattern, pinOffsetFunctor, descriptor['pins'][key])
+                    pinEntries[i] = SOT.PinDesc(pinPattern, bodySlope, descriptor['pins'][key])
             except KeyError:
                 pinEntries[i] = SOT.PinDesc(pinPattern)
         pinGroups = set(pinEntries.values())
@@ -147,12 +154,12 @@ class SOT:
         for group in pinGroups:
             mesh = primitives.makePinMesh(
                     pinShapeSize=group.shape,
-                    pinHeight=pinHeight,
+                    pinHeight=pinHeight + group.verticalOffset,
                     pinLength=group.length,
                     pinSlope=pinSlope,
-                    endSlope=math.atan(bodySlope),
-                    chamferSegments=SOT.CHAMFER_RESOLUTION,
-                    slopeSegments=SOT.SEAM_RESOLUTION)
+                    endSlope=bodySlope,
+                    chamferResolution=SOT.CHAMFER_RESOLUTION,
+                    edgeResolution=SOT.EDGE_RESOLUTION)
 
             if 'Pin' in materials:
                 mesh.appearance().material = materials['Pin']
@@ -161,7 +168,7 @@ class SOT:
 
         return self.generatePinRows(
                 count=descriptor['pins']['count'],
-                size=bodySize,
+                size=bodySize[0:2] + bandWidthProj * 2.0,
                 pitch=primitives.hmils(descriptor['pins']['pitch']),
                 patterns=pinGroupMeshes,
                 entries=pinEntries)
@@ -180,17 +187,16 @@ class SOT:
         meshes = []
         for i in range(1, columns + 1):
             x = pitch * (i - 1) - firstPinOffset
-            position = numpy.array([x, y])
 
             if i + columns in entries:
                 entry = entries[i + columns]
                 mesh = patterns[hash(entry)]
-                meshes.append(makePin(mesh, position + entry.offset, math.pi, i + columns))
+                meshes.append(makePin(mesh, [x, y + entry.planarOffset], math.pi, i + columns))
 
             if i in entries:
                 entry = entries[i]
                 mesh = patterns[hash(entry)]
-                meshes.append(makePin(mesh, -position + entry.offset * [1, -1], 0.0, i))
+                meshes.append(makePin(mesh, [-x, -(y + entry.planarOffset)], 0.0, i))
 
         return meshes
 
