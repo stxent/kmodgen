@@ -44,7 +44,7 @@ def reverseProjection(a, b):
         # Two segments lie on a same line
         raise Exception()
 
-def roundness(a=None, b=None, angle=None):
+def calcBezierWeight(a=None, b=None, angle=None):
     if angle is None:
         if a is None or b is None:
             # User must provide vectors a and b when angle argument is not used
@@ -116,7 +116,7 @@ class JointEdge:
         else:
             self.normals[self.mNum] = model.normalize(mVec) * length
             self.normals[self.nNum] = model.normalize(nVec) * length
-        self.roundness = roundness(mNorm, nNorm)
+        self.roundness = calcBezierWeight(mNorm, nNorm)
 
         self.m = self.normals[self.mNum]
         self.n = self.normals[self.nNum]
@@ -243,8 +243,8 @@ class QuadJoint:
 
         self.flat0 = angles[0] > sharpness
         self.flat1 = angles[1] > sharpness
-        self.roundness0 = roundness(angle=abs(angles[0]))
-        self.roundness1 = roundness(angle=abs(angles[1]))
+        self.roundness0 = calcBezierWeight(angle=abs(angles[0]))
+        self.roundness1 = calcBezierWeight(angle=abs(angles[1]))
 
         if self.flat0:
             self.diag0 = QuadJoint.Diag(
@@ -783,16 +783,17 @@ def makeSlopedBox(size, chamfer, slope, slopeHeight, edgeResolution=4, lineResol
 def makeRoundedRect(size, roundness, segments):
     dx, dy = size[0] / 2.0, size[1] / 2.0
     r = roundness
+    rb = roundness * calcBezierWeight(angle=math.pi / 2.0)
 
     shape = []
     shape.append(curves.Line((-dx + r, dy, 0.0), (dx - r, dy, 0.0), 1))
-    shape.append(curves.Bezier((dx - r, dy, 0.0), (r, 0.0, 0.0), (dx, dy - r, 0.0), (0.0, r, 0.0), segments))
+    shape.append(curves.Bezier((dx - r, dy, 0.0), (rb, 0.0, 0.0), (dx, dy - r, 0.0), (0.0, rb, 0.0), segments))
     shape.append(curves.Line((dx, dy - r, 0.0), (dx, -dy + r, 0.0), 1))
-    shape.append(curves.Bezier((dx, -dy + r, 0.0), (0.0, -r, 0.0), (dx - r, -dy, 0.0), (r, 0.0, 0.0), segments))
+    shape.append(curves.Bezier((dx, -dy + r, 0.0), (0.0, -rb, 0.0), (dx - r, -dy, 0.0), (rb, 0.0, 0.0), segments))
     shape.append(curves.Line((dx - r, -dy, 0.0), (-dx + r, -dy, 0.0), 1))
-    shape.append(curves.Bezier((-dx + r, -dy, 0.0), (-r, 0.0, 0.0), (-dx, -dy + r, 0.0), (0.0, -r, 0.0), segments))
+    shape.append(curves.Bezier((-dx + r, -dy, 0.0), (-rb, 0.0, 0.0), (-dx, -dy + r, 0.0), (0.0, -rb, 0.0), segments))
     shape.append(curves.Line((-dx, -dy + r, 0.0), (-dx, dy - r, 0.0), 1))
-    shape.append(curves.Bezier((-dx, dy - r, 0.0), (0.0, r, 0.0), (-dx + r, dy, 0.0), (-r, 0.0, 0.0), segments))
+    shape.append(curves.Bezier((-dx, dy - r, 0.0), (0.0, rb, 0.0), (-dx + r, dy, 0.0), (-rb, 0.0, 0.0), segments))
 
     return shape
 

@@ -149,6 +149,7 @@ class RadialCapacitor:
         if capRadius is not None and capDepth is not None and chamfer is None:
             raise Exception()
 
+        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
         curve = []
 
         # Bottom cap
@@ -161,16 +162,16 @@ class RadialCapacitor:
                 curve.append(curves.Line((capRadius, 0.0, 0.0), (radius - curvature, 0.0, 0.0), 1))
 
         # Plastic
-        curve.append(curves.Bezier((radius - curvature, 0.0, 0.0), (curvature / 2.0, 0.0, 0.0),
-                (radius, 0.0, curvature), (0.0, 0.0, -curvature / 2.0), edgeDetails))
+        curve.append(curves.Bezier((radius - curvature, 0.0, 0.0), (curvature * weight, 0.0, 0.0),
+                (radius, 0.0, curvature), (0.0, 0.0, -curvature * weight), edgeDetails))
         curve.append(curves.Line((radius, 0.0, curvature), (radius, 0.0, bandOffset - curvature * 2.0), 1))
         curve.append(curves.Bezier((radius, 0.0, bandOffset - curvature * 2.0), (0.0, 0.0, curvature),
                 (radius - curvature, 0.0, bandOffset), (0.0, 0.0, -curvature), bandDetails))
         curve.append(curves.Bezier((radius - curvature, 0.0, bandOffset), (0.0, 0.0, curvature),
                 (radius, 0.0, bandOffset + curvature * 2.0), (0.0, 0.0, -curvature), bandDetails))
         curve.append(curves.Line((radius, 0.0, bandOffset + curvature * 2.0), (radius, 0.0, height - curvature), 1))
-        curve.append(curves.Bezier((radius, 0.0, height - curvature), (0.0, 0.0, curvature / 2.0),
-                (radius - curvature, 0.0, height), (curvature / 2.0, 0.0, 0.0), edgeDetails))
+        curve.append(curves.Bezier((radius, 0.0, height - curvature), (0.0, 0.0, curvature * weight),
+                (radius - curvature, 0.0, height), (curvature * weight, 0.0, 0.0), edgeDetails))
 
         # Top cap
         if capRadius is not None:
@@ -184,10 +185,11 @@ class RadialCapacitor:
         return curve
 
     def buildPinCurve(self, radius, height, curvature, edgeDetails=2):
+        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
         curve = []
 
-        curve.append(curves.Bezier((radius - curvature, 0.0, -height), (curvature / 2.0, 0.0, 0.0),
-                (radius, 0.0, -height + curvature), (0.0, 0.0, -curvature / 2.0), edgeDetails))
+        curve.append(curves.Bezier((radius - curvature, 0.0, -height), (curvature * weight, 0.0, 0.0),
+                (radius, 0.0, -height + curvature), (0.0, 0.0, -curvature * weight), edgeDetails))
         curve.append(curves.Line((radius, 0.0, curvature - height), (radius, 0.0, 0.0), 1))
 
         return curve
