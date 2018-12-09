@@ -33,221 +33,213 @@
       "package": {"type": "Chip", "spec": "thin"},
       "title": "C0402",
       "body": {"size": [1.0, 0.5]},
-      "pins": {"pitch": 0.5},
-      "pads": {"size": [0.5, 0.6]},
+      "pins": {},
+      "pads": {"pitch": 0.5, "size": [0.5, 0.6]},
       "mark": {"vertical": true, "wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "C0603",
       "body": {"size": [1.6, 0.8]},
-      "pins": {"pitch": 0.7},
-      "pads": {"size": [0.8, 0.9]},
+      "pins": {},
+      "pads": {"pitch": 0.7, "size": [0.8, 0.9]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "C0805",
       "body": {"size": [2.0, 1.2]},
-      "pins": {"pitch": 1.0},
-      "pads": {"size": [0.9, 1.35]},
+      "pins": {},
+      "pads": {"pitch": 1.0, "size": [0.9, 1.35]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "C1206",
       "body": {"size": [3.2, 1.6]},
-      "pins": {"pitch": 1.8},
-      "pads": {"size": [1.2, 1.8]},
+      "pins": {},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "C1210",
       "body": {"size": [3.2, 2.5]},
-      "pins": {"pitch": 1.8},
-      "pads": {"size": [1.2, 2.7]},
+      "pins": {},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "C1808",
       "body": {"size": [4.5, 2.0]},
-      "pins": {"pitch": 3.2},
-      "pads": {"size": [1.2, 2.2]},
+      "pins": {},
+      "pads": {"pitch": 3.2, "size": [1.2, 2.2]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "C1812",
       "body": {"size": [4.5, 3.2]},
-      "pins": {"pitch": 3.1},
-      "pads": {"size": [1.2, 3.3]},
+      "pins": {},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "C2220",
       "body": {"size": [5.7, 5.0]},
-      "pins": {"pitch": 4.5},
-      "pads": {"size": [1.4, 5.2]},
+      "pins": {},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "CP3216",
       "body": {"size": [3.2, 1.6]},
-      "pins": {"pitch": 1.2, "names": ["A", "C"]},
-      "pads": {"size": [1.65, 1.4]},
+      "pins": {},
+      "pads": {"pitch": 1.2, "size": [1.65, 1.4], "names": ["A", "C"]},
       "mark": {"dot": true},
       "source": "AVX specifications"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "CP3528",
       "body": {"size": [3.5, 2.8]},
-      "pins": {"pitch": 1.5, "names": ["A", "C"]},
-      "pads": {"size": [1.65, 2.4]},
+      "pins": {},
+      "pads": {"pitch": 1.5, "size": [1.65, 2.4], "names": ["A", "C"]},
       "mark": {"dot": true},
       "source": "AVX specifications"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "CP6032",
       "body": {"size": [6.0, 3.2]},
-      "pins": {"pitch": 2.9, "names": ["A", "C"]},
-      "pads": {"size": [2.4, 2.4]},
+      "pins": {},
+      "pads": {"pitch": 2.9, "size": [2.4, 2.4], "names": ["A", "C"]},
       "mark": {"dot": true},
       "source": "AVX specifications"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "CP7343",
       "body": {"size": [7.3, 4.3]},
-      "pins": {"pitch": 4.2, "names": ["A", "C"]},
-      "pads": {"size": [2.4, 2.5]},
+      "pins": {},
+      "pads": {"pitch": 4.2, "size": [2.4, 2.5], "names": ["A", "C"]},
       "mark": {"dot": true},
       "source": "AVX specifications"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "DO214AC",
       "body": {"size": [4.3, 2.6]},
-      "pins": {"pitch": 2.3, "names": ["C", "A"]},
-      "pads": {"size": [1.65, 1.8]},
+      "pins": {},
+      "pads": {"pitch": 2.3, "size": [1.65, 1.8], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Fairchild specifications"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "L0603",
       "body": {"size": [1.6, 0.8]},
-      "pins": {"pitch": 0.7},
-      "pads": {"size": [0.8, 0.9]},
+      "pins": {},
+      "pads": {"pitch": 0.7, "size": [0.8, 0.9]},
       "mark": {"wrap": true}
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "L0805",
       "body": {"size": [2.0, 1.2]},
-      "pins": {"pitch": 1.0},
-      "pads": {"size": [0.9, 1.35]},
+      "pins": {},
+      "pads": {"pitch": 1.0, "size": [0.9, 1.35]},
       "mark": {"wrap": true}
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "L1206",
       "body": {"size": [3.2, 1.6]},
-      "pins": {"pitch": 1.8},
-      "pads": {"size": [1.2, 1.8]},
+      "pins": {},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
       "mark": {"wrap": true}
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "LED0805",
       "body": {"size": [2.0, 1.25]},
-      "pins": {"pitch": 1.0, "names": ["C", "A"]},
-      "pads": {"size": [1.2, 1.45]},
+      "pins": {},
+      "pads": {"pitch": 1.0, "size": [1.2, 1.45], "names": ["C", "A"]},
       "mark": {"bar": true, "dot": true, "wrap": true},
       "source": "Foryard specifications"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "LED1206",
       "body": {"size": [3.2, 1.6]},
-      "pins": {"pitch": 1.75, "names": ["C", "A"]},
-      "pads": {"size": [1.5, 1.8]},
+      "pins": {},
+      "pads": {"pitch": 1.75, "size": [1.5, 1.8], "names": ["C", "A"]},
       "mark": {"bar": true, "dot": true, "wrap": true},
       "source": "Foryard specifications"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "R0402",
       "body": {"size": [1.0, 0.5]},
-      "pins": {"pitch": 0.5},
-      "pads": {"size": [0.5, 0.6]},
+      "pins": {},
+      "pads": {"pitch": 0.5, "size": [0.5, 0.6]},
       "mark": {"vertical": true, "wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "R0603",
       "body": {"size": [1.6, 0.8]},
-      "pins": {"pitch": 0.9},
-      "pads": {"size": [0.6, 0.9]},
+      "pins": {},
+      "pads": {"pitch": 0.9, "size": [0.6, 0.9]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "R0805",
       "body": {"size": [2.0, 1.2]},
-      "pins": {"pitch": 1.2},
-      "pads": {"size": [0.7, 1.4]},
+      "pins": {},
+      "pads": {"pitch": 1.2, "size": [0.7, 1.4]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "R1206",
       "body": {"size": [3.2, 1.6]},
-      "pins": {"pitch": 2.0},
-      "pads": {"size": [0.9, 1.8]},
+      "pins": {},
+      "pads": {"pitch": 2.0, "size": [0.9, 1.8]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "R1210",
       "body": {"size": [3.2, 2.5]},
-      "pins": {"pitch": 2.0},
-      "pads": {"size": [0.9, 2.7]},
+      "pins": {},
+      "pads": {"pitch": 2.0, "size": [0.9, 2.7]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "R1218",
       "body": {"size": [3.0, 4.5]},
-      "pins": {"pitch": 2.0},
-      "pads": {"size": [0.9, 4.8]},
+      "pins": {},
+      "pads": {"pitch": 2.0, "size": [0.9, 4.8]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "R2010",
       "body": {"size": [5.0, 2.5]},
-      "pins": {"pitch": 3.8},
-      "pads": {"size": [0.9, 2.7]},
+      "pins": {},
+      "pads": {"pitch": 3.8, "size": [0.9, 2.7]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "R2512",
       "body": {"size": [6.4, 3.2]},
-      "pins": {"pitch": 4.8},
-      "pads": {"size": [1.35, 3.3]},
+      "pins": {},
+      "pads": {"pitch": 4.8, "size": [1.35, 3.3]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
-    }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "SOD-80",
-      "body": {"size": [3.7, 1.6]},
-      "pins": {"pitch": 2.3, "names": ["C", "A"]},
-      "pads": {"size": [0.9, 1.7]},
-      "mark": {"bar": true, "dot": true, "wrap": true},
-      "source": "NXP specifications"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "SOD-323",
       "body": {"size": [1.8, 1.35]},
-      "pins": {"pitch": 1.6, "names": ["C", "A"]},
-      "pads": {"size": [0.6, 0.6]},
+      "pins": {},
+      "pads": {"pitch": 1.6, "size": [0.6, 0.6], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "NXP specifications"
     }

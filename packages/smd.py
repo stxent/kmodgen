@@ -5,9 +5,11 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import copy
 import math
 import numpy
 
+from wrlconv import curves
 from wrlconv import model
 from packages import generic
 import primitives
@@ -15,6 +17,163 @@ import primitives
 class Chip(generic.GenericModelFilter):
     def __init__(self):
         generic.GenericModelFilter.__init__(self, Chip.PIVOT_BOUNDING_BOX_CENTER)
+
+
+class MELF:
+    EDGE_COUNT = 24
+
+    BODY_RESOLUTION    = 3
+    CONTACT_RESOLUTION = 2
+    LINE_RESOLUTION    = 1
+
+    def __init__(self):
+        pass
+
+    def buildBandCurves(self, length, bodyRadius, bandLength, bandOffset, lineResolution):
+        band = []
+
+        if bandLength > 0.0:
+            band.append(curves.Line(
+                    (bandOffset - bandLength / 2.0, 0.0, bodyRadius),
+                    (bandOffset + bandLength / 2.0, 0.0, bodyRadius), lineResolution))
+
+        return [band]
+
+    def buildBodyCurves(self, length, bodyCurvature, bodyRadius, contactLength, bandLength, bandOffset,
+            edgeResolution, lineResolution):
+        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
+        leftPart, rightPart = [], []
+
+        # Left rounded edge
+        leftPart.append(curves.Bezier(
+                (-length / 2.0 + contactLength, 0.0, bodyRadius - bodyCurvature), (0.0, 0.0, bodyCurvature * weight),
+                (-length / 2.0 + contactLength + bodyCurvature, 0.0, bodyRadius), (-bodyCurvature * weight, 0.0, 0.0),
+                edgeResolution))
+
+        if bandLength > 0.0:
+            # Package glass to the left of the band
+            leftPart.append(curves.Line(
+                    (-length / 2.0 + contactLength + bodyCurvature, 0.0, bodyRadius),
+                    (bandOffset - bandLength / 2.0, 0.0, bodyRadius), lineResolution))
+            # Package glass to the right of the band
+            rightPart.append(curves.Line(
+                    (bandOffset + bandLength / 2.0, 0.0, bodyRadius),
+                    (length / 2.0 - contactLength - bodyCurvature, 0.0, bodyRadius), lineResolution))
+        else:
+            leftPart.append(curves.Line(
+                    (-length / 2.0 + contactLength + bodyCurvature, 0.0, bodyRadius),
+                    (length / 2.0 - contactLength - bodyCurvature, 0.0, bodyRadius), lineResolution))
+
+        # Right rounded edge
+        rightPart.append(curves.Bezier(
+                (length / 2.0 - contactLength - bodyCurvature, 0.0, bodyRadius), (bodyCurvature * weight, 0.0, 0.0),
+                (length / 2.0 - contactLength, 0.0, bodyRadius - bodyCurvature), (0.0, 0.0, bodyCurvature * weight),
+                edgeResolution))
+
+        return [leftPart, rightPart]
+
+    def buildContactCurves(self, length, bodyCurvature, bodyRadius, contactCurvature, contactLength, contactRadius,
+            edgeResolution, lineResolution):
+        rotation = model.Transform(matrix=model.rotationMatrix(numpy.array([0.0, 0.0, 1.0]), math.pi))
+        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
+        leftContact = []
+
+        # Left contact
+        leftContact.append(curves.Line(
+                (-length / 2.0, 0.0, 0.0),
+                (-length / 2.0, 0.0, contactRadius - contactCurvature), lineResolution))
+        leftContact.append(curves.Bezier(
+                (-length / 2.0, 0.0, contactRadius - contactCurvature),
+                (0.0, 0.0, contactCurvature * weight),
+                (-length / 2.0 + contactCurvature, 0.0, contactRadius),
+                (-contactCurvature * weight, 0.0, 0.0),
+                edgeResolution))
+        leftContact.append(curves.Line(
+                (-length / 2.0 + contactCurvature, 0.0, contactRadius),
+                (-length / 2.0 + contactLength - contactCurvature, 0.0, contactRadius), lineResolution))
+        leftContact.append(curves.Bezier(
+                (-length / 2.0 + contactLength - contactCurvature, 0.0, contactRadius),
+                (contactCurvature * weight, 0.0, 0.0),
+                (-length / 2.0 + contactLength, 0.0, contactRadius - contactCurvature),
+                (0.0, 0.0, contactCurvature * weight),
+                edgeResolution))
+        leftContact.append(curves.Line(
+                (-length / 2.0 + contactLength, 0.0, contactRadius - contactCurvature),
+                (-length / 2.0 + contactLength, 0.0, bodyRadius - bodyCurvature), lineResolution))
+
+        rightContact = copy.deepcopy(leftContact)
+        rightContact.reverse()
+        for segment in rightContact:
+            segment.apply(rotation)
+            segment.reverse()
+
+        return [leftContact, rightContact]
+
+    def generate(self, materials, templates, descriptor):
+        length = primitives.hmils(descriptor['body']['length'] + descriptor['pins']['length'] * 2.0)
+        bodyCurvature = primitives.hmils(descriptor['body']['radius'] / 5.0)
+        bodyRadius = primitives.hmils(descriptor['body']['radius'])
+        contactCurvature = primitives.hmils(descriptor['pins']['length'] / 10.0)
+        contactLength = primitives.hmils(descriptor['pins']['length'])
+        contactRadius = primitives.hmils(descriptor['pins']['radius'])
+
+        try:
+            bandLength = primitives.hmils(descriptor['band']['length'])
+        except:
+            bandLength = 0.0
+
+        try:
+            bandOffset = primitives.hmils(descriptor['band']['offset'])
+        except:
+            bandOffset = 0.0
+
+        axis = numpy.array([1.0, 0.0, 0.0])
+        meshes = []
+
+        # Polarity mark
+        bandCurves = self.buildBandCurves(length=length, bodyRadius=bodyRadius, bandLength=bandLength,
+                bandOffset=bandOffset, lineResolution=MELF.LINE_RESOLUTION)
+        if len(bandCurves) > 0:
+            bandSlices = [curves.rotate(curve=x, axis=axis, edges=MELF.EDGE_COUNT) for x in bandCurves]
+            bandMeshes = [curves.createRotationMesh(slices=x, wrap=True) for x in bandSlices]
+
+            joinedMesh = model.Mesh()
+            [joinedMesh.append(mesh) for mesh in bandMeshes]
+            joinedMesh.optimize()
+            if 'Band' in materials:
+                joinedMesh.appearance().material = materials['Band']
+            meshes.append(joinedMesh)
+
+        # Glass body
+        bodyCurves = self.buildBodyCurves(length=length, bodyCurvature=bodyCurvature, bodyRadius=bodyRadius,
+                contactLength=contactLength, bandLength=bandLength, bandOffset=bandOffset,
+                edgeResolution=MELF.BODY_RESOLUTION, lineResolution=MELF.LINE_RESOLUTION)
+        bodySlices = [curves.rotate(curve=x, axis=axis, edges=MELF.EDGE_COUNT) for x in bodyCurves]
+        bodyMeshes = [curves.createRotationMesh(slices=x, wrap=True) for x in bodySlices]
+
+        joinedMesh = model.Mesh()
+        [joinedMesh.append(mesh) for mesh in bodyMeshes]
+        joinedMesh.optimize()
+        if 'Glass' in materials:
+            joinedMesh.appearance().material = materials['Glass']
+        meshes.append(joinedMesh)
+
+        # Contacts
+        contactCurves = self.buildContactCurves(length=length, bodyCurvature=bodyCurvature, bodyRadius=bodyRadius,
+                contactCurvature=contactCurvature, contactLength=contactLength, contactRadius=contactRadius,
+                edgeResolution=MELF.CONTACT_RESOLUTION, lineResolution=MELF.LINE_RESOLUTION)
+        contactSlices = [curves.rotate(curve=x, axis=axis, edges=MELF.EDGE_COUNT) for x in contactCurves]
+        contactMeshes = [curves.createRotationMesh(slices=x, wrap=True) for x in contactSlices]
+
+        joinedMesh = model.Mesh()
+        [joinedMesh.append(mesh) for mesh in contactMeshes]
+        joinedMesh.optimize()
+        if 'Contact' in materials:
+            joinedMesh.appearance().material = materials['Contact']
+        meshes.append(joinedMesh)
+
+        [mesh.translate(numpy.array([0.0, 0.0, contactRadius])) for mesh in meshes]
+        return meshes
 
 
 class SOT:
@@ -206,5 +365,6 @@ class SOT:
 
 types = [
         Chip,
+        MELF,
         SOT
 ]

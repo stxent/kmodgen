@@ -1,0 +1,58 @@
+{
+  "materials": {
+    "Band": {
+      "shininess": 0.9,
+      "diffuse": [0.15, 0.15, 0.15],
+      "specular": [0.621, 0.621, 0.621],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Contact": {
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.401, 0.401, 0.401],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Glass": {
+      "shininess": 0.9,
+      "diffuse": [0.5, 0.115, 0.071],
+      "specular": [0.621, 0.621, 0.621],
+      "ambient": [0.333, 0.333, 0.333]
+    }
+  },
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "MELF", "spec": "thick"},
+      "title": "DO-213AA",
+      "band": {"length": 0.513, "offset": -0.513},
+      "body": {"length": 2.565, "radius": 0.788},
+      "pins": {"length": 0.559, "radius": 0.838},
+      "pads": {"pitch": 3.25, "size": [1.25, 2.0], "names": ["C", "A"]},
+      "mark": {"bar": true, "dot": true, "wrap": true},
+      "description": "MiniMELF",
+      "source": "Vishay specifications"
+    }, {
+      "package": {"type": "MELF", "spec": "thick"},
+      "title": "DO-213AB",
+      "band": {"length": 0.816, "offset": -0.816},
+      "body": {"length": 4.08, "radius": 1.285},
+      "pins": {"length": 0.56, "radius": 1.335},
+      "pads": {"pitch": 4.75, "size": [1.25, 3.0], "names": ["C", "A"]},
+      "mark": {"bar": true, "dot": true, "wrap": true},
+      "description": "MELF",
+      "source": "Vishay specifications"
+    }, {
+      "package": {"type": "MELF", "spec": "thick"},
+      "title": "SOD-80",
+      "band": {"length": 0.62, "offset": -0.62},
+      "body": {"length": 3.1, "radius": 0.75},
+      "pins": {"length": 0.3, "radius": 0.8},
+      "pads": {"pitch": 3.3, "size": [0.9, 1.7], "names": ["C", "A"]},
+      "mark": {"bar": true, "dot": true, "wrap": true},
+      "source": "NXP specifications"
+    }
+  ]
+}

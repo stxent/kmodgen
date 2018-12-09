@@ -15,7 +15,7 @@ class Chip(exporter.Footprint):
 
         self.bodySize = numpy.array(descriptor['body']['size'])
         self.padSize = numpy.array(descriptor['pads']['size'])
-        self.pitch = descriptor['pins']['pitch']
+        self.pitch = descriptor['pads']['pitch']
         self.mapping = descriptor['pins']['names'] if 'names' in descriptor['pins'] else ['1', '2']
 
         self.markArrow = descriptor['mark']['arrow'] if 'arrow' in descriptor['mark'] else False
@@ -145,6 +145,12 @@ class Chip(exporter.Footprint):
     @staticmethod
     def describe(descriptor):
         return descriptor['description'] if 'description' in descriptor else None
+
+
+class MELF(Chip):
+    def __init__(self, spec, descriptor):
+        descriptor['body']['size'] = [descriptor['body']['length'], descriptor['body']['radius'] * 2.0]
+        super().__init__(spec, descriptor)
 
 
 class SOT(exporter.Footprint):
@@ -292,4 +298,8 @@ class SOT(exporter.Footprint):
         return descriptor['body']['model'] if 'model' in descriptor['body'] else None
 
 
-types = [Chip, SOT]
+types = [
+        Chip,
+        MELF,
+        SOT
+]
