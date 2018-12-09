@@ -617,10 +617,11 @@ def makeRoundedBox(size, roundness, chamfer, edgeResolution=4, lineResolution=1,
         band=None, bandWidth=0.0, markRadius=None, markOffset=numpy.array([0.0, 0.0]), markResolution=24):
     x, y, z = numpy.array(size) / 2.0
     r = roundness * math.sqrt(0.5)
+
     if band is not None:
         dr = bandWidth * math.sqrt(0.5)
     else:
-        dr = 0.0
+        raise Exception() # TODO
 
     if markRadius is not None:
         topFaceFunc = lambda vertices: makeBodyCap(vertices, markRadius, markOffset, markResolution)
@@ -727,7 +728,7 @@ def makeSlopedBox(size, chamfer, slope, slopeHeight, edgeResolution=4, lineResol
     if band is not None:
         dr = bandWidth * math.sqrt(0.5)
     else:
-        dr = 0.0
+        raise Exception() # TODO
 
     offset = dr - mz * (dr / z)
     mx = x + offset

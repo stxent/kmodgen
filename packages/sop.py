@@ -20,8 +20,8 @@ class SOP:
     BAND_WIDTH = primitives.hmils(0.1)
 
     CHAMFER_RESOLUTION = 1
-    LINE_RESOLUTION = 1
-    EDGE_RESOLUTION = 3
+    LINE_RESOLUTION    = 1
+    EDGE_RESOLUTION    = 3
 
 
     def __init__(self):

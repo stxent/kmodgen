@@ -11,8 +11,7 @@ import exporter
 
 class RadialCapacitor(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=RadialCapacitor.describe(descriptor), spec=spec)
+        super().__init__(name=descriptor['title'], description=RadialCapacitor.describe(descriptor), spec=spec)
 
         self.bodyDiameter = descriptor['body']['diameter']
         self.padDrill = descriptor['pads']['drill']

@@ -194,7 +194,7 @@ class RadialCapacitor:
 
     def buildCapacitorBody(self, curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
             capSectionWidth, capBumpDepth):
-        slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
+        slices = curves.rotate(curve=curve, axis=numpy.array([0.0, 0.0, 1.0]), edges=edges)
         meshes = []
 
         bottomCap = curves.createTriCapMesh(slices, True)
@@ -212,17 +212,17 @@ class RadialCapacitor:
         meshes.append(topCap)
 
         if polarized:
-            body = curves.createRotationMesh(slices[1:], False)
+            body = curves.createRotationMesh(slices=slices[1:], wrap=False)
             body.appearance().material = self.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
-            mark = curves.createRotationMesh([slices[-1]] + slices[0:2], False)
+            mark = curves.createRotationMesh(slices=[slices[-1]] + slices[0:2], wrap=False)
             mark.appearance().material = self.mat(materials, 'Mark')
             mark.ident = name + 'Mark'
             meshes.append(mark)
         else:
-            body = curves.createRotationMesh(slices, True)
+            body = curves.createRotationMesh(slices=slices, wrap=True)
             body.appearance().material = self.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)

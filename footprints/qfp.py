@@ -11,7 +11,7 @@ import exporter
 
 class QFP(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=QFP.describe(descriptor), spec=spec)
+        super().__init__(name=descriptor['title'], description=QFP.describe(descriptor), spec=spec)
 
         try:
             self.padSize = numpy.array(descriptor['pads']['regularPadSize'])

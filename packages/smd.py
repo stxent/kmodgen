@@ -27,8 +27,8 @@ class SOT:
     MARK_RADIUS = primitives.hmils(0.2)
 
     CHAMFER_RESOLUTION = 1
-    LINE_RESOLUTION = 1
-    EDGE_RESOLUTION = 3
+    LINE_RESOLUTION    = 1
+    EDGE_RESOLUTION    = 3
 
 
     class PinDesc:

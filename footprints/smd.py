@@ -11,7 +11,7 @@ import exporter
 
 class Chip(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=Chip.describe(descriptor), spec=spec)
+        super().__init__(name=descriptor['title'], description=Chip.describe(descriptor), spec=spec)
 
         self.bodySize = numpy.array(descriptor['body']['size'])
         self.padSize = numpy.array(descriptor['pads']['size'])
@@ -187,7 +187,7 @@ class SOT(exporter.Footprint):
 
 
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=SOT.describe(descriptor),
+        super().__init__(self, name=descriptor['title'], description=SOT.describe(descriptor),
                 model=SOT.model(descriptor), spec=spec)
 
         self.count = descriptor['pins']['count']
