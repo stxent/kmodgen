@@ -96,6 +96,7 @@ class QFP:
                 pinShapeSize=pinShape,
                 pinHeight=pinHeight + pinShape[1] * math.cos(bodySlope) / 2.0,
                 pinLength=primitives.hmils(descriptor['pins']['length']) + pinOffset,
+                pinSlope=math.pi * (10.0 / 180.0),
                 endSlope=bodySlope,
                 chamferResolution=QFP.CHAMFER_RESOLUTION,
                 edgeResolution=QFP.EDGE_RESOLUTION)

@@ -369,7 +369,7 @@ class QuadJoint:
         return pairs[angles.index(min(angles))]
 
 
-def makeBodyCap(corners, radius, offset, edges=24):
+def makeBodyCap(corners, radius, offset, edges):
     if edges % 4 != 0:
         raise Exception()
     if len(corners) != 4:
@@ -458,7 +458,7 @@ def makeRoundedEdge(beg, end, resolution, inversion=False):
                     endPosN + endDirN
             ), resolution, inversion)
 
-def roundModelEdges(vertices, edges, faces, chamfer, sharpness, edgeResolution=4, lineResolution=1):
+def roundModelEdges(vertices, edges, faces, chamfer, sharpness, edgeResolution, lineResolution):
     meshes = []
     tesselatedEdges = []
     processedEdges = []
@@ -540,7 +540,7 @@ def roundModelEdges(vertices, edges, faces, chamfer, sharpness, edgeResolution=4
 
     return mesh
 
-def makeBox(size, chamfer, edgeResolution=4, lineResolution=1, band=None, bandWidth=0.0,
+def makeBox(size, chamfer, edgeResolution, lineResolution, band=None, bandWidth=0.0,
         markRadius=None, markOffset=numpy.array([0.0, 0.0]), markResolution=24):
     x, y, z = numpy.array(size) / 2.0
     if band is not None:
@@ -613,8 +613,8 @@ def makeBox(size, chamfer, edgeResolution=4, lineResolution=1, band=None, bandWi
         mark = None
     return (body, mark)
 
-def makeRoundedBox(size, roundness, chamfer, edgeResolution=4, lineResolution=1,
-        band=None, bandWidth=0.0, markRadius=None, markOffset=numpy.array([0.0, 0.0]), markResolution=24):
+def makeRoundedBox(size, roundness, chamfer, edgeResolution, lineResolution, band=None, bandWidth=0.0,
+        markRadius=None, markOffset=numpy.array([0.0, 0.0]), markResolution=24):
     x, y, z = numpy.array(size) / 2.0
     r = roundness * math.sqrt(0.5)
 
@@ -720,7 +720,7 @@ def makeRoundedBox(size, roundness, chamfer, edgeResolution=4, lineResolution=1,
         mark = None
     return (body, mark)
 
-def makeSlopedBox(size, chamfer, slope, slopeHeight, edgeResolution=4, lineResolution=1, band=None, bandWidth=0.0):
+def makeSlopedBox(size, chamfer, slope, slopeHeight, edgeResolution, lineResolution, band=None, bandWidth=0.0):
     x, y, z = numpy.array(size) / 2.0
     mz = z - slopeHeight
     sy = y - slopeHeight / math.tan(slope)
@@ -893,10 +893,9 @@ def calcMedianPoint(vertices):
         minPos = numpy.minimum(minPos, v)
     return (maxPos + minPos) / 2.0
 
-def makePinMesh(pinShapeSize, pinHeight, pinLength, pinSlope=math.pi * (10.0 / 180.0), endSlope=0.0,
-        chamferResolution=2, edgeResolution=3):
-    chamfer = pinShapeSize[1] / 10.0
-    curveRoundness = roundness(angle=math.pi / 2.0 + pinSlope)
+def makePinMesh(pinShapeSize, pinHeight, pinLength, pinSlope, endSlope, chamferResolution, edgeResolution):
+    chamfer = min(pinShapeSize) / 10.0
+    curveRoundness = calcBezierWeight(angle=math.pi / 2.0 + pinSlope)
 
     shape = makeRoundedRect(size=pinShapeSize, roundness=chamfer, segments=chamferResolution)
     shapePoints = []
