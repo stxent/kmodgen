@@ -17,288 +17,399 @@ class RadialCapacitor:
     def __init__(self):
         pass
 
-    def buildBumpedCap(self, slices, beginning, sections, sectionWidth, capRadius, bodyRadius):
+    @staticmethod
+    def build_bumped_cap(slices, beginning, sections, section_width, cap_radius, body_radius):
         if sections < 2:
             raise Exception()
-
-        rot = lambda a, b: a if a < b else a - b if a >= 0 else b - a
 
         if beginning:
             vertices = [slices[i][0] for i in range(0, len(slices))]
         else:
             vertices = [slices[i][len(slices[i]) - 1] for i in range(0, len(slices))]
+
         center = sum(vertices) / len(slices)
+        angle = lambda v: math.atan2((v - center)[1], (v - center)[0])
+        belongs = lambda v, a, b: a <= v <= b if b >= a else v >= a or v <= b
+        rot = lambda a, b: a if a < b else a - b if a >= 0 else b - a
 
-        geoVertices = []
-        geoPolygons = []
+        geo_vertices = []
+        geo_polygons = []
 
-        depth = sectionWidth / 4.0
-        firstCircleRadius = sectionWidth / 4.0 / math.sin(2.0 * math.pi / float(2 * sections))
-        secondCircleRadius = sectionWidth / 2.0 / math.sin(2.0 * math.pi / float(2 * sections))
-        firstCirclePoints, secondCirclePoints = [], []
-        outerPoints = []
-        bodyPoints = []
+        depth = section_width / 4.0
+        first_circle_radius = section_width / 4.0 / math.sin(2.0 * math.pi / float(2 * sections))
+        second_circle_radius = section_width / 2.0 / math.sin(2.0 * math.pi / float(2 * sections))
+        first_circle_points, second_circle_points = [], []
+        outer_points = []
+        body_points = []
+
         for i in range(0, sections):
-            angle = 2.0 * math.pi / float(sections) * float(i)
-            vector = numpy.array([math.cos(angle), math.sin(angle), 0.0])
-            firstCirclePoints.append(center + vector * firstCircleRadius + numpy.array([0.0, 0.0, -depth]))
-            secondCirclePoints.append(center + vector * secondCircleRadius)
+            direction = 2.0 * math.pi / float(sections) * float(i)
+            vector = numpy.array([math.cos(direction), math.sin(direction), 0.0])
+            first_circle_points.append(center + vector * first_circle_radius
+                + numpy.array([0.0, 0.0, -depth]))
+            second_circle_points.append(center + vector * second_circle_radius)
 
-            angle = 2.0 * math.pi / float(sections) * (float(i) + 0.5)
-            vector = numpy.array([math.cos(angle), math.sin(angle), 0.0])
-            normal = numpy.array([math.cos(angle + math.pi / 2.0), math.sin(angle + math.pi / 2.0), 0.0])
+            direction = 2.0 * math.pi / float(sections) * (float(i) + 0.5)
+            vector = numpy.array([
+                math.cos(direction),
+                math.sin(direction),
+                0.0])
+            normal = numpy.array([
+                math.cos(direction + math.pi / 2.0),
+                math.sin(direction + math.pi / 2.0),
+                0.0])
             points = [
-                    center + vector * capRadius + normal * sectionWidth / 2.0,
-                    center + vector * capRadius + normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
-                    center + vector * capRadius - normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
-                    center + vector * capRadius - normal * sectionWidth / 2.0
-            ]
-            outerPoints.append(points)
+                center + vector * cap_radius + normal * section_width / 2.0,
+                center + vector * cap_radius + normal * section_width / 4.0
+                    + numpy.array([0.0, 0.0, -depth]),
+                center + vector * cap_radius - normal * section_width / 4.0
+                    + numpy.array([0.0, 0.0, -depth]),
+                center + vector * cap_radius - normal * section_width / 2.0]
+            outer_points.append(points)
             points = [
-                    center + vector * bodyRadius + normal * sectionWidth / 2.0,
-                    center + vector * bodyRadius + normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
-                    center + vector * bodyRadius - normal * sectionWidth / 4.0 + numpy.array([0.0, 0.0, -depth]),
-                    center + vector * bodyRadius - normal * sectionWidth / 2.0
-            ]
-            bodyPoints.append(points)
+                center + vector * body_radius + normal * section_width / 2.0,
+                center + vector * body_radius + normal * section_width / 4.0
+                    + numpy.array([0.0, 0.0, -depth]),
+                center + vector * body_radius - normal * section_width / 4.0
+                    + numpy.array([0.0, 0.0, -depth]),
+                center + vector * body_radius - normal * section_width / 2.0]
+            body_points.append(points)
 
-        edgePoints = []
+        edge_points = []
         for i in range(0, sections):
-            angle = lambda v: math.atan2((v - center)[1], (v - center)[0])
-            belongs = lambda v, a, b: v >= a and v <= b if b >= a else v >= a or v <= b
+            inner_range = (outer_points[rot(i - 1, sections)][0], outer_points[i][3])
+            outer_range = (outer_points[rot(i - 1, sections)][3], outer_points[i][0])
+            inner = (angle(inner_range[0]), angle(inner_range[1]))
+            outer = (angle(outer_range[0]), angle(outer_range[1]))
 
-            innerRange = (outerPoints[rot(i - 1, sections)][0], outerPoints[i][3])
-            outerRange = (outerPoints[rot(i - 1, sections)][3], outerPoints[i][0])
-            inner = (angle(innerRange[0]), angle(innerRange[1]))
-            outer = (angle(outerRange[0]), angle(outerRange[1]))
-
-            normalAngles = (
-                    2.0 * math.pi / float(sections) * (float(i) + 0.5) + math.pi / 2.0,
-                    2.0 * math.pi / float(sections) * (float(i) - 0.5) + math.pi / 2.0
-            )
+            normal_angles = (
+                2.0 * math.pi / float(sections) * (float(i) + 0.5) + math.pi / 2.0,
+                2.0 * math.pi / float(sections) * (float(i) - 0.5) + math.pi / 2.0)
             normals = (
-                    numpy.array([math.cos(normalAngles[0]), math.sin(normalAngles[0]), 0.0]),
-                    numpy.array([math.cos(normalAngles[1]), math.sin(normalAngles[1]), 0.0])
-            )
+                numpy.array([math.cos(normal_angles[0]), math.sin(normal_angles[0]), 0.0]),
+                numpy.array([math.cos(normal_angles[1]), math.sin(normal_angles[1]), 0.0]))
 
             points = [v for v in vertices if belongs(angle(v), inner[0], inner[1])]
 
-            for j in range(0, len(vertices)):
-                seg = (vertices[rot(j - 1, len(vertices))], vertices[j])
+            for j, vertex in enumerate(vertices):
+                seg = (vertices[rot(j - 1, len(vertices))], vertex)
 
-                if not belongs(angle(seg[0]), outer[0], outer[1]) and not belongs(angle(seg[1]), outer[0], outer[1]):
+                if (not belongs(angle(seg[0]), outer[0], outer[1])
+                    and not belongs(angle(seg[1]), outer[0], outer[1])):
                     continue
 
-                intersection = model.intersectLinePlane(secondCirclePoints[i], normals[0], seg[0], seg[1])
+                intersection = model.intersect_line_plane(second_circle_points[i],
+                    normals[0], seg[0], seg[1])
                 if intersection is not None:
-                    outerPoints[i][3] = intersection
+                    outer_points[i][3] = intersection
                     points.append(intersection)
 
-                intersection = model.intersectLinePlane(secondCirclePoints[i], normals[1], seg[0], seg[1])
+                intersection = model.intersect_line_plane(second_circle_points[i],
+                    normals[1], seg[0], seg[1])
                 if intersection is not None:
-                    outerPoints[rot(i - 1, sections)][0] = intersection
+                    outer_points[rot(i - 1, sections)][0] = intersection
                     points.append(intersection)
 
             if inner[1] >= inner[0]:
-                points = sorted(points, key=lambda p: angle(p))
+                points = sorted(points, key=angle)
             else:
-                points = sorted(filter(lambda x: angle(x) >= 0.0, points), key=lambda p: angle(p))\
-                        + sorted(filter(lambda x: angle(x) < 0.0, points), key=lambda p: angle(p))
-            edgePoints.append(points)
+                points = (sorted(filter(lambda x: angle(x) >= 0.0, points), key=angle)
+                    + sorted(filter(lambda x: angle(x) < 0.0, points), key=angle))
+            edge_points.append(points)
 
-        fcp = lambda a: rot(a, sections)
-        geoVertices.extend(firstCirclePoints)
-        scp = lambda a: sections + rot(a, sections)
-        geoVertices.extend(secondCirclePoints)
-        op = lambda a, b: 2 * sections + rot(a, sections) * 4 + rot(b, 4)
-        [geoVertices.extend(points) for points in outerPoints]
-        bp = lambda a, b: 6 * sections + rot(a, sections) * 4 + rot(b, 4)
-        [geoVertices.extend(points) for points in bodyPoints]
+        first_circle_point_func = lambda a: rot(a, sections)
+        geo_vertices.extend(first_circle_points)
+        second_circle_point_func = lambda a: sections + rot(a, sections)
+        geo_vertices.extend(second_circle_points)
+        outer_point_func = lambda a, b: 2 * sections + rot(a, sections) * 4 + rot(b, 4)
+        for points in outer_points:
+            geo_vertices.extend(points)
+        body_point_func = lambda a, b: 6 * sections + rot(a, sections) * 4 + rot(b, 4)
+        for points in body_points:
+            geo_vertices.extend(points)
 
-        [geoVertices.extend(points) for points in edgePoints]
-        def edgeIndices(a):
-            return [10 * sections + sum(map(len, edgePoints[0:a])) + i for i in range(0, len(edgePoints[a]))]
+        for points in edge_points:
+            geo_vertices.extend(points)
+
+        def edge_indices(edge):
+            index_range = range(0, len(edge_points[edge]))
+            return [10 * sections + sum(map(len, edge_points[0:edge])) + i for i in index_range]
 
         # Central polygon
-        geoPolygons.append([i for i in range(0, sections)])
+        geo_polygons.append(list(range(0, sections)))
         for i in range(0, sections):
             # Bumped polygons
-            geoPolygons.append([fcp(i + 1), fcp(i), op(i, 2), op(i, 1)])
+            geo_polygons.append([
+                first_circle_point_func(i + 1),
+                first_circle_point_func(i),
+                outer_point_func(i, 2),
+                outer_point_func(i, 1)])
             # Ramp polygons
-            geoPolygons.append([scp(i + 1), fcp(i + 1), op(i, 1), op(i, 0)])
-            geoPolygons.append([fcp(i), scp(i), op(i, 3), op(i, 2)])
+            geo_polygons.append([
+                second_circle_point_func(i + 1),
+                first_circle_point_func(i + 1),
+                outer_point_func(i, 1),
+                outer_point_func(i, 0)])
+            geo_polygons.append([
+                first_circle_point_func(i),
+                second_circle_point_func(i),
+                outer_point_func(i, 3),
+                outer_point_func(i, 2)])
             # Arc polygons
-            geoPolygons.append([scp(i)] + edgeIndices(i))
+            geo_polygons.append([second_circle_point_func(i)] + edge_indices(i))
             # Partially visible polygons
-            geoPolygons.append([op(i, 0), op(i, 1), bp(i, 1), bp(i, 0)])
-            geoPolygons.append([op(i, 2), op(i, 3), bp(i, 3), bp(i, 2)])
-            geoPolygons.append([op(i, 1), op(i, 2), bp(i, 2), bp(i, 1)])
-            geoPolygons.append([bp(i, 0), bp(i, 1), bp(i, 2), bp(i, 3)])
+            geo_polygons.append([
+                outer_point_func(i, 0),
+                outer_point_func(i, 1),
+                body_point_func(i, 1),
+                body_point_func(i, 0)])
+            geo_polygons.append([
+                outer_point_func(i, 2),
+                outer_point_func(i, 3),
+                body_point_func(i, 3),
+                body_point_func(i, 2)])
+            geo_polygons.append([
+                outer_point_func(i, 1),
+                outer_point_func(i, 2),
+                body_point_func(i, 2),
+                body_point_func(i, 1)])
+            geo_polygons.append([
+                body_point_func(i, 0),
+                body_point_func(i, 1),
+                body_point_func(i, 2),
+                body_point_func(i, 3)])
 
         # Generate object
         mesh = model.Mesh()
-        mesh.geoVertices = geoVertices
-        [mesh.geoPolygons.extend(model.Mesh.tesselate(patch)) for patch in geoPolygons]
+        mesh.geo_vertices = geo_vertices
+        for patch in geo_polygons:
+            mesh.geo_polygons.extend(model.Mesh.triangulate(patch))
         mesh.optimize()
 
         return mesh
 
-    def buildCapacitorCurve(self, radius, height, curvature, bandOffset, capRadius, capDepth, chamfer,
-            edgeDetails=3, bandDetails=4):
+    @staticmethod
+    def build_capacitor_curve(radius, height, curvature, band_offset, cap_radius, cap_depth,
+                              chamfer, edge_details=3, band_details=4):
 
-        if capRadius is not None and capDepth is not None and chamfer is None:
+        if cap_radius is not None and cap_depth is not None and chamfer is None:
             raise Exception()
 
-        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
+        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
         # Bottom cap
-        if capRadius is not None:
-            if capDepth is not None:
-                curve.append(curves.Line((capRadius, 0.0, capDepth - chamfer), (capRadius, 0.0, chamfer), 1))
-                curve.append(curves.Line((capRadius, 0.0, chamfer), (capRadius + chamfer, 0.0, 0.0), 1))
-                curve.append(curves.Line((capRadius + chamfer, 0.0, 0.0), (radius - curvature, 0.0, 0.0), 1))
+        if cap_radius is not None:
+            if cap_depth is not None:
+                curve.append(curves.Line(
+                    (cap_radius, 0.0, cap_depth - chamfer),
+                    (cap_radius, 0.0, chamfer),
+                    1))
+                curve.append(curves.Line(
+                    (cap_radius, 0.0, chamfer),
+                    (cap_radius + chamfer, 0.0, 0.0),
+                    1))
+                curve.append(curves.Line(
+                    (cap_radius + chamfer, 0.0, 0.0),
+                    (radius - curvature, 0.0, 0.0),
+                    1))
             else:
-                curve.append(curves.Line((capRadius, 0.0, 0.0), (radius - curvature, 0.0, 0.0), 1))
+                curve.append(curves.Line(
+                    (cap_radius, 0.0, 0.0),
+                    (radius - curvature, 0.0, 0.0),
+                    1))
 
         # Plastic
-        curve.append(curves.Bezier((radius - curvature, 0.0, 0.0), (curvature * weight, 0.0, 0.0),
-                (radius, 0.0, curvature), (0.0, 0.0, -curvature * weight), edgeDetails))
-        curve.append(curves.Line((radius, 0.0, curvature), (radius, 0.0, bandOffset - curvature * 2.0), 1))
-        curve.append(curves.Bezier((radius, 0.0, bandOffset - curvature * 2.0), (0.0, 0.0, curvature),
-                (radius - curvature, 0.0, bandOffset), (0.0, 0.0, -curvature), bandDetails))
-        curve.append(curves.Bezier((radius - curvature, 0.0, bandOffset), (0.0, 0.0, curvature),
-                (radius, 0.0, bandOffset + curvature * 2.0), (0.0, 0.0, -curvature), bandDetails))
-        curve.append(curves.Line((radius, 0.0, bandOffset + curvature * 2.0), (radius, 0.0, height - curvature), 1))
-        curve.append(curves.Bezier((radius, 0.0, height - curvature), (0.0, 0.0, curvature * weight),
-                (radius - curvature, 0.0, height), (curvature * weight, 0.0, 0.0), edgeDetails))
+        curve.append(curves.Bezier(
+            (radius - curvature, 0.0, 0.0),
+            (curvature * weight, 0.0, 0.0),
+            (radius, 0.0, curvature),
+            (0.0, 0.0, -curvature * weight),
+            edge_details))
+        curve.append(curves.Line(
+            (radius, 0.0, curvature),
+            (radius, 0.0, band_offset - curvature * 2.0),
+            1))
+        curve.append(curves.Bezier(
+            (radius, 0.0, band_offset - curvature * 2.0),
+            (0.0, 0.0, curvature),
+            (radius - curvature, 0.0, band_offset),
+            (0.0, 0.0, -curvature),
+            band_details))
+        curve.append(curves.Bezier(
+            (radius - curvature, 0.0, band_offset),
+            (0.0, 0.0, curvature),
+            (radius, 0.0, band_offset + curvature * 2.0),
+            (0.0, 0.0, -curvature),
+            band_details))
+        curve.append(curves.Line(
+            (radius, 0.0, band_offset + curvature * 2.0),
+            (radius, 0.0, height - curvature),
+            1))
+        curve.append(curves.Bezier(
+            (radius, 0.0, height - curvature),
+            (0.0, 0.0, curvature * weight),
+            (radius - curvature, 0.0, height),
+            (curvature * weight, 0.0, 0.0),
+            edge_details))
 
         # Top cap
-        if capRadius is not None:
-            if capDepth is not None:
-                curve.append(curves.Line((radius - curvature, 0.0, height), (capRadius + chamfer, 0.0, height), 1))
-                curve.append(curves.Line((capRadius + chamfer, 0.0, height), (capRadius, 0.0, height - chamfer), 1))
-                curve.append(curves.Line((capRadius, 0.0, height - chamfer), (capRadius, 0.0, height - capDepth), 1))
+        if cap_radius is not None:
+            if cap_depth is not None:
+                curve.append(curves.Line(
+                    (radius - curvature, 0.0, height),
+                    (cap_radius + chamfer, 0.0, height),
+                    1))
+                curve.append(curves.Line(
+                    (cap_radius + chamfer, 0.0, height),
+                    (cap_radius, 0.0, height - chamfer),
+                    1))
+                curve.append(curves.Line(
+                    (cap_radius, 0.0, height - chamfer),
+                    (cap_radius, 0.0, height - cap_depth),
+                    1))
             else:
-                curve.append(curves.Line((radius - curvature, 0.0, height), (capRadius, 0.0, height), 1))
+                curve.append(curves.Line(
+                    (radius - curvature, 0.0, height),
+                    (cap_radius, 0.0, height),
+                    1))
 
         return curve
 
-    def buildPinCurve(self, radius, height, curvature, edgeDetails=2):
-        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
+    @staticmethod
+    def build_pin_curve(radius, height, curvature, edge_details=2):
+        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
-        curve.append(curves.Bezier((radius - curvature, 0.0, -height), (curvature * weight, 0.0, 0.0),
-                (radius, 0.0, -height + curvature), (0.0, 0.0, -curvature * weight), edgeDetails))
+        curve.append(curves.Bezier(
+            (radius - curvature, 0.0, -height),
+            (curvature * weight, 0.0, 0.0),
+            (radius, 0.0, -height + curvature),
+            (0.0, 0.0, -curvature * weight),
+            edge_details))
         curve.append(curves.Line((radius, 0.0, curvature - height), (radius, 0.0, 0.0), 1))
 
         return curve
 
-    def buildCapacitorBody(self, curve, edges, polarized, materials, name, capSections, capInnerRadius, capOuterRadius,
-            capSectionWidth, capBumpDepth):
+    @staticmethod
+    def build_capacitor_body(curve, edges, polarized, materials, name, cap_sections,
+                             cap_inner_radius, cap_outer_radius, cap_section_width, _):
         slices = curves.rotate(curve=curve, axis=numpy.array([0.0, 0.0, 1.0]), edges=edges)
         meshes = []
 
-        bottomCap = curves.createTriCapMesh(slices, True)
-        bottomCap.appearance().material = self.mat(materials, 'Bottom')
-        bottomCap.ident = name + 'BottomCap'
-        meshes.append(bottomCap)
+        bottom_cap = curves.create_tri_cap_mesh(slices, True)
+        bottom_cap.appearance().material = RadialCapacitor.mat(materials, 'Bottom')
+        bottom_cap.ident = name + 'BottomCap'
+        meshes.append(bottom_cap)
 
-        if capSections == 1:
-            topCap = curves.createTriCapMesh(slices, False)
+        if cap_sections == 1:
+            top_cap = curves.create_tri_cap_mesh(slices, False)
         else:
-            topCap = self.buildBumpedCap(slices=slices, beginning=False, sections=capSections,
-                    sectionWidth=capSectionWidth, capRadius=capInnerRadius, bodyRadius=capOuterRadius)
-        topCap.appearance().material = self.mat(materials, 'Top')
-        topCap.ident = name + 'TopCap'
-        meshes.append(topCap)
+            top_cap = RadialCapacitor.build_bumped_cap(
+                slices=slices,
+                beginning=False,
+                sections=cap_sections,
+                section_width=cap_section_width,
+                cap_radius=cap_inner_radius,
+                body_radius=cap_outer_radius)
+        top_cap.appearance().material = RadialCapacitor.mat(materials, 'Top')
+        top_cap.ident = name + 'TopCap'
+        meshes.append(top_cap)
 
         if polarized:
-            body = curves.createRotationMesh(slices=slices[1:], wrap=False)
-            body.appearance().material = self.mat(materials, 'Body')
+            body = curves.create_rotation_mesh(slices=slices[1:], wrap=False)
+            body.appearance().material = RadialCapacitor.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
-            mark = curves.createRotationMesh(slices=[slices[-1]] + slices[0:2], wrap=False)
-            mark.appearance().material = self.mat(materials, 'Mark')
+            mark = curves.create_rotation_mesh(slices=[slices[-1]] + slices[0:2], wrap=False)
+            mark.appearance().material = RadialCapacitor.mat(materials, 'Mark')
             mark.ident = name + 'Mark'
             meshes.append(mark)
         else:
-            body = curves.createRotationMesh(slices=slices, wrap=True)
-            body.appearance().material = self.mat(materials, 'Body')
+            body = curves.create_rotation_mesh(slices=slices, wrap=True)
+            body.appearance().material = RadialCapacitor.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
         return meshes
 
-    def buildCapacitorPin(self, curve, edges):
+    @staticmethod
+    def build_capacitor_pin(curve, edges):
         slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
 
-        pin = curves.createRotationMesh(slices, True)
-        pin.append(curves.createTriCapMesh(slices, True))
+        pin = curves.create_rotation_mesh(slices, True)
+        pin.append(curves.create_tri_cap_mesh(slices, True))
         pin.optimize()
 
         return pin
 
-    def demangle(self, title):
-        return title.replace('C-', 'Cap').replace('CP-', 'Cap').replace('R-', 'Radial').replace('A-', 'Axial')
+    @staticmethod
+    def demangle(title):
+        title = title.replace('C-', 'Cap')
+        title = title.replace('CP-', 'Cap')
+        title = title.replace('R-', 'Radial')
+        title = title.replace('A-', 'Axial')
+        return title
 
-    def mat(self, materials, name):
+    @staticmethod
+    def mat(materials, name):
         if name in materials:
             return materials[name]
-        else:
-            result = model.Material()
-            result.color.ident = name
-            return result
 
-    def generate(self, materials, templates, descriptor):
-        title = self.demangle(descriptor['title'])
+        result = model.Material()
+        result.color.ident = name
+        return result
 
-        bodyDetails = descriptor['body']['details'] if 'details' in descriptor['body'] else 3
-        bodyEdges = descriptor['body']['edges'] if 'edges' in descriptor['body'] else 24
-        capSections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'] else 1
+    def generate(self, materials, _, descriptor):
+        title = RadialCapacitor.demangle(descriptor['title'])
+
+        body_details = descriptor['body']['details'] if 'details' in descriptor['body'] else 3
+        body_edges = descriptor['body']['edges'] if 'edges' in descriptor['body'] else 24
+        cap_sections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'] else 1
 
         meshes = []
-        bodyCurve = self.buildCapacitorCurve(
-                primitives.hmils(descriptor['body']['diameter']) / 2.0,
-                primitives.hmils(descriptor['body']['height']),
-                primitives.hmils(descriptor['body']['curvature']),
-                primitives.hmils(descriptor['body']['band']),
-                primitives.hmils(descriptor['caps']['diameter']) / 2.0,
-                primitives.hmils(descriptor['caps']['depth']),
-                primitives.hmils(descriptor['caps']['chamfer']),
-                bodyDetails,
-                bodyDetails + 1)
+        body_curve = RadialCapacitor.build_capacitor_curve(
+            primitives.hmils(descriptor['body']['diameter']) / 2.0,
+            primitives.hmils(descriptor['body']['height']),
+            primitives.hmils(descriptor['body']['curvature']),
+            primitives.hmils(descriptor['body']['band']),
+            primitives.hmils(descriptor['caps']['diameter']) / 2.0,
+            primitives.hmils(descriptor['caps']['depth']),
+            primitives.hmils(descriptor['caps']['chamfer']),
+            body_details,
+            body_details + 1)
 
-        bodyMesh = self.buildCapacitorBody(
-                bodyCurve,
-                bodyEdges,
-                descriptor['body']['stripe'],
-                materials,
-                title,
-                capSections,
-                primitives.hmils(descriptor['caps']['diameter']) / 2.0,
-                primitives.hmils(descriptor['caps']['diameter'] + descriptor['body']['curvature']) / 2.0,
-                primitives.hmils(descriptor['body']['curvature']),
-                primitives.hmils(descriptor['body']['curvature']) / 2.0)
-        meshes.extend(bodyMesh)
+        body_mesh = RadialCapacitor.build_capacitor_body(
+            body_curve,
+            body_edges,
+            descriptor['body']['stripe'],
+            materials,
+            title,
+            cap_sections,
+            primitives.hmils(descriptor['caps']['diameter']) / 2.0,
+            primitives.hmils(descriptor['caps']['diameter']
+                             + descriptor['body']['curvature']) / 2.0,
+            primitives.hmils(descriptor['body']['curvature']),
+            primitives.hmils(descriptor['body']['curvature']) / 2.0)
+        meshes.extend(body_mesh)
 
-        pinCurve = self.buildPinCurve(
-                primitives.hmils(descriptor['pins']['diameter']) / 2.0,
-                primitives.hmils(descriptor['pins']['height']),
-                primitives.hmils(descriptor['pins']['curvature']))
+        pin_curve = RadialCapacitor.build_pin_curve(
+            primitives.hmils(descriptor['pins']['diameter']) / 2.0,
+            primitives.hmils(descriptor['pins']['height']),
+            primitives.hmils(descriptor['pins']['curvature']))
 
-        pinMesh = self.buildCapacitorPin(pinCurve, descriptor['pins']['edges'])
-        pinMesh.appearance().material = self.mat(materials, 'Pin')
-        pinMesh.ident = title + 'Pin'
+        pin_mesh = RadialCapacitor.build_capacitor_pin(pin_curve, descriptor['pins']['edges'])
+        pin_mesh.appearance().material = self.mat(materials, 'Pin')
+        pin_mesh.ident = title + 'Pin'
 
         spacing = primitives.hmils(descriptor['pins']['spacing']) / 2.0
-        posPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Pos')
-        posPin.translate([-spacing, 0.0, 0.0])
-        meshes.append(posPin)
-        negPin = model.Mesh(parent=pinMesh, name=pinMesh.ident + 'Neg')
-        negPin.translate([spacing, 0.0, 0.0])
-        meshes.append(negPin)
+        pos_pin = model.Mesh(parent=pin_mesh, name=pin_mesh.ident + 'Pos')
+        pos_pin.translate([-spacing, 0.0, 0.0])
+        meshes.append(pos_pin)
+        neg_pin = model.Mesh(parent=pin_mesh, name=pin_mesh.ident + 'Neg')
+        neg_pin.translate([spacing, 0.0, 0.0])
+        meshes.append(neg_pin)
 
         return meshes
 

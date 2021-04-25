@@ -13,52 +13,49 @@ import time
 import exporter
 
 class Converter:
-    def __init__(self, modelPath, libraryPath=None, libraryName=None, modelType='wrl'):
-        if modelType != 'wrl' and modelType != 'x3d':
+    def __init__(self, model_path, library_path=None, library_name=None, model_type='wrl'):
+        if model_type not in ('wrl', 'x3d'):
             raise Exception()
-        self.modelPath = modelPath
-        self.modelType = modelType
-        self.libraryPath = libraryPath if libraryName is not None else None
-        self.libraryName = libraryName if libraryPath is not None else None
+        self.model_path = model_path
+        self.model_type = model_type
+        self.library_path = library_path if library_name is not None else None
+        self.library_name = library_name if library_path is not None else None
 
-    def circleToText(self, circle):
+    def circle_to_text(self, circle):
         if circle.part is not None:
             # Arc
             angle = circle.part[0] * math.pi / 180.0
             start = (circle.position[0] + math.cos(angle) * circle.radius,
-                    circle.position[1] + math.sin(angle) * circle.radius)
+                     circle.position[1] + math.sin(angle) * circle.radius)
             return 'DA {:g} {:g} {:g} {:g} {:d} {:g} 21\n'.format(*circle.position, *start,
-                    int(abs(circle.part[1] - circle.part[0]) * 10.0), circle.thickness)
-        else:
-            # Circle
-            return 'DC {:g} {:g} {:g} {:g} {:g} 21\n'.format(*circle.position,
-                    circle.position[0], circle.position[1] + circle.radius, circle.thickness)
+                int(abs(circle.part[1] - circle.part[0]) * 10.0), circle.thickness)
 
-    def labelToText(self, label):
+        # Circle
+        return 'DC {:g} {:g} {:g} {:g} {:g} 21\n'.format(*circle.position,
+            circle.position[0], circle.position[1] + circle.radius, circle.thickness)
+
+    def label_to_text(self, label):
         if label is None:
             return ''
 
         out = ''
         out += 'T0 {:g} {:g} {:g} {:g} 0 {:g} N V 21 N "{:s}"\n'.format(*label.position,
-                label.font, label.font, label.thickness, label.name)
+            label.font, label.font, label.thickness, label.name)
         out += 'T1 {:g} {:g} {:g} {:g} 0 {:g} N I 21 N "VAL*"'.format(*label.position,
-                label.font, label.font, label.thickness)
+            label.font, label.font, label.thickness)
         return out + '\n'
 
-    def stringToText(self, string):
+    def string_to_text(self, string):
         return 'T2 {:g} {:g} {:g} {:g} 0 {:g} N V 21 N "{:s}"\n'.format(*string.position,
-                string.font, string.font, string.thickness, string.value)
+            string.font, string.font, string.thickness, string.value)
 
-    def lineToText(self, line):
+    def line_to_text(self, line):
         return 'DS {:g} {:g} {:g} {:g} {:g} 21\n'.format(*line.start, *line.end, line.thickness)
 
-    def rectToText(self, rect):
-        return ''.join([self.lineToText(line) for line in rect.lines])
+    def rect_to_text(self, rect):
+        return ''.join([self.line_to_text(line) for line in rect.lines])
 
-    def rectToText(self, rect):
-        return ''.join([self.lineToText(line) for line in rect.lines])
-
-    def padToText(self, pad):
+    def pad_to_text(self, pad):
         style = 'R' if pad.style == exporter.AbstractPad.STYLE_RECT else 'C'
 
         out = '$PAD\n'
@@ -77,13 +74,13 @@ class Converter:
         out += '$EndPAD'
         return out + '\n'
 
-    def polyToText(self, poly):
+    def poly_to_text(self, poly):
         out = 'DP 0 0 0 0 {:d} {:g} {:d}'.format(len(poly.vertices), poly.thickness, poly.layer)
         for vertex in poly.vertices:
             out += '\nDl {:g} {:g}'.format(*vertex)
         return out + '\n'
 
-    def footprintToText(self, footprint):
+    def footprint_to_text(self, footprint):
         timestamp = time.time()
 
         out = '$MODULE {:s}\n'.format(footprint.name)
@@ -99,22 +96,22 @@ class Converter:
         objects = footprint.generate()
 
         for obj in filter(lambda x: isinstance(x, exporter.Label), objects):
-            out += self.labelToText(obj)
+            out += self.label_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.String), objects):
-            out += self.stringToText(obj)
+            out += self.string_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Circle), objects):
-            out += self.circleToText(obj)
+            out += self.circle_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Line), objects):
-            out += self.lineToText(obj)
+            out += self.line_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Rect), objects):
-            out += self.rectToText(obj)
+            out += self.rect_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Poly), objects):
-            out += self.polyToText(obj)
+            out += self.poly_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):
-            out += self.padToText(obj)
+            out += self.pad_to_text(obj)
 
         out += '$SHAPE3D\n'
-        out += 'Na "{:s}/{:s}.{:s}"\n'.format(self.modelPath, footprint.model, self.modelType)
+        out += 'Na "{:s}/{:s}.{:s}"\n'.format(self.model_path, footprint.model, self.model_type)
         out += 'Sc 1 1 1\n'
         out += 'Of 0 0 0\n'
         out += 'Ro 0 0 0\n'
@@ -124,10 +121,10 @@ class Converter:
         return out
 
     def generate(self, part):
-        return self.footprintToText(part)
+        return self.footprint_to_text(part)
 
     @staticmethod
-    def extractPartName(part):
+    def extract_part_name(part):
         return re.sub(re.compile(r'^.*\$MODULE (CP.*?)\n.*$', re.M | re.S), r'\1', part)
 
     @staticmethod
@@ -135,7 +132,8 @@ class Converter:
         timestring = datetime.datetime.fromtimestamp(time.time()).strftime('%d.%m.%Y %H:%M:{:s}')
 
         footprints = {}
-        [footprints.update({Converter.extractPartName(part): part}) for part in parts]
+        for part in parts:
+            footprints.update({Converter.extract_part_name(part): part})
         names = list(footprints.keys())
         names.sort()
 

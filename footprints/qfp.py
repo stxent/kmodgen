@@ -7,6 +7,7 @@
 
 import numpy
 import exporter
+import primitives
 
 
 class QFP(exporter.Footprint):
@@ -14,34 +15,34 @@ class QFP(exporter.Footprint):
         super().__init__(name=descriptor['title'], description=QFP.describe(descriptor), spec=spec)
 
         try:
-            self.padSize = numpy.array(descriptor['pads']['regularPadSize'])
-        except:
-            self.padSize = numpy.array(descriptor['pads']['size'])
+            self.pad_size = numpy.array(descriptor['pads']['regularPadSize'])
+        except KeyError:
+            self.pad_size = numpy.array(descriptor['pads']['size'])
 
         try:
-            self.sidePadSize = numpy.array(descriptor['pads']['sidePadSize'])
-        except:
-            self.sidePadSize = self.padSize
+            self.side_pad_size = numpy.array(descriptor['pads']['sidePadSize'])
+        except KeyError:
+            self.side_pad_size = self.pad_size
 
-        self.bodySize = numpy.array(descriptor['body']['size'])
+        self.body_size = numpy.array(descriptor['body']['size'])
         self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
         self.margin = descriptor['pads']['margin']
         self.pitch = descriptor['pins']['pitch']
-        self.sidePitch = self.pitch + (self.sidePadSize[0] - self.padSize[0]) / 2.0
+        self.side_pitch = self.pitch + (self.side_pad_size[0] - self.pad_size[0]) / 2.0
         self.title = 'QFP-{:d}'.format(sum(self.count) * 2)
 
     def pad(self, position, count, rev):
-        x, y = self.sidePadSize if position == 0 or position == count - 1 else self.padSize
-        return numpy.array([x, y]) if not rev else numpy.array([y, x])
+        x_offset, y_offset = self.side_pad_size if position in (0, count - 1) else self.pad_size
+        return numpy.array([x_offset, y_offset]) if not rev else numpy.array([y_offset, x_offset])
 
     def spacing(self, position, count):
         res = 0.0
         if position > 0:
             res += self.pitch * (position - 1)
         if position >= 1:
-            res += self.sidePitch
+            res += self.side_pitch
         if position == count - 1:
-            res += self.sidePitch - self.pitch
+            res += self.side_pitch - self.pitch
         return res
 
     def generate(self):
@@ -49,43 +50,45 @@ class QFP(exporter.Footprint):
         silkscreen.append(exporter.Label(self.title, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal and vertical offsets to first pins on each side
-        firstPinOffset = (numpy.asfarray(self.count) - 3.0) * self.pitch / 2.0 + self.sidePitch
+        first_pin_offset = (numpy.asfarray(self.count) - 3.0) * self.pitch / 2.0 + self.side_pitch
 
         # Body outline
-        outlineMargin = (self.margin - self.gap) * 2.0 - self.thickness
-        outlineSize = numpy.minimum(self.bodySize, self.bodySize + outlineMargin)
-        topCorner = outlineSize / 2.0
-        silkscreen.append(exporter.Rect(topCorner, -topCorner, self.thickness))
+        outline_margin = (self.margin - self.gap) * 2.0 - self.thickness
+        outline_size = numpy.minimum(self.body_size, self.body_size + outline_margin)
+        top_corner = outline_size / 2.0
+        silkscreen.append(exporter.Rect(top_corner, -top_corner, self.thickness))
 
         # Outer first pin mark
-        dotMarkPosition = numpy.array([
-                -(firstPinOffset[0] + self.sidePadSize[0] / 2.0 + self.gap + self.thickness),
-                (self.bodySize[1] + self.padSize[1]) / 2.0 + self.margin])
-        silkscreen.append(exporter.Circle(dotMarkPosition, self.thickness / 2.0, self.thickness))
+        dot_mark_position = numpy.array([
+            -(first_pin_offset[0] + self.side_pad_size[0] / 2.0 + self.gap + self.thickness),
+            (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin])
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
 
         # Inner first pin mark
-        triMarkOffset = 1.0
-        triMarkPoints = [
-                (-topCorner[0], topCorner[1] - triMarkOffset),
-                (-topCorner[0], topCorner[1]),
-                (-topCorner[0] + triMarkOffset, topCorner[1])]
-        silkscreen.append(exporter.Poly(triMarkPoints, self.thickness, exporter.Layer.SILK_FRONT))
+        tri_mark_offset = 1.0
+        tri_mark_points = [
+            (-top_corner[0], top_corner[1] - tri_mark_offset),
+            (-top_corner[0], top_corner[1]),
+            (-top_corner[0] + tri_mark_offset, top_corner[1])]
+        silkscreen.append(exporter.Poly(tri_mark_points, self.thickness, exporter.Layer.SILK_FRONT))
 
         # Horizontal pads
-        y = (self.bodySize[1] + self.padSize[1]) / 2.0 + self.margin
+        y_offset = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
         pad = lambda x: self.pad(x, self.count[0], False)
         for i in range(0, self.count[0]):
-            x = self.spacing(i, self.count[0]) - firstPinOffset[0]
-            pads.append(exporter.SmdPad(1 + i, pad(i), (x, y)))
-            pads.append(exporter.SmdPad(1 + i + self.count[0] + self.count[1], pad(i), (-x, -y)))
+            x_offset = self.spacing(i, self.count[0]) - first_pin_offset[0]
+            pads.append(exporter.SmdPad(1 + i, pad(i), (x_offset, y_offset)))
+            pads.append(exporter.SmdPad(1 + i + self.count[0] + self.count[1], pad(i),
+                (-x_offset, -y_offset)))
 
         # Vertical pads
-        x = (self.bodySize[0] + self.padSize[1]) / 2.0 + self.margin
+        x_offset = (self.body_size[0] + self.pad_size[1]) / 2.0 + self.margin
         pad = lambda x: self.pad(x, self.count[1], True)
         for j in range(0, self.count[1]):
-            y = self.spacing(j, self.count[1]) - firstPinOffset[1]
-            pads.append(exporter.SmdPad(1 + j + self.count[0], pad(j), (x, -y)))
-            pads.append(exporter.SmdPad(1 + j + 2 * self.count[0] + self.count[1], pad(j), (-x, y)))
+            y_offset = self.spacing(j, self.count[1]) - first_pin_offset[1]
+            pads.append(exporter.SmdPad(1 + j + self.count[0], pad(j), (x_offset, -y_offset)))
+            pads.append(exporter.SmdPad(1 + j + 2 * self.count[0] + self.count[1], pad(j),
+                (-x_offset, y_offset)))
 
         pads.sort(key=lambda x: x.number)
         return silkscreen + pads
@@ -94,15 +97,13 @@ class QFP(exporter.Footprint):
     def describe(descriptor):
         if 'description' in descriptor:
             return descriptor['description']
-        else:
-            pinCount = (descriptor['pins']['columns'] + descriptor['pins']['rows']) * 2
-            round1f = lambda x: '{:d}'.format(int(x)) if int(x * 10) == int(x) * 10 else '{:.1f}'.format(x)
-            round2f = lambda x: '{:.1f}'.format(x) if int(x * 100) == int(x * 10) * 10 else '{:.2f}'.format(x)
-            sizeStr = [round1f(x) for x in descriptor['body']['size'][0:2]]
-            heightStr = round2f(descriptor['body']['size'][2])
-            pitchStr = round2f(descriptor['pins']['pitch'])
-            return '{:d} leads, body {:s}x{:s}x{:s} mm, pitch {:s} mm'.format(
-                    pinCount, sizeStr[0], sizeStr[1], heightStr, pitchStr)
+
+        pin_count = (descriptor['pins']['columns'] + descriptor['pins']['rows']) * 2
+        size_str = [primitives.round1f(x) for x in descriptor['body']['size'][0:2]]
+        height_str = primitives.round2f(descriptor['body']['size'][2])
+        pitch_str = primitives.round2f(descriptor['pins']['pitch'])
+        return '{:d} leads, body {:s}x{:s}x{:s} mm, pitch {:s} mm'.format(
+            pin_count, size_str[0], size_str[1], height_str, pitch_str)
 
 
 types = [QFP]

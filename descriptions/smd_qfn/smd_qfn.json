@@ -1,0 +1,41 @@
+{
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "QFN", "spec": "thick"},
+      "title": "QFN-16-1EP_4x4mm_P0.65mm_EP2.1x2.1mm",
+      "body": {"size": [4.0, 4.0, 0.75]},
+      "heatsink": {"size": [2.1, 2.1]},
+      "pads": {"size": [0.28, 0.8]},
+      "pins": {"columns": 4, "rows": 4, "pitch": 0.65, "margin": -0.200},
+      "source": "Renesas specifications"
+    }, {
+      "package": {"type": "QFN", "spec": "thick"},
+      "title": "QFN-24-1EP_4x4mm_P0.5mm_EP2.1x2.1mm",
+      "body": {"size": [4.0, 4.0, 0.85]},
+      "heatsink": {"size": [2.1, 2.1]},
+      "pads": {"size": [0.24, 0.9]},
+      "pins": {"columns": 6, "rows": 6, "pitch": 0.5, "margin": 0.050},
+      "source": "Renesas specifications"
+    }, {
+      "package": {"type": "QFN", "spec": "thick"},
+      "title": "QFN-24-1EP_4x4mm_P0.5mm_EP2.8x2.8mm",
+      "body": {"size": [4.0, 4.0, 0.75]},
+      "heatsink": {"size": [2.8, 2.8]},
+      "pads": {"size": [0.25, 0.7]},
+      "pins": {"columns": 6, "rows": 6, "pitch": 0.5, "margin": 0.050},
+      "source": "Silabs specifications"
+    }, {
+      "package": {"type": "QFN", "spec": "thick"},
+      "title": "QFN-32-1EP_5x5mm_P0.5mm_EP3.5x3.5mm",
+      "body": {"size": [5.0, 5.0, 0.85]},
+      "heatsink": {"size": [3.75, 3.75]},
+      "pads": {"size": [0.27, 0.85]},
+      "pins": {"columns": 8, "rows": 8, "pitch": 0.5, "margin": 0.050},
+      "source": "NXP specifications for reflow soldering"
+    }
+  ]
+}

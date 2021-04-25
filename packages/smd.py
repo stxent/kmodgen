@@ -11,12 +11,13 @@ import numpy
 
 from wrlconv import curves
 from wrlconv import model
-from packages import generic
 import primitives
+from packages import generic
+
 
 class Chip(generic.GenericModelFilter):
     def __init__(self):
-        generic.GenericModelFilter.__init__(self, Chip.PIVOT_BOUNDING_BOX_CENTER)
+        super().__init__(Chip.PIVOT_BOUNDING_BOX_CENTER)
 
 
 class MELF:
@@ -29,150 +30,193 @@ class MELF:
     def __init__(self):
         pass
 
-    def buildBandCurves(self, length, bodyRadius, bandLength, bandOffset, lineResolution):
+    @staticmethod
+    def build_band_curves(body_radius, band_length, band_offset, line_resolution):
         band = []
 
-        if bandLength > 0.0:
+        if band_length > 0.0:
             band.append(curves.Line(
-                    (bandOffset - bandLength / 2.0, 0.0, bodyRadius),
-                    (bandOffset + bandLength / 2.0, 0.0, bodyRadius), lineResolution))
+                (band_offset - band_length / 2.0, 0.0, body_radius),
+                (band_offset + band_length / 2.0, 0.0, body_radius), line_resolution))
 
         return [band]
 
-    def buildBodyCurves(self, length, bodyCurvature, bodyRadius, contactLength, bandLength, bandOffset,
-            edgeResolution, lineResolution):
-        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
-        leftPart, rightPart = [], []
+    @staticmethod
+    def build_body_curves(length, body_curvature, body_radius, contact_length, band_length,
+                          band_offset, edge_resolution, line_resolution):
+        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        left_part, right_part = [], []
 
         # Left rounded edge
-        leftPart.append(curves.Bezier(
-                (-length / 2.0 + contactLength, 0.0, bodyRadius - bodyCurvature), (0.0, 0.0, bodyCurvature * weight),
-                (-length / 2.0 + contactLength + bodyCurvature, 0.0, bodyRadius), (-bodyCurvature * weight, 0.0, 0.0),
-                edgeResolution))
+        left_part.append(curves.Bezier(
+            (-length / 2.0 + contact_length, 0.0, body_radius - body_curvature),
+            (0.0, 0.0, body_curvature * weight),
+            (-length / 2.0 + contact_length + body_curvature, 0.0, body_radius),
+            (-body_curvature * weight, 0.0, 0.0),
+            edge_resolution))
 
-        if bandLength > 0.0:
+        if band_length > 0.0:
             # Package glass to the left of the band
-            leftPart.append(curves.Line(
-                    (-length / 2.0 + contactLength + bodyCurvature, 0.0, bodyRadius),
-                    (bandOffset - bandLength / 2.0, 0.0, bodyRadius), lineResolution))
+            left_part.append(curves.Line(
+                (-length / 2.0 + contact_length + body_curvature, 0.0, body_radius),
+                (band_offset - band_length / 2.0, 0.0, body_radius), line_resolution))
             # Package glass to the right of the band
-            rightPart.append(curves.Line(
-                    (bandOffset + bandLength / 2.0, 0.0, bodyRadius),
-                    (length / 2.0 - contactLength - bodyCurvature, 0.0, bodyRadius), lineResolution))
+            right_part.append(curves.Line(
+                (band_offset + band_length / 2.0, 0.0, body_radius),
+                (length / 2.0 - contact_length - body_curvature, 0.0, body_radius),
+                line_resolution))
         else:
-            leftPart.append(curves.Line(
-                    (-length / 2.0 + contactLength + bodyCurvature, 0.0, bodyRadius),
-                    (length / 2.0 - contactLength - bodyCurvature, 0.0, bodyRadius), lineResolution))
+            left_part.append(curves.Line(
+                (-length / 2.0 + contact_length + body_curvature, 0.0, body_radius),
+                (length / 2.0 - contact_length - body_curvature, 0.0, body_radius),
+                line_resolution))
 
         # Right rounded edge
-        rightPart.append(curves.Bezier(
-                (length / 2.0 - contactLength - bodyCurvature, 0.0, bodyRadius), (bodyCurvature * weight, 0.0, 0.0),
-                (length / 2.0 - contactLength, 0.0, bodyRadius - bodyCurvature), (0.0, 0.0, bodyCurvature * weight),
-                edgeResolution))
+        right_part.append(curves.Bezier(
+            (length / 2.0 - contact_length - body_curvature, 0.0, body_radius),
+            (body_curvature * weight, 0.0, 0.0),
+            (length / 2.0 - contact_length, 0.0, body_radius - body_curvature),
+            (0.0, 0.0, body_curvature * weight),
+            edge_resolution))
 
-        return [leftPart, rightPart]
+        return [left_part, right_part]
 
-    def buildContactCurves(self, length, bodyCurvature, bodyRadius, contactCurvature, contactLength, contactRadius,
-            edgeResolution, lineResolution):
-        rotation = model.Transform(matrix=model.rotationMatrix(numpy.array([0.0, 0.0, 1.0]), math.pi))
-        weight = primitives.calcBezierWeight(angle=math.pi / 2.0)
-        leftContact = []
+    @staticmethod
+    def build_contact_curves(length, body_curvature, body_radius, contact_curvature,
+                             contact_length, contact_radius, edge_resolution, line_resolution):
+        rotation = model.Transform(matrix=model.make_rotation_matrix(numpy.array([0.0, 0.0, 1.0]),
+            math.pi))
+        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        left_contact = []
 
         # Left contact
-        leftContact.append(curves.Line(
-                (-length / 2.0, 0.0, 0.0),
-                (-length / 2.0, 0.0, contactRadius - contactCurvature), lineResolution))
-        leftContact.append(curves.Bezier(
-                (-length / 2.0, 0.0, contactRadius - contactCurvature),
-                (0.0, 0.0, contactCurvature * weight),
-                (-length / 2.0 + contactCurvature, 0.0, contactRadius),
-                (-contactCurvature * weight, 0.0, 0.0),
-                edgeResolution))
-        leftContact.append(curves.Line(
-                (-length / 2.0 + contactCurvature, 0.0, contactRadius),
-                (-length / 2.0 + contactLength - contactCurvature, 0.0, contactRadius), lineResolution))
-        leftContact.append(curves.Bezier(
-                (-length / 2.0 + contactLength - contactCurvature, 0.0, contactRadius),
-                (contactCurvature * weight, 0.0, 0.0),
-                (-length / 2.0 + contactLength, 0.0, contactRadius - contactCurvature),
-                (0.0, 0.0, contactCurvature * weight),
-                edgeResolution))
-        leftContact.append(curves.Line(
-                (-length / 2.0 + contactLength, 0.0, contactRadius - contactCurvature),
-                (-length / 2.0 + contactLength, 0.0, bodyRadius - bodyCurvature), lineResolution))
+        left_contact.append(curves.Line(
+            (-length / 2.0, 0.0, 0.0),
+            (-length / 2.0, 0.0, contact_radius - contact_curvature),
+            line_resolution))
+        left_contact.append(curves.Bezier(
+            (-length / 2.0, 0.0, contact_radius - contact_curvature),
+            (0.0, 0.0, contact_curvature * weight),
+            (-length / 2.0 + contact_curvature, 0.0, contact_radius),
+            (-contact_curvature * weight, 0.0, 0.0),
+            edge_resolution))
+        left_contact.append(curves.Line(
+            (-length / 2.0 + contact_curvature, 0.0, contact_radius),
+            (-length / 2.0 + contact_length - contact_curvature, 0.0, contact_radius),
+            line_resolution))
+        left_contact.append(curves.Bezier(
+            (-length / 2.0 + contact_length - contact_curvature, 0.0, contact_radius),
+            (contact_curvature * weight, 0.0, 0.0),
+            (-length / 2.0 + contact_length, 0.0, contact_radius - contact_curvature),
+            (0.0, 0.0, contact_curvature * weight),
+            edge_resolution))
+        left_contact.append(curves.Line(
+            (-length / 2.0 + contact_length, 0.0, contact_radius - contact_curvature),
+            (-length / 2.0 + contact_length, 0.0, body_radius - body_curvature),
+            line_resolution))
 
-        rightContact = copy.deepcopy(leftContact)
-        rightContact.reverse()
-        for segment in rightContact:
+        right_contact = copy.deepcopy(left_contact)
+        right_contact.reverse()
+        for segment in right_contact:
             segment.apply(rotation)
             segment.reverse()
 
-        return [leftContact, rightContact]
+        return [left_contact, right_contact]
 
-    def generate(self, materials, templates, descriptor):
+    def generate(self, materials, _, descriptor):
         length = primitives.hmils(descriptor['body']['length'] + descriptor['pins']['length'] * 2.0)
-        bodyCurvature = primitives.hmils(descriptor['body']['radius'] / 5.0)
-        bodyRadius = primitives.hmils(descriptor['body']['radius'])
-        contactCurvature = primitives.hmils(descriptor['pins']['length'] / 10.0)
-        contactLength = primitives.hmils(descriptor['pins']['length'])
-        contactRadius = primitives.hmils(descriptor['pins']['radius'])
+        body_curvature = primitives.hmils(descriptor['body']['radius'] / 5.0)
+        body_radius = primitives.hmils(descriptor['body']['radius'])
+        contact_curvature = primitives.hmils(descriptor['pins']['length'] / 10.0)
+        contact_length = primitives.hmils(descriptor['pins']['length'])
+        contact_radius = primitives.hmils(descriptor['pins']['radius'])
 
         try:
-            bandLength = primitives.hmils(descriptor['band']['length'])
-        except:
-            bandLength = 0.0
+            band_length = primitives.hmils(descriptor['band']['length'])
+        except KeyError:
+            band_length = 0.0
 
         try:
-            bandOffset = primitives.hmils(descriptor['band']['offset'])
-        except:
-            bandOffset = 0.0
+            band_offset = primitives.hmils(descriptor['band']['offset'])
+        except KeyError:
+            band_offset = 0.0
 
         axis = numpy.array([1.0, 0.0, 0.0])
         meshes = []
 
         # Polarity mark
-        bandCurves = self.buildBandCurves(length=length, bodyRadius=bodyRadius, bandLength=bandLength,
-                bandOffset=bandOffset, lineResolution=MELF.LINE_RESOLUTION)
-        if len(bandCurves) > 0:
-            bandSlices = [curves.rotate(curve=x, axis=axis, edges=MELF.EDGE_COUNT) for x in bandCurves]
-            bandMeshes = [curves.createRotationMesh(slices=x, wrap=True) for x in bandSlices]
+        band_curves = MELF.build_band_curves(
+            body_radius=body_radius,
+            band_length=band_length,
+            band_offset=band_offset,
+            line_resolution=MELF.LINE_RESOLUTION)
+        if len(band_curves) > 0:
+            band_slices = []
+            for entry in band_curves:
+                band_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
+            band_meshes = []
+            for entry in band_slices:
+                band_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True))
 
-            joinedMesh = model.Mesh()
-            [joinedMesh.append(mesh) for mesh in bandMeshes]
-            joinedMesh.optimize()
+            joined_mesh = model.Mesh()
+            for mesh in band_meshes:
+                joined_mesh.append(mesh)
+            joined_mesh.optimize()
             if 'Band' in materials:
-                joinedMesh.appearance().material = materials['Band']
-            meshes.append(joinedMesh)
+                joined_mesh.appearance().material = materials['Band']
+            meshes.append(joined_mesh)
 
         # Glass body
-        bodyCurves = self.buildBodyCurves(length=length, bodyCurvature=bodyCurvature, bodyRadius=bodyRadius,
-                contactLength=contactLength, bandLength=bandLength, bandOffset=bandOffset,
-                edgeResolution=MELF.BODY_RESOLUTION, lineResolution=MELF.LINE_RESOLUTION)
-        bodySlices = [curves.rotate(curve=x, axis=axis, edges=MELF.EDGE_COUNT) for x in bodyCurves]
-        bodyMeshes = [curves.createRotationMesh(slices=x, wrap=True) for x in bodySlices]
+        body_curves = MELF.build_body_curves(length=length,
+            body_curvature=body_curvature,
+            body_radius=body_radius,
+            contact_length=contact_length,
+            band_length=band_length,
+            band_offset=band_offset,
+            edge_resolution=MELF.BODY_RESOLUTION,
+            line_resolution=MELF.LINE_RESOLUTION)
+        body_slices = []
+        for entry in body_curves:
+            body_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
+        body_meshes = []
+        for entry in body_slices:
+            body_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True))
 
-        joinedMesh = model.Mesh()
-        [joinedMesh.append(mesh) for mesh in bodyMeshes]
-        joinedMesh.optimize()
+        joined_mesh = model.Mesh()
+        for mesh in body_meshes:
+            joined_mesh.append(mesh)
+        joined_mesh.optimize()
         if 'Glass' in materials:
-            joinedMesh.appearance().material = materials['Glass']
-        meshes.append(joinedMesh)
+            joined_mesh.appearance().material = materials['Glass']
+        meshes.append(joined_mesh)
 
         # Contacts
-        contactCurves = self.buildContactCurves(length=length, bodyCurvature=bodyCurvature, bodyRadius=bodyRadius,
-                contactCurvature=contactCurvature, contactLength=contactLength, contactRadius=contactRadius,
-                edgeResolution=MELF.CONTACT_RESOLUTION, lineResolution=MELF.LINE_RESOLUTION)
-        contactSlices = [curves.rotate(curve=x, axis=axis, edges=MELF.EDGE_COUNT) for x in contactCurves]
-        contactMeshes = [curves.createRotationMesh(slices=x, wrap=True) for x in contactSlices]
+        contact_curves = MELF.build_contact_curves(
+            length=length,
+            body_curvature=body_curvature,
+            body_radius=body_radius,
+            contact_curvature=contact_curvature,
+            contact_length=contact_length,
+            contact_radius=contact_radius,
+            edge_resolution=MELF.CONTACT_RESOLUTION,
+            line_resolution=MELF.LINE_RESOLUTION)
+        contact_slices = []
+        for entry in contact_curves:
+            contact_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
+        contact_meshes = []
+        for entry in contact_slices:
+            contact_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True))
 
-        joinedMesh = model.Mesh()
-        [joinedMesh.append(mesh) for mesh in contactMeshes]
-        joinedMesh.optimize()
+        joined_mesh = model.Mesh()
+        for mesh in contact_meshes:
+            joined_mesh.append(mesh)
+        joined_mesh.optimize()
         if 'Contact' in materials:
-            joinedMesh.appearance().material = materials['Contact']
-        meshes.append(joinedMesh)
+            joined_mesh.appearance().material = materials['Contact']
+        meshes.append(joined_mesh)
 
-        [mesh.translate(numpy.array([0.0, 0.0, contactRadius])) for mesh in meshes]
+        for mesh in meshes:
+            mesh.translate(numpy.array([0.0, 0.0, contact_radius]))
         return meshes
 
 
@@ -198,8 +242,8 @@ class SOT:
 
             if pattern is not None:
                 self.length = pattern.length
-                self.planarOffset = pattern.planarOffset
-                self.verticalOffset = pattern.verticalOffset
+                self.planar_offset = pattern.planar_offset
+                self.vertical_offset = pattern.vertical_offset
                 self.shape = pattern.shape
 
             if descriptor is not None:
@@ -207,17 +251,17 @@ class SOT:
                     self.length = primitives.hmils(descriptor['length'])
                 if 'shape' in descriptor:
                     self.shape = primitives.hmils(descriptor['shape'])
-                    self.planarOffset = -abs(self.shape[1] * math.sin(slope) / 2.0)
-                    self.verticalOffset = self.shape[1] * math.cos(slope) / 2.0
+                    self.planar_offset = -abs(self.shape[1] * math.sin(slope) / 2.0)
+                    self.vertical_offset = self.shape[1] * math.cos(slope) / 2.0
                     if slope < 0:
-                        self.verticalOffset = -self.verticalOffset
-                self.length -= self.planarOffset
+                        self.vertical_offset = -self.vertical_offset
+                self.length -= self.planar_offset
 
         def __hash__(self):
             return hash((self.length, *self.shape))
 
         @classmethod
-        def makePattern(cls, slope, descriptor):
+        def make_pattern(cls, slope, descriptor):
             if slope is None or descriptor is None:
                 raise Exception()
 
@@ -227,144 +271,148 @@ class SOT:
     def __init__(self):
         pass
 
-    def generateBody(self, materials, descriptor):
+    @staticmethod
+    def generate_body(materials, descriptor):
         try:
-            bandOffset = primitives.hmils(descriptor['band']['offset'])
-        except:
-            bandOffset = 0.0
+            band_offset = primitives.hmils(descriptor['band']['offset'])
+        except KeyError:
+            band_offset = 0.0
 
         try:
-            markRadius = SOT.MARK_RADIUS if primitives.hmils(descriptor['mark']['dot']) else None
-        except:
-            markRadius = None
+            mark_radius = SOT.MARK_RADIUS if primitives.hmils(descriptor['mark']['dot']) else None
+        except KeyError:
+            mark_radius = None
 
-        bodySize = primitives.hmils(descriptor['body']['size'])
-        markOffset = -(bodySize[0:2] / 2.0 - SOT.MARK_MARGIN)
+        body_size = primitives.hmils(descriptor['body']['size'])
+        mark_offset = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
 
-        bodyMesh, markMesh = primitives.makeBox(
-                size=bodySize,
-                chamfer=SOT.BODY_CHAMFER,
-                edgeResolution=SOT.EDGE_RESOLUTION,
-                lineResolution=SOT.LINE_RESOLUTION,
-                band=bandOffset,
-                bandWidth=SOT.BAND_WIDTH,
-                markRadius=markRadius,
-                markOffset=markOffset,
-                markResolution=SOT.EDGE_RESOLUTION * 8)
+        body_mesh, mark_mesh = primitives.make_box(
+            size=body_size,
+            chamfer=SOT.BODY_CHAMFER,
+            edge_resolution=SOT.EDGE_RESOLUTION,
+            line_resolution=SOT.LINE_RESOLUTION,
+            band=band_offset,
+            band_width=SOT.BAND_WIDTH,
+            mark_radius=mark_radius,
+            mark_offset=mark_offset,
+            mark_resolution=SOT.EDGE_RESOLUTION * 8)
 
-        bodyTransform = model.Transform()
-        bodyTransform.translate([0.0, 0.0, bodySize[2] / 2.0 + SOT.BODY_OFFSET_Z])
+        body_transform = model.Transform()
+        body_transform.translate([0.0, 0.0, body_size[2] / 2.0 + SOT.BODY_OFFSET_Z])
         meshes = []
 
         if 'Body' in materials:
-            bodyMesh.appearance().material = materials['Body']
-        bodyMesh.apply(bodyTransform)
-        bodyMesh.rename('Body')
-        meshes.append(bodyMesh)
+            body_mesh.appearance().material = materials['Body']
+        body_mesh.apply(body_transform)
+        body_mesh.rename('Body')
+        meshes.append(body_mesh)
 
-        if markMesh is not None:
+        if mark_mesh is not None:
             if 'Mark' in materials:
-                markMesh.appearance().material = materials['Mark']
-            markMesh.apply(bodyTransform)
-            markMesh.rename('Mark')
-            meshes.append(markMesh)
+                mark_mesh.appearance().material = materials['Mark']
+            mark_mesh.apply(body_transform)
+            mark_mesh.rename('Mark')
+            meshes.append(mark_mesh)
 
         return meshes
 
-    def generatePins(self, materials, descriptor):
+    @staticmethod
+    def generate_pins(materials, descriptor):
         try:
-            pinSlope = descriptor['pins']['slope'] * math.pi / 180.0
-        except:
-            pinSlope = math.pi * (10.0 / 180.0)
-
-        try:
-            bandOffset = primitives.hmils(descriptor['band']['offset'])
-        except:
-            bandOffset = 0.0
-        try:
-            bandInversion = descriptor['band']['inverse']
-        except:
-            bandInversion = False
-
-        bodySize = primitives.hmils(descriptor['body']['size'])
-        bandWidthProj = SOT.BAND_WIDTH * math.sqrt(0.5)
-        if bandInversion:
-            bodySlope = -math.atan(bandWidthProj / (bodySize[2] / 2.0 + bandOffset))
-        else:
-            bodySlope = math.atan(bandWidthProj / (bodySize[2] / 2.0 - bandOffset))
-        pinHeight = bodySize[2] / 2.0 + bandOffset + SOT.BODY_OFFSET_Z
-
-        try:
-            pinPattern = SOT.PinDesc.makePattern(bodySlope, descriptor['pins']['default'])
+            pin_slope = descriptor['pins']['slope'] * math.pi / 180.0
         except KeyError:
-            pinPattern = None
+            pin_slope = math.pi * (10.0 / 180.0)
 
-        pinEntries = {}
+        try:
+            band_offset = primitives.hmils(descriptor['band']['offset'])
+        except KeyError:
+            band_offset = 0.0
+        try:
+            band_inversion = descriptor['band']['inverse']
+        except KeyError:
+            band_inversion = False
+
+        body_size = primitives.hmils(descriptor['body']['size'])
+        band_width_proj = SOT.BAND_WIDTH * math.sqrt(0.5)
+        if band_inversion:
+            body_slope = -math.atan(band_width_proj / (body_size[2] / 2.0 + band_offset))
+        else:
+            body_slope = math.atan(band_width_proj / (body_size[2] / 2.0 - band_offset))
+        pin_height = body_size[2] / 2.0 + band_offset + SOT.BODY_OFFSET_Z
+
+        try:
+            pin_pattern = SOT.PinDesc.make_pattern(body_slope, descriptor['pins']['default'])
+        except KeyError:
+            pin_pattern = None
+
+        pin_entries = {}
         for i in range(1, descriptor['pins']['count'] + 1):
             key = str(i)
             try:
                 if descriptor['pins'][key] is not None:
-                    pinEntries[i] = SOT.PinDesc(pinPattern, bodySlope, descriptor['pins'][key])
+                    pin_entries[i] = SOT.PinDesc(pin_pattern, body_slope, descriptor['pins'][key])
             except KeyError:
-                pinEntries[i] = SOT.PinDesc(pinPattern)
-        pinGroups = set(pinEntries.values())
-        pinGroupMeshes = {}
+                pin_entries[i] = SOT.PinDesc(pin_pattern)
+        pin_groups = set(pin_entries.values())
+        pin_group_meshes = {}
 
-        for group in pinGroups:
-            mesh = primitives.makePinMesh(
-                    pinShapeSize=group.shape,
-                    pinHeight=pinHeight + group.verticalOffset,
-                    pinLength=group.length,
-                    pinSlope=pinSlope,
-                    endSlope=bodySlope,
-                    chamferResolution=SOT.CHAMFER_RESOLUTION,
-                    edgeResolution=SOT.EDGE_RESOLUTION)
+        for group in pin_groups:
+            mesh = primitives.make_pin_mesh(
+                pin_shape_size=group.shape,
+                pin_height=pin_height + group.vertical_offset,
+                pin_length=group.length,
+                pin_slope=pin_slope,
+                end_slope=body_slope,
+                chamfer_resolution=SOT.CHAMFER_RESOLUTION,
+                edge_resolution=SOT.EDGE_RESOLUTION)
 
             if 'Pin' in materials:
                 mesh.appearance().material = materials['Pin']
 
-            pinGroupMeshes[hash(group)] = mesh
+            pin_group_meshes[hash(group)] = mesh
 
-        return self.generatePinRows(
-                count=descriptor['pins']['count'],
-                size=bodySize[0:2] + bandWidthProj * 2.0,
-                pitch=primitives.hmils(descriptor['pins']['pitch']),
-                patterns=pinGroupMeshes,
-                entries=pinEntries)
+        return SOT.generate_pin_rows(
+            count=descriptor['pins']['count'],
+            size=body_size[0:2] + band_width_proj * 2.0,
+            pitch=primitives.hmils(descriptor['pins']['pitch']),
+            patterns=pin_group_meshes,
+            entries=pin_entries)
 
-    def generatePinRows(self, count, size, pitch, patterns, entries):
-        def makePin(mesh, position, angle, number):
+    @staticmethod
+    def generate_pin_rows(count, size, pitch, patterns, entries):
+        def make_pin(mesh, position, angle, number):
             pin = model.Mesh(parent=mesh, name='Pin{:d}'.format(number))
             pin.translate([*position, 0.0])
             pin.rotate([0.0, 0.0, 1.0], angle - math.pi / 2.0)
             return pin
 
         columns = int(count / 2)
-        firstPinOffset = pitch * (columns - 1) / 2.0
-        y = size[1] / 2.0
+        first_pin_offset = pitch * (columns - 1) / 2.0
+        y_offset = size[1] / 2.0
 
         meshes = []
         for i in range(1, columns + 1):
-            x = pitch * (i - 1) - firstPinOffset
+            x_offset = pitch * (i - 1) - first_pin_offset
 
             if i + columns in entries:
                 entry = entries[i + columns]
                 mesh = patterns[hash(entry)]
-                meshes.append(makePin(mesh, [x, y + entry.planarOffset], math.pi, i + columns))
+                meshes.append(make_pin(mesh, [x_offset, y_offset + entry.planar_offset],
+                    math.pi, i + columns))
 
             if i in entries:
                 entry = entries[i]
                 mesh = patterns[hash(entry)]
-                meshes.append(makePin(mesh, [-x, -(y + entry.planarOffset)], 0.0, i))
+                meshes.append(make_pin(mesh, [-x_offset, -(y_offset + entry.planar_offset)],
+                    0.0, i))
 
         return meshes
 
-    def generate(self, materials, templates, descriptor):
-        return self.generateBody(materials, descriptor) + self.generatePins(materials, descriptor)
+    def generate(self, materials, _, descriptor):
+        return SOT.generate_body(materials, descriptor) + SOT.generate_pins(materials, descriptor)
 
 
 types = [
-        Chip,
-        MELF,
-        SOT
-]
+    Chip,
+    MELF,
+    SOT]

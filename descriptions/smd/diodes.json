@@ -19,6 +19,9 @@
       "ambient": [0.333, 0.333, 0.333]
     }
   },
+  "templates": [
+    "smd_tantalum.x3d"
+  ],
   "specs": {
     "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
     "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
@@ -45,6 +48,30 @@
       "description": "MELF",
       "source": "Vishay specifications"
     }, {
+      "package": {"type": "Chip", "spec": "thick"},
+      "title": "DO-214AA",
+      "body": {"size": [4.3, 3.6, 2.25]},
+      "pins": {},
+      "pads": {"pitch": 1.8, "size": [2.5, 2.3], "names": ["C", "A"]},
+      "mark": {"dot": true},
+      "source": "Diodes Incorporated specifications"
+    }, {
+      "package": {"type": "Chip", "spec": "thick"},
+      "title": "DO-214AB",
+      "body": {"size": [6.9, 5.9, 2.25]},
+      "pins": {},
+      "pads": {"pitch": 4.4, "size": [2.5, 3.3], "names": ["C", "A"]},
+      "mark": {"dot": true},
+      "source": "Diodes Incorporated specifications"
+    }, {
+      "package": {"type": "Chip", "spec": "thick"},
+      "title": "DO-214AC",
+      "body": {"size": [4.3, 2.6, 2.2]},
+      "pins": {},
+      "pads": {"pitch": 1.5, "size": [2.5, 1.7], "names": ["C", "A"]},
+      "mark": {"dot": true},
+      "source": "Diodes Incorporated specifications"
+    }, {
       "package": {"type": "MELF", "spec": "thick"},
       "title": "SOD-80",
       "band": {"length": 0.62, "offset": -0.62},
@@ -52,6 +79,14 @@
       "pins": {"length": 0.3, "radius": 0.8},
       "pads": {"pitch": 3.3, "size": [0.9, 1.7], "names": ["C", "A"]},
       "mark": {"bar": true, "dot": true, "wrap": true},
+      "source": "NXP specifications"
+    }, {
+      "package": {"type": "Chip", "spec": "thin"},
+      "title": "SOD-323",
+      "body": {"size": [1.8, 1.35]},
+      "pins": {},
+      "pads": {"pitch": 1.6, "size": [0.6, 0.6], "names": ["C", "A"]},
+      "mark": {"dot": true},
       "source": "NXP specifications"
     }
   ]

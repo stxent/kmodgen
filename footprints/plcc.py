@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# crystals.py
+# plcc.py
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
@@ -10,10 +10,10 @@ import exporter
 import primitives
 
 
-class CrystalSMD(exporter.Footprint):
+class PLCC(exporter.Footprint):
     def __init__(self, spec, descriptor):
         super().__init__(name=descriptor['title'],
-                         description=CrystalSMD.describe(descriptor), spec=spec)
+                         description=PLCC.describe(descriptor), spec=spec)
 
         self.body_size = numpy.array(descriptor['body']['size'])
         self.pad_size = numpy.array(descriptor['pads']['size'])
@@ -64,50 +64,7 @@ class CrystalSMD(exporter.Footprint):
             return descriptor['description']
 
         body_size = [primitives.round1f(x) for x in descriptor['body']['size'][0:2]]
-        return 'Quartz crystal SMD {:s}x{:s} mm'.format(*body_size)
+        return 'Plastic Leaded Chip Carrier {:s}x{:s} mm'.format(*body_size)
 
 
-class CrystalTH(exporter.Footprint):
-    def __init__(self, spec, descriptor):
-        super().__init__(name=descriptor['title'],
-                         description=CrystalTH.describe(descriptor), spec=spec)
-
-        self.count = descriptor['pins']['count']
-        self.pitch = descriptor['pins']['pitch']
-        self.inner_diameter = descriptor['pads']['drill']
-        self.pad_size = numpy.array([
-            descriptor['pads']['diameter'],
-            descriptor['pads']['diameter']])
-        self.body_size = numpy.array(descriptor['body']['size'])
-
-    def generate(self):
-        objects = []
-        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
-
-        # Horizontal offset of the first pin
-        first_pin_offset = -float(self.count - 1) * self.pitch / 2.0
-        for i in range(0, self.count):
-            x_offset = first_pin_offset + self.pitch * i
-            objects.append(exporter.HolePad(i + 1, self.pad_size, (x_offset, 0.0),
-                self.inner_diameter))
-
-        # Body outline
-        arc_radius = self.body_size[1] / 2.0
-        arc_offset = self.body_size[0] / 2.0 - arc_radius
-        objects.append(exporter.Circle((-arc_offset, 0.0), arc_radius, self.thickness,
-            (90.0, -90.0)))
-        objects.append(exporter.Circle((arc_offset, 0.0), arc_radius, self.thickness,
-            (-90.0, 90.0)))
-        objects.append(exporter.Line((-arc_offset, arc_radius), (arc_offset, arc_radius),
-            self.thickness))
-        objects.append(exporter.Line((-arc_offset, -arc_radius), (arc_offset, -arc_radius),
-            self.thickness))
-
-        return objects
-
-    @staticmethod
-    def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor else ''
-
-
-types = [CrystalSMD, CrystalTH]
+types = [PLCC]

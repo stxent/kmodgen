@@ -126,14 +126,6 @@
       "mark": {"dot": true},
       "source": "AVX specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "DO214AC",
-      "body": {"size": [4.3, 2.6]},
-      "pins": {},
-      "pads": {"pitch": 2.3, "size": [1.65, 1.8], "names": ["C", "A"]},
-      "mark": {"dot": true},
-      "source": "Fairchild specifications"
-    }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "L0603",
       "body": {"size": [1.6, 0.8]},
@@ -153,6 +145,20 @@
       "body": {"size": [3.2, 1.6]},
       "pins": {},
       "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
+      "mark": {"wrap": true}
+    }, {
+      "package": {"type": "Chip", "spec": "thick"},
+      "title": "L1812",
+      "body": {"size": [4.5, 3.2]},
+      "pins": {},
+      "pads": {"pitch": 1.5, "size": [3.0, 3.0]},
+      "mark": {"wrap": true}
+    }, {
+      "package": {"type": "Chip", "spec": "thick"},
+      "title": "L2220",
+      "body": {"size": [5.7, 5.0]},
+      "pins": {},
+      "pads": {"pitch": 2.0, "size": [3.0, 3.5]},
       "mark": {"wrap": true}
     }, {
       "package": {"type": "Chip", "spec": "thin"},
@@ -235,13 +241,12 @@
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thin"},
-      "title": "SOD-323",
-      "body": {"size": [1.8, 1.35]},
-      "pins": {},
-      "pads": {"pitch": 1.6, "size": [0.6, 0.6], "names": ["C", "A"]},
-      "mark": {"dot": true},
-      "source": "NXP specifications"
+      "package": {"type": "ChipArray", "spec": "thin"},
+      "title": "R0603X4",
+      "body": {"size": [3.2, 1.5]},
+      "pins": {"count": 8, "pitch": [0.8, 1.7]},
+      "pads": {"size": [0.45, 0.9]},
+      "source": "Yageo specifications for reflow soldering"
     }
   ]
 }

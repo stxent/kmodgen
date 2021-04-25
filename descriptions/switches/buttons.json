@@ -33,6 +33,12 @@
       "pins": {"pitch": [7.5, 4.5], "shielding": true}
     }, {
       "package": {"type": "Button", "spec": "thick"},
+      "title": "IT-1187",
+      "body": {"size": [5.2, 5.2]},
+      "pads": {"size": [1.8, 1.1]},
+      "pins": {"pitch": [6.2, 3.7], "shielding": false}
+    }, {
+      "package": {"type": "Button", "spec": "thick"},
       "title": "IT-1187UN",
       "body": {"size": [5.2, 5.2]},
       "pads": {"size": [1.5, 0.9]},

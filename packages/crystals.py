@@ -10,14 +10,12 @@ from packages import generic
 
 class CrystalSMD(generic.GenericModelFilter):
     def __init__(self):
-        generic.GenericModelFilter.__init__(self, CrystalSMD.PIVOT_BOUNDING_BOX_CENTER)
+        super().__init__(CrystalSMD.PIVOT_BOUNDING_BOX_CENTER)
+
 
 class CrystalTH(generic.GenericModelFilter):
     def __init__(self):
-        generic.GenericModelFilter.__init__(self, CrystalTH.PIVOT_BOUNDING_BOX_CENTER)
+        super().__init__(CrystalTH.PIVOT_BOUNDING_BOX_CENTER)
 
 
-types = [
-        CrystalSMD,
-        CrystalTH
-]
+types = [CrystalSMD, CrystalTH]

@@ -11,7 +11,12 @@
       "package": {"type": "USB", "spec": "thick"},
       "title": "USB-M1J",
       "body": {"size": "mini", "type": "b"},
-      "description": "Mini-USB B-Type SMT connector"
+      "description": "USB Type-B Mini SMT connector"
+    }, {
+      "package": {"type": "USB", "spec": "thick"},
+      "title": "A40-00119",
+      "body": {"type": "c"},
+      "description": "USB Type-C SMT connector"
     }
   ]
 }

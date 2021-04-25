@@ -80,6 +80,13 @@
       "pads": {"regularPadSize": [0.28, 1.5], "sidePadSize": [0.4, 1.5], "margin": 0.150},
       "pins": {"shape": [0.2, 0.15], "length": 1.0, "columns": 44, "rows": 44, "pitch": 0.5},
       "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "QFP", "spec": "thick"},
+      "title": "TQFP-32_7x7mm_P0.8mm",
+      "body": {"size": [7.0, 7.0, 1.0]},
+      "pads": {"regularPadSize": [0.55, 1.6], "margin": -0.050},
+      "pins": {"shape": [0.37, 0.145], "length": 1.0, "columns": 8, "rows": 8, "pitch": 0.8},
+      "source": "Microchip packaging specification"
     }
   ]
 }

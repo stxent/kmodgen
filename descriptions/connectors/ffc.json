@@ -10,38 +10,47 @@
       "body": {"height": 4.5, "width": 20.35},
       "mount": {"horizontalSpacing": 1.54, "verticalSpacing": 2.325},
       "pads": {"width": 0.3, "height": 1.25, "mountWidth": 2.0, "mountHeight": 3.0, "offset": 3.075},
+      "pins": {"count": 32, "pitch": 0.5, "style": "bottom", "inversion": false}
+    }, {
+      "package": {"type": "EastRisingHB", "spec": "thick"},
+      "title": "ER-CON32-HB1_MIRROR",
+      "body": {"height": 4.5, "width": 20.35},
+      "mount": {"horizontalSpacing": 1.54, "verticalSpacing": 2.325},
+      "pads": {"width": 0.3, "height": 1.25, "mountWidth": 2.0, "mountHeight": 3.0, "offset": 3.075},
       "pins": {"count": 32, "pitch": 0.5, "style": "bottom", "inversion": true}
-    },
-    {
+    }, {
       "package": {"type": "EastRisingHB", "spec": "thick"},
       "title": "ER-CON20-HB2",
       "body": {"height": 5.3, "width": 26.1},
       "mount": {"horizontalSpacing": 2.8, "verticalSpacing": 2.15},
       "pads": {"width": 0.6, "height": 2.0, "mountWidth": 2.0, "mountHeight": 2.5, "offset": 3.55},
+      "pins": {"count": 20, "pitch": 1.0, "style": "bottom", "inversion": false}
+    }, {
+      "package": {"type": "EastRisingHB", "spec": "thick"},
+      "title": "ER-CON20-HB2_MIRROR",
+      "body": {"height": 5.3, "width": 26.1},
+      "mount": {"horizontalSpacing": 2.8, "verticalSpacing": 2.15},
+      "pads": {"width": 0.6, "height": 2.0, "mountWidth": 2.0, "mountHeight": 2.5, "offset": 3.55},
       "pins": {"count": 20, "pitch": 1.0, "style": "bottom", "inversion": true}
-    },
-    {
+    }, {
       "package": {"type": "FFC", "spec": "thick"},
       "title": "LCM-37-0.8",
       "pads": {"width": 0.4, "height": 3.0, "offset": 1.0},
       "pins": {"count": 37, "pitch": 0.8}
-    },
-    {
+    }, {
       "package": {"type": "FFC", "spec": "thick"},
       "title": "LCM-37-1.0",
       "mount": {"horizontalSpacing": 1.9, "verticalSpacing": 0.0},
       "pads": {"width": 0.5, "height": 3.0, "mountWidth": 1.2, "mountHeight": 3.0, "offset": 1.0},
       "pins": {"count": 37, "pitch": 1.0}
-    },
-    {
+    }, {
       "package": {"type": "Molex52271", "spec": "thick"},
       "title": "MOLEX-52271-1669",
       "body": {"height": 5.4, "width": 22.0},
       "mount": {"horizontalSpacing": 3.15, "verticalSpacing": 2.35},
       "pads": {"width": 0.6, "height": 1.9, "mountWidth": 2.1, "mountHeight": 2.8, "offset": 4.05},
       "pins": {"count": 16, "pitch": 1.0, "style": "bottom", "inversion": true}
-    },
-    {
+    }, {
       "package": {"type": "Molex52271", "spec": "thick"},
       "title": "MOLEX-52271-2069",
       "body": {"height": 5.4, "width": 26.0},

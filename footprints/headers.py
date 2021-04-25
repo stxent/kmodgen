@@ -11,33 +11,48 @@ import exporter
 
 class PinHeader(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'],
-                description=PinHeader.describe(descriptor), spec=spec)
+        super().__init__(name=descriptor['title'],
+                         description=PinHeader.describe(descriptor), spec=spec)
 
         self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
         self.pitch = descriptor['pins']['pitch']
-        self.bodySize = numpy.asfarray(self.count) * self.pitch
-        self.bodyCenter = numpy.asfarray(self.count - 1) * [1, -1] * (self.pitch / 2.0)
-        self.padSize = numpy.array([descriptor['pads']['diameter'], descriptor['pads']['diameter']])
-        self.padDrill = descriptor['pads']['drill']
+        self.body_size = numpy.asfarray(self.count) * self.pitch
+        self.body_center = numpy.asfarray(self.count - 1) * [1, -1] * (self.pitch / 2.0)
+        self.pad_size = numpy.array([
+            descriptor['pads']['diameter'],
+            descriptor['pads']['diameter']])
+        self.pad_drill = descriptor['pads']['drill']
 
     def generate(self):
+        label = exporter.Label(self.name, self.body_center, self.thickness, self.font)
+        return [label] + self.generate_lines() + self.generate_pads()
+
+    def generate_lines(self):
         objects = []
-        objects.append(exporter.Label(self.name, self.bodyCenter, self.thickness, self.font))
 
-        # Body outline
-        outlineMargin = 2.0 * self.gap + self.thickness - self.pitch
-        outlineSize = numpy.maximum(self.bodySize, self.bodySize + self.padSize + outlineMargin)
-        objects.append(exporter.Rect(outlineSize / 2.0 + self.bodyCenter, -outlineSize / 2.0 + self.bodyCenter,
-                self.thickness))
+        outline_margin = self.pitch - 2.0 * self.gap - self.thickness
+        outline_size = numpy.maximum(self.body_size,
+                                     self.body_size + self.pad_size - outline_margin)
+        objects.append(exporter.Rect(outline_size / 2.0 + self.body_center,
+            -outline_size / 2.0 + self.body_center,
+            self.thickness))
 
-        # Pads
-        for x in range(0, self.count[0]):
-            for y in range(0, self.count[1]):
-                offset = numpy.array([float(x), -float(y)]) * self.pitch
-                number = 1 + x * self.count[1] + y
-                style = exporter.AbstractPad.STYLE_CIRCLE if number > 1 else exporter.AbstractPad.STYLE_RECT
-                objects.append(exporter.HolePad(number, self.padSize, offset, self.padDrill, style))
+        return objects
+
+    def generate_pads(self):
+        objects = []
+
+        for x_offset in range(0, self.count[0]):
+            for y_offset in range(0, self.count[1]):
+                number = 1 + x_offset * self.count[1] + y_offset
+                if number == 1:
+                    style = exporter.AbstractPad.STYLE_RECT
+                else:
+                    style = exporter.AbstractPad.STYLE_CIRCLE
+
+                offset = numpy.array([float(x_offset), -float(y_offset)]) * self.pitch
+                objects.append(exporter.HolePad(number, self.pad_size, offset, self.pad_drill,
+                    style))
 
         return objects
 
@@ -48,32 +63,40 @@ class PinHeader(exporter.Footprint):
 
 class RightAnglePinHeader(PinHeader):
     def __init__(self, spec, descriptor):
-        PinHeader.__init__(self, spec, descriptor)
+        super().__init__(spec, descriptor)
 
-        projectionLength = descriptor['pins']['length'] - 0.5 * self.pitch
-        self.bodySize += numpy.array([0.0, projectionLength])
-        self.bodyCenter += numpy.array([0.0, projectionLength / 2.0])
+        projection_length = descriptor['pins']['length'] - self.pitch / 2.0
+        self.body_size += numpy.array([0.0, projection_length])
+        self.body_center += numpy.array([0.0, projection_length / 2.0])
 
     def generate(self):
-        objects = PinHeader.generate(self)
+        objects = self.generate_pads()
+        objects.append(exporter.Label(self.name, self.body_center, self.thickness, self.font))
 
-        outlineMargin = 2.0 * self.gap + self.thickness - self.pitch
-        outlineSize = numpy.maximum(self.bodySize, self.bodySize + self.padSize + outlineMargin)
-        lineOffsets = (outlineSize[0] / 2.0, self.gap + (self.padSize[1] + self.thickness) / 2.0)
-        objects.append(exporter.Line((lineOffsets[0] + self.bodyCenter[0], lineOffsets[1]),
-                (-lineOffsets[0] + self.bodyCenter[0], lineOffsets[1]), self.thickness))
+        edge_margin = numpy.array([0, self.thickness / 2.0])
+        outline_margin = self.pitch - 2.0 * self.gap - self.thickness
+        outline_size = numpy.maximum(self.body_size,
+                                     self.body_size + self.pad_size - outline_margin)
+        line_offset_x = outline_size[0] / 2.0
+        line_offset_y = numpy.maximum(self.pitch / 2.0,
+                                      self.gap + (self.pad_size[1] + self.thickness) / 2.0)
+
+        objects.append(exporter.Rect(outline_size / 2.0 + self.body_center - edge_margin,
+            -outline_size / 2.0 + self.body_center, self.thickness))
+        objects.append(exporter.Line((line_offset_x + self.body_center[0], line_offset_y),
+            (-line_offset_x + self.body_center[0], line_offset_y), self.thickness))
+
         return objects
 
 
 class BoxHeader(PinHeader):
     def __init__(self, spec, descriptor):
-        PinHeader.__init__(self, spec, descriptor)
-        self.bodySize = numpy.array(descriptor['body']['size'])
+        super().__init__(spec, descriptor)
+        self.body_size = numpy.array(descriptor['body']['size'])
 
 
 class Jumper(PinHeader):
-    def __init__(self, spec, descriptor):
-        PinHeader.__init__(self, spec, descriptor)
+    pass
 
 
 types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper]

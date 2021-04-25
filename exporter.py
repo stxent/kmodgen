@@ -112,14 +112,14 @@ class AbstractPad:
 
 class HolePad(AbstractPad):
     def __init__(self, number, size, position, diameter, style=AbstractPad.STYLE_CIRCLE):
-        AbstractPad.__init__(self, number, size, position, diameter, style, AbstractPad.FAMILY_TH,
-                AbstractPad.LAYERS_BOTH, AbstractPad.LAYERS_NONE)
+        super().__init__(number, size, position, diameter, style, AbstractPad.FAMILY_TH,
+                         AbstractPad.LAYERS_BOTH, AbstractPad.LAYERS_NONE)
 
 
 class SmdPad(AbstractPad):
     def __init__(self, number, size, position):
-        AbstractPad.__init__(self, number, size, position, 0.0, AbstractPad.STYLE_RECT, AbstractPad.FAMILY_SMD,
-                AbstractPad.LAYERS_FRONT, AbstractPad.LAYERS_FRONT)
+        super().__init__(number, size, position, 0.0, AbstractPad.STYLE_RECT,
+                         AbstractPad.FAMILY_SMD, AbstractPad.LAYERS_FRONT, AbstractPad.LAYERS_FRONT)
 
 
 class Cutout:
@@ -149,116 +149,145 @@ class Footprint:
             self.thickness = spec['thickness']
 
 
-def collideLine(line, pads, thickness, gap):
-    minWidth = thickness
+def collide_line(line, pads, thickness, gap):
+    min_width = thickness
 
-    def pointInRect(rect, point):
+    def point_in_rect(rect, point):
         epsilon = 1e-6
-        inRange = lambda x, start, end: start - epsilon <= x <= end + epsilon
-        return inRange(point[0], rect[0][0], rect[1][0]) and inRange(point[1], rect[0][1], rect[1][1])
+        in_range = lambda x, start, end: start - epsilon <= x <= end + epsilon
+        if not in_range(point[0], rect[0][0], rect[1][0]):
+            return False
+        if not in_range(point[1], rect[0][1], rect[1][1]):
+            return False
+        return True
 
-    def getCrossPoint(line1, line2):
+    def get_cross_point(line1, line2):
         epsilon = 1e-6
         det = line1[0] * line2[1] - line1[1] * line2[0]
-        if abs(det) > epsilon:
-            dx = -line1[2] * line2[1] + line1[1] * line2[2]
-            dy = -line1[0] * line2[2] + line1[2] * line2[0]
-            return (dx / det, dy / det)
-        else:
+
+        if abs(det) <= epsilon:
             return None
 
-    def getLineFunc(start, end):
+        delta_x = -line1[2] * line2[1] + line1[1] * line2[2]
+        delta_y = -line1[0] * line2[2] + line1[2] * line2[0]
+        return (delta_x / det, delta_y / det)
+
+    def get_line_func(start, end):
         # Returns (A, B, C)
-        dx, dy = end[0] - start[0], end[1] - start[1]
+        delta_x, delta_y = end[0] - start[0], end[1] - start[1]
 
-        if dx == 0.0:
+        if delta_x == 0.0:
             return (1.0, 0.0, -start[0])
-        elif dy == 0.0:
+        if delta_y == 0.0:
             return (0.0, 1.0, -start[1])
-        else:
-            return (dy, -dx, dx * start[1] - dy * start[0])
+        return (delta_y, -delta_x, delta_x * start[1] - delta_y * start[0])
 
-    def getCrossSegment(line, segment, box):
+    def get_cross_segment(line, segment, box):
         start, end = segment[0], segment[1]
-        crossPoint = getCrossPoint(line, getLineFunc(start, end))
-        if crossPoint is None:
-            return None
-        rect = ((min(start[0], end[0]), min(start[1], end[1])), (max(start[0], end[0]), max(start[1], end[1])))
-        return crossPoint if pointInRect(rect, crossPoint) and pointInRect(box, crossPoint) else None
 
-    def getPadSegments(pad):
+        cross_point = get_cross_point(line, get_line_func(start, end))
+        if cross_point is None:
+            return None
+
+        rect = ((min(start[0], end[0]), min(start[1], end[1])),
+                (max(start[0], end[0]), max(start[1], end[1])))
+        if not point_in_rect(rect, cross_point) or not point_in_rect(box, cross_point):
+            return None
+
+        return cross_point
+
+    def get_pad_segments(pad):
         segments = []
-        pos, offset = pad.position, (pad.size[0] / 2., pad.size[1] / 2.)
-        segments.append(((pos[0] - offset[0], pos[1] - offset[1]), (pos[0] - offset[0], pos[1] + offset[1])))
-        segments.append(((pos[0] + offset[0], pos[1] - offset[1]), (pos[0] + offset[0], pos[1] + offset[1])))
-        segments.append(((pos[0] - offset[0], pos[1] - offset[1]), (pos[0] + offset[0], pos[1] - offset[1])))
-        segments.append(((pos[0] - offset[0], pos[1] + offset[1]), (pos[0] + offset[0], pos[1] + offset[1])))
+        pos, offset = pad.position, (pad.size[0] / 2.0, pad.size[1] / 2.0)
+        segments.append(((pos[0] - offset[0], pos[1] - offset[1]),
+            (pos[0] - offset[0], pos[1] + offset[1])))
+        segments.append(((pos[0] + offset[0], pos[1] - offset[1]),
+            (pos[0] + offset[0], pos[1] + offset[1])))
+        segments.append(((pos[0] - offset[0], pos[1] - offset[1]),
+            (pos[0] + offset[0], pos[1] - offset[1])))
+        segments.append(((pos[0] - offset[0], pos[1] + offset[1]),
+            (pos[0] + offset[0], pos[1] + offset[1])))
         return segments
 
-    def shrinkLine(line, shrinkStart, shrinkEnd, value):
-        length = math.sqrt(math.pow(line[1][0] - line[0][0], 2.0) + math.pow(line[1][1] - line[0][1], 2.0))
-        kx, ky = (line[1][0] - line[0][0]) / length, (line[1][1] - line[0][1]) / length
+    def shrink_line(line, shrink_start, shrink_end, value):
+        length = math.sqrt(math.pow(line[1][0] - line[0][0], 2.0)
+                           + math.pow(line[1][1] - line[0][1], 2.0))
+        x_coef, y_coef = (line[1][0] - line[0][0]) / length, (line[1][1] - line[0][1]) / length
         start, end = line[0], line[1]
-        initialAngle = math.atan2(end[1] - start[1], end[0] - start[0])
-        if shrinkStart:
-            start = (start[0] + kx * value, start[1] + ky * value)
-        if shrinkEnd:
-            end = (end[0] - kx * value, end[1] - ky * value)
-        resultAngle = math.atan2(end[1] - start[1], end[0] - start[0])
-        if abs(resultAngle - initialAngle) > math.pi / 2.:
-            return None
-        else:
-            return (start, end)
+        src_angle = math.atan2(end[1] - start[1], end[0] - start[0])
+        if shrink_start:
+            start = (start[0] + x_coef * value, start[1] + y_coef * value)
+        if shrink_end:
+            end = (end[0] - x_coef * value, end[1] - y_coef * value)
 
-    def checkPointCollisions(point, pads):
-        padRectFunc = lambda pad: ((pad.position[0] - pad.size[0] / 2., pad.position[1] - pad.size[1] / 2.),
-                (pad.position[0] + pad.size[0] / 2., pad.position[1] + pad.size[1] / 2.))
-        collisions = [pointInRect(padRectFunc(pad), point) for pad in pads]
+        dst_angle = math.atan2(end[1] - start[1], end[0] - start[0])
+        if abs(dst_angle - src_angle) > math.pi / 2.0:
+            return None
+
+        return (start, end)
+
+    def pad_rect_func(pad):
+        return ((pad.position[0] - pad.size[0] / 2.0, pad.position[1] - pad.size[1] / 2.0),
+                (pad.position[0] + pad.size[0] / 2.0, pad.position[1] + pad.size[1] / 2.0))
+
+    def check_point_collisions(point, pads):
+        collisions = [point_in_rect(pad_rect_func(pad), point) for pad in pads]
         return functools.reduce(lambda x, y: x or y, collisions)
 
-    def checkChunkCollisions(chunk, pads):
-        collisionFunc = lambda x: checkPointCollisions(chunk[0], [x]) and checkPointCollisions(chunk[1], [x])
-        collisions = [collisionFunc(pad) for pad in pads]
+    def collision_func(chunk, pad):
+        return check_point_collisions(chunk[0], [pad]) and check_point_collisions(chunk[1], [pad])
+
+    def check_chunk_collisions(chunk, pads):
+        collisions = [collision_func(chunk, pad) for pad in pads]
         return functools.reduce(lambda x, y: x or y, collisions)
 
     if len(pads) == 0:
         return [line]
 
     # Create common line function Ax + By + C = 0
-    lineBox = ((min(line.start[0], line.end[0]), min(line.start[1], line.end[1])),
-            (max(line.start[0], line.end[0]), max(line.start[1], line.end[1])))
-    lineFunc = getLineFunc(line.start, line.end)
-    segFunc = lambda x: getCrossSegment(lineFunc, x, lineBox)
+    line_box = ((min(line.start[0], line.end[0]), min(line.start[1], line.end[1])),
+        (max(line.start[0], line.end[0]), max(line.start[1], line.end[1])))
+    line_func = get_line_func(line.start, line.end)
+    seg_func = lambda x: get_cross_segment(line_func, x, line_box)
 
     # Subdivide all pads into segments
     segments = []
-    [segments.extend(getPadSegments(pad)) for pad in pads]
+    for pad in pads:
+        segments.extend(get_pad_segments(pad))
 
     # Generate crossing points for the given line
     crosses = [line.start, line.end]
-    crosses.extend([cross for cross in [segFunc(seg) for seg in segments] if cross is not None])
+    crosses.extend([cross for cross in [seg_func(seg) for seg in segments] if cross is not None])
 
     # Sort crossing points
-    distFunc = lambda x: math.sqrt(math.pow(x[0] - line.start[0], 2.0) + math.pow(x[1] - line.start[1], 2.0))
-    crosses = sorted(crosses, key=distFunc)
+    def dist_func(point):
+        return math.sqrt(math.pow(point[0] - line.start[0], 2.0)
+                         + math.pow(point[1] - line.start[1], 2.0))
+    crosses = sorted(crosses, key=dist_func)
 
     # Generate chunks
     chunks = []
     for i in range(0, len(crosses) - 1):
         chunks.append((crosses[i], crosses[i + 1]))
+
     # Filter chunks by length
-    chunkLengthFunc = lambda x: math.sqrt(math.pow(x[1][0] - x[0][0], 2.0) + math.pow(x[1][1] - x[0][1], 2.0))
-    chunks = [chunk for chunk in chunks if chunkLengthFunc(chunk) >= minWidth]
+    def chunk_length(chunk):
+        return math.sqrt(math.pow(chunk[1][0] - chunk[0][0], 2.0)
+                         + math.pow(chunk[1][1] - chunk[0][1], 2.0))
+    chunks = [chunk for chunk in chunks if chunk_length(chunk) >= min_width]
 
     # Exclude chunks intersected with pads
-    chunks = [chunk for chunk in chunks if not checkChunkCollisions(chunk, pads)]
+    chunks = [chunk for chunk in chunks if not check_chunk_collisions(chunk, pads)]
 
     # Reduce line width
-    chunkShrinkFunc = lambda x: shrinkLine(x, checkPointCollisions(x[0], pads), checkPointCollisions(x[1], pads),
+    def shrink_chunk(chunk):
+        return shrink_line(chunk,
+            check_point_collisions(chunk[0], pads),
+            check_point_collisions(chunk[1], pads),
             gap + thickness / 2)
-    chunks = [chunkShrinkFunc(chunk) for chunk in chunks]
+    chunks = [shrink_chunk(chunk) for chunk in chunks]
 
     # Remove broken and short lines
-    chunks = [chunk for chunk in chunks if chunk is not None and chunkLengthFunc(chunk) >= minWidth]
+    chunks = [chunk for chunk in chunks if chunk is not None and chunk_length(chunk) >= min_width]
 
     return [Line(chunk[0], chunk[1], thickness) for chunk in chunks]

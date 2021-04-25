@@ -11,10 +11,11 @@ import exporter
 
 class Button(exporter.Footprint):
     def __init__(self, spec, descriptor):
-        exporter.Footprint.__init__(self, name=descriptor['title'], description=Button.describe(descriptor), spec=spec)
+        super().__init__(name=descriptor['title'],
+                         description=Button.describe(descriptor), spec=spec)
 
-        self.bodySize = numpy.array(descriptor['body']['size'])
-        self.padSize = numpy.array(descriptor['pads']['size'])
+        self.body_size = numpy.array(descriptor['body']['size'])
+        self.pad_size = numpy.array(descriptor['pads']['size'])
         self.pitch = numpy.array(descriptor['pins']['pitch'])
         self.shielding = descriptor['pins']['shielding']
 
@@ -23,23 +24,27 @@ class Button(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # Pads
-        pads.append(exporter.SmdPad(1, self.padSize, self.pitch / 2.0 * [-1, +1]))
-        pads.append(exporter.SmdPad(2, self.padSize, self.pitch / 2.0 * [+1, +1]))
-        pads.append(exporter.SmdPad(3, self.padSize, self.pitch / 2.0 * [+1, -1]))
-        pads.append(exporter.SmdPad(4, self.padSize, self.pitch / 2.0 * [-1, -1]))
+        pads.append(exporter.SmdPad(1, self.pad_size, self.pitch / 2.0 * [-1, +1]))
+        pads.append(exporter.SmdPad(2, self.pad_size, self.pitch / 2.0 * [+1, +1]))
+        pads.append(exporter.SmdPad(3, self.pad_size, self.pitch / 2.0 * [+1, -1]))
+        pads.append(exporter.SmdPad(4, self.pad_size, self.pitch / 2.0 * [-1, -1]))
 
         if self.shielding:
-            pads.append(exporter.SmdPad(5, self.padSize, self.pitch / 2.0 * [1, 0]))
+            pads.append(exporter.SmdPad(5, self.pad_size, self.pitch / 2.0 * [1, 0]))
 
         # Body outline
-        boundingBox = numpy.array([0.0, self.pitch[1] + self.padSize[1] + self.gap * 2.0 + self.thickness])
-        outlineSize = numpy.maximum(self.bodySize, boundingBox)
-        outline = exporter.Rect(outlineSize / 2.0, -outlineSize / 2.0, self.thickness)
-        processFunc = lambda x: exporter.collideLine(x, pads, self.thickness, self.gap)
-        [silkscreen.extend(processFunc(line)) for line in outline.lines]
+        bounding_box = numpy.array([
+            0.0,
+            self.pitch[1] + self.pad_size[1] + self.gap * 2.0 + self.thickness])
+        outline_size = numpy.maximum(self.body_size, bounding_box)
+        outline = exporter.Rect(outline_size / 2.0, -outline_size / 2.0, self.thickness)
+
+        process_func = lambda x: exporter.collide_line(x, pads, self.thickness, self.gap)
+        for line in outline.lines:
+            silkscreen.extend(process_func(line))
 
         # Central circle
-        silkscreen.append(exporter.Circle((0.0, 0.0), min(self.bodySize) / 4.0, self.thickness))
+        silkscreen.append(exporter.Circle((0.0, 0.0), min(self.body_size) / 4.0, self.thickness))
 
         return silkscreen + pads
 
@@ -48,6 +53,4 @@ class Button(exporter.Footprint):
         return descriptor['description'] if 'description' in descriptor else ''
 
 
-types = [
-        Button
-]
+types = [Button]

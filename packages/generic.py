@@ -5,13 +5,13 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import numpy
 import re
+import numpy
 
-def lookup(meshList, meshName):
+def lookup(mesh_list, mesh_name):
     found = []
-    for entry in meshList:
-        if re.search('^{:s}'.format(meshName), entry.ident, re.S) is not None:
+    for entry in mesh_list:
+        if re.search('^{:s}'.format(mesh_name), entry.ident, re.S) is not None:
             found.append(entry)
     return found
 
@@ -22,7 +22,7 @@ class GenericModelFilter:
     def __init__(self, alignment=PIVOT_NONE):
         self.alignment = alignment
 
-    def generate(self, materials, templates, descriptor):
+    def generate(self, _, templates, descriptor):
         meshes = lookup(templates, descriptor['title'])
 
         if len(meshes) > 0 and self.alignment != GenericModelFilter.PIVOT_NONE:
@@ -34,17 +34,17 @@ class GenericModelFilter:
                 pivot *= numpy.array([1.0 / len(meshes), 1.0 / len(meshes), 0.0])
             elif self.alignment == GenericModelFilter.PIVOT_BOUNDING_BOX_CENTER:
                 # Find bounding box center
-                coordMin, coordMax = None, None
+                coord_min, coord_max = None, None
 
                 for mesh in meshes:
                     column = mesh.transform.matrix.getA()[:,3][0:3]
-                    if coordMin is None:
-                        coordMin = coordMax = column
+                    if coord_min is None:
+                        coord_min = coord_max = column
                     else:
-                        coordMin = numpy.minimum(coordMin, column)
-                        coordMax = numpy.maximum(coordMax, column)
+                        coord_min = numpy.minimum(coord_min, column)
+                        coord_max = numpy.maximum(coord_max, column)
 
-                pivot = coordMin + (coordMax - coordMin) * numpy.array([0.5, 0.5, 0.0])
+                pivot = coord_min + (coord_max - coord_min) * numpy.array([0.5, 0.5, 0.0])
 
             # Move all objects in horizontal plane to the center of the scene
             for mesh in meshes:

@@ -10,9 +10,7 @@ from packages import generic
 
 class Button(generic.GenericModelFilter):
     def __init__(self):
-        generic.GenericModelFilter.__init__(self, Button.PIVOT_BOUNDING_BOX_CENTER)
+        super().__init__(Button.PIVOT_BOUNDING_BOX_CENTER)
 
 
-types = [
-        Button
-]
+types = [Button]
