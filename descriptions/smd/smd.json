@@ -152,14 +152,14 @@
       "body": {"size": [4.5, 3.2]},
       "pins": {},
       "pads": {"pitch": 1.5, "size": [3.0, 3.0]},
-      "mark": {"wrap": true}
+      "mark": {"wrap": false}
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "L2220",
       "body": {"size": [5.7, 5.0]},
       "pins": {},
       "pads": {"pitch": 2.0, "size": [3.0, 3.5]},
-      "mark": {"wrap": true}
+      "mark": {"wrap": false}
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "LED0805",
