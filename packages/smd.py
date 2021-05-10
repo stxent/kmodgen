@@ -156,7 +156,8 @@ class MELF:
                 band_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
             band_meshes = []
             for entry in band_slices:
-                band_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True))
+                band_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
+                                                               inverse=True))
 
             joined_mesh = model.Mesh()
             for mesh in band_meshes:
@@ -180,7 +181,8 @@ class MELF:
             body_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
         body_meshes = []
         for entry in body_slices:
-            body_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True))
+            body_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
+                                                           inverse=True))
 
         joined_mesh = model.Mesh()
         for mesh in body_meshes:
@@ -205,7 +207,8 @@ class MELF:
             contact_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
         contact_meshes = []
         for entry in contact_slices:
-            contact_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True))
+            contact_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
+                                                              inverse=True))
 
         joined_mesh = model.Mesh()
         for mesh in contact_meshes:

@@ -98,13 +98,13 @@ class RadialCapacitor:
                     and not belongs(angle(seg[1]), outer[0], outer[1])):
                     continue
 
-                intersection = model.intersect_line_plane(second_circle_points[i],
+                intersection = curves.intersect_line_plane(second_circle_points[i],
                     normals[0], seg[0], seg[1])
                 if intersection is not None:
                     outer_points[i][3] = intersection
                     points.append(intersection)
 
-                intersection = model.intersect_line_plane(second_circle_points[i],
+                intersection = curves.intersect_line_plane(second_circle_points[i],
                     normals[1], seg[0], seg[1])
                 if intersection is not None:
                     outer_points[rot(i - 1, sections)][0] = intersection
@@ -297,13 +297,13 @@ class RadialCapacitor:
         slices = curves.rotate(curve=curve, axis=numpy.array([0.0, 0.0, 1.0]), edges=edges)
         meshes = []
 
-        bottom_cap = curves.create_tri_cap_mesh(slices, True)
+        bottom_cap = curves.create_tri_cap_mesh(slices=slices, inverse=True)
         bottom_cap.appearance().material = RadialCapacitor.mat(materials, 'Bottom')
         bottom_cap.ident = name + 'BottomCap'
         meshes.append(bottom_cap)
 
         if cap_sections == 1:
-            top_cap = curves.create_tri_cap_mesh(slices, False)
+            top_cap = curves.create_tri_cap_mesh(slices=slices, inverse=False)
         else:
             top_cap = RadialCapacitor.build_bumped_cap(
                 slices=slices,
@@ -317,17 +317,18 @@ class RadialCapacitor:
         meshes.append(top_cap)
 
         if polarized:
-            body = curves.create_rotation_mesh(slices=slices[1:], wrap=False)
+            body = curves.create_rotation_mesh(slices=slices[1:], wrap=False, inverse=True)
             body.appearance().material = RadialCapacitor.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
-            mark = curves.create_rotation_mesh(slices=[slices[-1]] + slices[0:2], wrap=False)
+            mark = curves.create_rotation_mesh(slices=[slices[-1]] + slices[0:2], wrap=False,
+                                               inverse=True)
             mark.appearance().material = RadialCapacitor.mat(materials, 'Mark')
             mark.ident = name + 'Mark'
             meshes.append(mark)
         else:
-            body = curves.create_rotation_mesh(slices=slices, wrap=True)
+            body = curves.create_rotation_mesh(slices=slices, wrap=True, inverse=True)
             body.appearance().material = RadialCapacitor.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
@@ -338,8 +339,8 @@ class RadialCapacitor:
     def build_capacitor_pin(curve, edges):
         slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
 
-        pin = curves.create_rotation_mesh(slices, True)
-        pin.append(curves.create_tri_cap_mesh(slices, True))
+        pin = curves.create_rotation_mesh(slices=slices, wrap=True, inverse=True)
+        pin.append(curves.create_tri_cap_mesh(slices=slices, inverse=True))
         pin.optimize()
 
         return pin
