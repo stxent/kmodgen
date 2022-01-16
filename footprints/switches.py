@@ -53,4 +53,40 @@ class Button(exporter.Footprint):
         return descriptor['description'] if 'description' in descriptor else ''
 
 
-types = [Button]
+class DIP(exporter.Footprint):
+    def __init__(self, spec, descriptor):
+        super().__init__(name=descriptor['title'], description=DIP.describe(descriptor), spec=spec)
+
+        self.body_size = numpy.array(descriptor['body']['size'])
+        self.pad_size = numpy.array(descriptor['pads']['size'])
+        self.count = descriptor['pins']['count']
+        self.pitch = numpy.array(descriptor['pins']['pitch'])
+
+    def generate(self):
+        objects = []
+        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
+
+        # Body outline
+        top_corner = self.body_size / 2.0
+        objects.append(exporter.Rect(top_corner, -top_corner, self.thickness))
+
+        # Horizontal offset to the first pin
+        columns = int(self.count / 2)
+        first_pin_offset = float(columns - 1) / 2.0 * self.pitch[0]
+
+        pads = []
+        for i in range(0, columns):
+            x_offset = i * self.pitch[0] - first_pin_offset
+            y_offset = self.pitch[1] / 2.0
+            pads.append(exporter.SmdPad(i + 1, self.pad_size, (x_offset, y_offset)))
+            pads.append(exporter.SmdPad(self.count - i, self.pad_size, (x_offset, -y_offset)))
+
+        objects.extend(pads)
+        return objects
+
+    @staticmethod
+    def describe(descriptor):
+        return descriptor['description'] if 'description' in descriptor else None
+
+
+types = [Button, DIP]

@@ -1,0 +1,15 @@
+{
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "Microphone", "spec": "thick"},
+      "title": "EM-6022P",
+      "body": {"diameter": 6.0, "height": 2.2, "curvature": 0.25, "edges": 24},
+      "pins": {"diameter": 0.45, "height": 2.8, "curvature": 0.075, "edges": 12, "offset": 0.9, "spacing": 1.9},
+      "pads": {"diameter": 1.25, "drill": 0.65}
+    }
+  ]
+}

@@ -15,6 +15,11 @@ class SOP(exporter.Footprint):
         super().__init__(name=descriptor['title'], description=SOP.describe(descriptor), spec=spec)
 
         try:
+            self.heatsink_size = numpy.array(descriptor['heatsink']['size'])
+        except KeyError:
+            self.heatsink_size = None
+
+        try:
             self.pad_size = numpy.array(descriptor['pads']['regularPadSize'])
         except KeyError:
             self.pad_size = numpy.array(descriptor['pads']['size'])
@@ -80,6 +85,10 @@ class SOP(exporter.Footprint):
             pads.append(exporter.SmdPad(i + 1 + self.rows, self.pad(i, self.rows),
                 (-x_offset, -y_offset)))
 
+        # Central pad
+        if self.heatsink_size is not None:
+            pads.append(exporter.SmdPad(self.rows * 2 + 1, self.heatsink_size, (0.0, 0.0)))
+
         pads.sort(key=lambda x: x.number)
         return silkscreen + pads
 
@@ -90,8 +99,17 @@ class SOP(exporter.Footprint):
 
         width_str = primitives.round1f(descriptor['body']['size'][0])
         pitch_str = primitives.round2f(descriptor['pins']['pitch'])
-        return '{:d} leads, body width {:s} mm, pitch {:s} mm'.format(
+
+        try:
+            heatsink_str = [primitives.round1f(x) for x in descriptor['heatsink']['size'][0:2]]
+        except KeyError:
+            heatsink_str = None
+
+        output = '{:d} leads, body width {:s} mm, pitch {:s} mm'.format(
             descriptor['pins']['count'], width_str, pitch_str)
+        if heatsink_str is not None:
+            output += ', exposed pad {:s}x{:s} mm'.format(heatsink_str[1], heatsink_str[0])
+        return output
 
 
 types = [SOP]

@@ -1,0 +1,39 @@
+{
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "DIP", "spec": "thick"},
+      "title": "SWD4-2",
+      "body": {"size": [6.04, 6.8]},
+      "pads": {"size": [1.1, 1.5]},
+      "pins": {"count": 4, "pitch": [2.54, 8.9], "length": 1.0, "width": 0.5}
+    }, {
+      "package": {"type": "DIP", "spec": "thick"},
+      "title": "SWD4-3",
+      "body": {"size": [8.58, 6.8]},
+      "pads": {"size": [1.1, 1.5]},
+      "pins": {"count": 6, "pitch": [2.54, 8.9], "length": 1.0, "width": 0.5}
+    }, {
+      "package": {"type": "DIP", "spec": "thick"},
+      "title": "SWD4-4",
+      "body": {"size": [11.2, 6.8]},
+      "pads": {"size": [1.1, 1.5]},
+      "pins": {"count": 8, "pitch": [2.54, 8.9], "length": 1.0, "width": 0.5}
+    }, {
+      "package": {"type": "DIP", "spec": "thick"},
+      "title": "SWD4-6",
+      "body": {"size": [16.2, 6.8]},
+      "pads": {"size": [1.1, 1.5]},
+      "pins": {"count": 12, "pitch": [2.54, 8.9], "length": 1.0, "width": 0.5}
+    }, {
+      "package": {"type": "DIP", "spec": "thick"},
+      "title": "SWD4-8",
+      "body": {"size": [21.28, 6.8]},
+      "pads": {"size": [1.1, 1.5]},
+      "pins": {"count": 16, "pitch": [2.54, 8.9], "length": 1.0, "width": 0.5}
+    }
+  ]
+}

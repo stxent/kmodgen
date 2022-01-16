@@ -82,6 +82,41 @@
       "title": "PLD-20R",
       "pins": {"columns": 10, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-22R",
+      "pins": {"columns": 11, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-24R",
+      "pins": {"columns": 12, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-26R",
+      "pins": {"columns": 13, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-28R",
+      "pins": {"columns": 14, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-30R",
+      "pins": {"columns": 15, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-32R",
+      "pins": {"columns": 16, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "title": "PLD-40R",
+      "pins": {"columns": 20, "rows": 2, "pitch": 2.54, "length": 10.0},
+      "pads": {"diameter": 1.6, "drill": 1.0}
     }
   ]
 }

@@ -122,6 +122,14 @@
       "pads": {"size": [0.4, 1.1], "margin": 0.1},
       "pins": {"shape": [0.245, 0.15], "length": 1.0, "count": 28, "pitch": 0.65},
       "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOP", "subtype": "TSSOP", "spec": "thick"},
+      "title": "HTSSOP-20_4.4x6.5mm_P0.65mm_EP2.4x3.7mm",
+      "body": {"size": [6.5, 4.4, 1.2]},
+      "heatsink": {"size": [3.7, 2.4]},
+      "pads": {"size": [0.3, 1.6], "margin": -0.2},
+      "pins": {"shape": [0.245, 0.15], "length": 1.0, "count": 20, "pitch": 0.65},
+      "source": "TI specifications"
     }
   ]
 }

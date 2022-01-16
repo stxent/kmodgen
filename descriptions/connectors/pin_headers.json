@@ -82,6 +82,56 @@
       "title": "PLD-20",
       "pins": {"columns": 10, "rows": 2, "pitch": 2.54},
       "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-20",
+      "pins": {"columns": 10, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-20",
+      "pins": {"columns": 10, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-20",
+      "pins": {"columns": 10, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-22",
+      "pins": {"columns": 11, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-24",
+      "pins": {"columns": 12, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-26",
+      "pins": {"columns": 13, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-28",
+      "pins": {"columns": 14, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-30",
+      "pins": {"columns": 15, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-32",
+      "pins": {"columns": 16, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
+    }, {
+      "package": {"type": "PinHeader", "spec": "thick"},
+      "title": "PLD-40",
+      "pins": {"columns": 20, "rows": 2, "pitch": 2.54},
+      "pads": {"diameter": 1.6, "drill": 1.0}
     }
   ]
 }

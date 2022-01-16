@@ -10,6 +10,14 @@
   },
   "parts": [
     {
+      "package": {"type": "Chip", "spec": "thin"},
+      "title": "FC-12M",
+      "body": {"size": [2.05, 1.2]},
+      "pins": {},
+      "pads": {"pitch": 0.8, "size": [0.7, 1.4]},
+      "mark": {"wrap": true},
+      "source": "Seiko Epson specifications"
+    }, {
       "package": {"type": "CrystalSMD", "spec": "thin"},
       "title": "KX-7",
       "body": {"size": [3.2, 2.5, 0.8]},
