@@ -30,14 +30,14 @@ class GenericModelFilter:
                 # Find median point of the group of objects
                 pivot = numpy.zeros(3)
                 for mesh in meshes:
-                    pivot += mesh.transform.matrix.getA()[:,3][0:3]
+                    pivot += mesh.transform.matrix[:,3][0:3]
                 pivot *= numpy.array([1.0 / len(meshes), 1.0 / len(meshes), 0.0])
             elif self.alignment == GenericModelFilter.PIVOT_BOUNDING_BOX_CENTER:
                 # Find bounding box center
                 coord_min, coord_max = None, None
 
                 for mesh in meshes:
-                    column = mesh.transform.matrix.getA()[:,3][0:3]
+                    column = mesh.transform.matrix[:,3][0:3]
                     if coord_min is None:
                         coord_min = coord_max = column
                     else:

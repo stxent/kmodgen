@@ -1,0 +1,65 @@
+{
+  "materials": {
+    "Body": {
+      "shininess": 0.059,
+      "diffuse": [0.15, 0.15, 0.15],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Pin": {
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.401, 0.401, 0.401],
+      "ambient": [0.333, 0.333, 0.333]
+    }
+  },
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "DPAK", "spec": "thick"},
+      "title": "TO-252AA",
+      "body": {"size": [6.5, 6.22, 2.3]},
+      "pads": {
+          "heatsink": {"size": [5.8, 6.4], "offset": [0.0, 2.1], "name": "D"},
+          "default": {"size": [1.2, 2.2], "offset": [0.0, 4.2]},
+          "1": {"name": "G"},
+          "3": {"name": "S"}
+      },
+      "pins": {
+          "count": 3,
+          "pitch": 2.28,
+
+          "heatsink": {"size": [5.4, 5.24, 0.5], "offset": [0.0, 1.49]},
+          "default": {"shape": [0.75, 0.5], "length": 2.76},
+          "stub": {"shape": [0.75, 0.5], "length": 0.8},
+          "2": null
+      },
+      "description": "DPAK",
+      "source": "Infineon specifications"
+    }, {
+      "package": {"type": "DPAK", "spec": "thick"},
+      "title": "TO-263AB",
+      "body": {"size": [10.0, 9.25, 4.4]},
+      "pads": {
+          "heatsink": {"size": [10.9, 9.5], "offset": [0.0, 3.5], "name": "D"},
+          "default": {"size": [1.35, 4.6], "offset": [0.0, 5.7]},
+          "1": {"name": "G"},
+          "3": {"name": "S"}
+      },
+      "pins": {
+          "count": 3,
+          "pitch": 2.54,
+
+          "heatsink": {"size": [10.0, 7.55, 1.27], "offset": [0.0, 1.85]},
+          "default": {"shape": [1.05, 0.5], "length": 4.7},
+          "stub": {"shape": [1.05, 0.5], "length": 1.3},
+          "2": null
+      },
+      "description": "D2PAK",
+      "source": "Infineon specifications"
+    }
+  ]
+}

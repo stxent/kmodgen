@@ -207,7 +207,7 @@ class TriJoint:
         u_roundness = self.u.roundness
         v_roundness = self.v.roundness
         w_roundness = self.w.roundness
-        inversion = inversion ^ (numpy.linalg.det(numpy.matrix([uv, uw, vw])) < 0.0)
+        inversion = inversion ^ (numpy.linalg.det(numpy.array([uv, uw, vw])) < 0.0)
 
         return curves.BezierTriangle(
             (
@@ -263,7 +263,7 @@ class QuadJoint:
         for vertex in neighbors[1:]:
             vec = vecs[vertex] - projection(vecs[vertex], mean)
             angle = model.angle(initvec, vec)
-            if numpy.linalg.det(numpy.matrix([initvec, vec, mean])) < 0.0:
+            if numpy.linalg.det(numpy.array([initvec, vec, mean])) < 0.0:
                 angle = -angle
             dirs.append((vertex, angle))
         dirs = sorted(dirs, key=lambda x: x[1])
@@ -355,7 +355,7 @@ class QuadJoint:
                    self.diag0.u.n + self.diag1.v.m,
                    self.diag0.v.n + self.diag1.v.n,
                    self.diag0.v.m + self.diag1.u.n]
-        inversion = inversion ^ (numpy.linalg.det(numpy.matrix([*corners[0:3]])) < 0.0)
+        inversion = inversion ^ (numpy.linalg.det(numpy.array([*corners[0:3]])) < 0.0)
 
         return curves.BezierQuad(
             (
@@ -467,10 +467,10 @@ def make_rounded_edge(beg, end, resolution, inversion=False):
     end_roundness = end.edges[beg.num].roundness
     direction = ((end_pos_m + end_pos_n) / 2.0 - (beg_pos_m + beg_pos_n) / 2.0) / 3.0
 
-    if numpy.linalg.det(numpy.matrix([beg_dir_m, beg_dir_n, direction])) < 0.0:
+    if numpy.linalg.det(numpy.array([beg_dir_m, beg_dir_n, direction])) < 0.0:
         beg_dir_m, beg_dir_n = beg_dir_n, beg_dir_m
         beg_pos_m, beg_pos_n = beg_pos_n, beg_pos_m
-    if numpy.linalg.det(numpy.matrix([end_dir_m, end_dir_n, direction])) < 0.0:
+    if numpy.linalg.det(numpy.array([end_dir_m, end_dir_n, direction])) < 0.0:
         end_dir_m, end_dir_n = end_dir_n, end_dir_m
         end_pos_m, end_pos_n = end_pos_n, end_pos_m
 
@@ -767,7 +767,6 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         mark.apply()
     else:
         mark = None
-
     return (body, mark)
 
 def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_resolution,

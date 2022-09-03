@@ -16,7 +16,22 @@ class PinHeader(exporter.Footprint):
 
         self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
         self.pitch = descriptor['pins']['pitch']
-        self.body_size = numpy.asfarray(self.count) * self.pitch
+
+        try:
+            body_size_x = descriptor['body']['width']
+        except KeyError:
+            body_size_x = self.count[0] * self.pitch
+        try:
+            body_size_y = descriptor['body']['height']
+        except KeyError:
+            body_size_y = self.count[1] * self.pitch
+        self.body_size = numpy.array([body_size_x, body_size_y])
+
+        try:
+            self.pad_offset = descriptor['pads']['offset']
+        except KeyError:
+            self.pad_offset = 0.0
+
         self.body_center = numpy.asfarray(self.count - 1) * [1, -1] * (self.pitch / 2.0)
         self.pad_size = numpy.array([
             descriptor['pads']['diameter'],
@@ -51,6 +66,7 @@ class PinHeader(exporter.Footprint):
                     style = exporter.AbstractPad.STYLE_CIRCLE
 
                 offset = numpy.array([float(x_offset), -float(y_offset)]) * self.pitch
+                offset += numpy.array([0.0, self.pad_offset])
                 objects.append(exporter.HolePad(number, self.pad_size, offset, self.pad_drill,
                     style))
 
@@ -99,4 +115,8 @@ class Jumper(PinHeader):
     pass
 
 
-types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper]
+class ScrewTerminalBlock(PinHeader):
+    pass
+
+
+types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper, ScrewTerminalBlock]

@@ -22,6 +22,14 @@
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "QFN", "spec": "thick"},
+      "title": "QFN-24-1EP_4x4mm_P0.5mm_EP2.7x2.6mm",
+      "body": {"size": [4.0, 4.0, 0.9]},
+      "heatsink": {"size": [2.7, 2.6]},
+      "pads": {"size": [0.35, 0.85]},
+      "pins": {"columns": 6, "rows": 6, "pitch": 0.5, "length": 0.35, "width": 0.25, "margin": -0.025},
+      "source": "InvenSense specifications"
+    }, {
+      "package": {"type": "QFN", "spec": "thick"},
       "title": "QFN-24-1EP_4x4mm_P0.5mm_EP2.8x2.8mm",
       "body": {"size": [4.0, 4.0, 0.75]},
       "heatsink": {"size": [2.8, 2.8]},
@@ -52,6 +60,21 @@
       "pads": {"size": [0.3, 1.1]},
       "pins": {"columns": 8, "rows": 8, "pitch": 0.65, "length": 0.6, "width": 0.28, "margin": -0.050},
       "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "QFN", "spec": "thick"},
+      "title": "HVQFN-40-1EP_6x6mm_P0.5mm_EP4.1x4.1mm",
+      "body": {"size": [6.0, 6.0, 0.85]},
+      "heatsink": {"size": [4.1, 4.1]},
+      "pads": {"size": [0.29, 0.9]},
+      "pins": {"columns": 10, "rows": 10, "pitch": 0.5, "length": 0.4, "width": 0.24, "margin": 0.050},
+      "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "QFN", "spec": "thick"},
+      "title": "LPCC-16_3x3mm_P0.5mm",
+      "body": {"size": [3.0, 3.0, 0.9]},
+      "pads": {"size": [0.3, 0.45]},
+      "pins": {"columns": 4, "rows": 4, "pitch": 0.5, "length": 0.325, "width": 0.25, "margin": -0.225},
+      "source": "Honeywell specifications"
     }
   ]
 }

@@ -45,11 +45,11 @@ class QFN(exporter.Footprint):
             exporter.Rect(self.body_size / 2.0, -self.body_size / 2.0, self.thickness).lines)
 
         # Outer first pin mark
-        dot_offset_from_pin = -(self.gap + (self.pad_size[0] + self.thickness) / 2.0
-                                + first_pin_offset[0])
-        dot_offset_from_body = -top_corner[0]
-        dot_mark_x_offset = (dot_offset_from_pin + dot_offset_from_body) / 2.0
-        dot_mark_y_offset = top_corner[1] + self.gap + self.thickness
+        dot_offset_from_pin = (self.pad_size[0] / 2.0 + self.thickness + self.gap
+                               + first_pin_offset[0])
+        dot_offset_from_body = top_corner[0] - self.thickness / 2.0
+        dot_mark_x_offset = -max(dot_offset_from_pin, dot_offset_from_body)
+        dot_mark_y_offset = top_corner[1] + self.gap + self.thickness * 1.5
         dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
         silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
 

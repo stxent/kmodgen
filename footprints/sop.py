@@ -30,7 +30,7 @@ class SOP(exporter.Footprint):
             self.side_pad_size = self.pad_size
 
         self.body_size = numpy.array(descriptor['body']['size'])
-        self.rows = int(descriptor['pins']['count'] / 2)
+        self.rows = descriptor['pins']['count'] // 2
         self.margin = descriptor['pads']['margin']
         self.pitch = descriptor['pins']['pitch']
         self.side_pitch = self.pitch + (self.side_pad_size[0] - self.pad_size[0]) / 2.0
