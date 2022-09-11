@@ -42,56 +42,40 @@
       "body": {"diameter": 4.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
       "caps": {"diameter": 3.2, "depth": 0.125, "chamfer": 0.025},
       "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 1.5},
-      "pads": {"diameter": 1.0, "drill": 0.5}
-    }, {
-      "package": {"type": "RadialCapacitor", "spec": "thin"},
-      "title": "CP-R-4x8",
-      "body": {"diameter": 4.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"diameter": 3.2, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 1.5},
-      "pads": {"diameter": 1.0, "drill": 0.5}
+      "pads": {"diameter": 1.0, "drill": 0.5},
+      "source": "Hitano E5R series specifications"
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-5x5",
       "body": {"diameter": 5.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
       "caps": {"diameter": 4.2, "depth": 0.125, "chamfer": 0.025},
       "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
-      "pads": {"diameter": 1.2, "drill": 0.6}
-    }, {
-      "package": {"type": "RadialCapacitor", "spec": "thin"},
-      "title": "CP-R-5x8",
-      "body": {"diameter": 5.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"diameter": 4.2, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
-      "pads": {"diameter": 1.2, "drill": 0.6}
+      "pads": {"diameter": 1.2, "drill": 0.6},
+      "source": "Hitano E5R series specifications"
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thin"},
       "title": "CP-R-5x11",
       "body": {"diameter": 5.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
       "caps": {"diameter": 4.2, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
-      "pads": {"diameter": 1.2, "drill": 0.6}
+      "pins": {"diameter": 0.5, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.0},
+      "pads": {"diameter": 1.2, "drill": 0.6},
+      "source": "EPCOS B41851 and B43851 series specifications"
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
-      "title": "CP-R-6x5",
-      "body": {"diameter": 6.0, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"diameter": 5.2, "depth": 0.125, "chamfer": 0.025},
+      "title": "CP-R-6.3x5",
+      "body": {"diameter": 6.3, "height": 5.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 5.5, "depth": 0.125, "chamfer": 0.025},
       "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
-      "pads": {"diameter": 1.2, "drill": 0.6}
+      "pads": {"diameter": 1.2, "drill": 0.6},
+      "source": "Hitano E5R series specifications"
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
-      "title": "CP-R-6x8",
-      "body": {"diameter": 6.0, "height": 8.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"diameter": 5.2, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
-      "pads": {"diameter": 1.2, "drill": 0.6}
-    }, {
-      "package": {"type": "RadialCapacitor", "spec": "thick"},
-      "title": "CP-R-6x11",
-      "body": {"diameter": 6.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
-      "caps": {"diameter": 5.2, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
-      "pads": {"diameter": 1.2, "drill": 0.6}
+      "title": "CP-R-6.3x11",
+      "body": {"diameter": 6.3, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 5.5, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.5, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 2.5},
+      "pads": {"diameter": 1.2, "drill": 0.6},
+      "source": "EPCOS B41851 and B43851 series specifications"
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
       "title": "CP-R-8x5",
@@ -101,11 +85,36 @@
       "pads": {"diameter": 1.2, "drill": 0.6}
     }, {
       "package": {"type": "RadialCapacitor", "spec": "thick"},
-      "title": "CP-R-8x11",
-      "body": {"diameter": 8.0, "height": 11.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "title": "CP-R-8x11.5",
+      "body": {"diameter": 8.0, "height": 11.5, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
       "caps": {"diameter": 7.2, "depth": 0.125, "chamfer": 0.025},
-      "pins": {"diameter": 0.45, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 3.5},
-      "pads": {"diameter": 1.2, "drill": 0.6}
+      "pins": {"diameter": 0.6, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 3.5},
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "source": "EPCOS B41851 and B43851 series specifications"
+    }, {
+      "package": {"type": "RadialCapacitor", "spec": "thick"},
+      "title": "CP-R-10x12.5",
+      "body": {"diameter": 10.0, "height": 12.5, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 9.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.6, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 5.0},
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "source": "EPCOS B41851 and B43851 series specifications"
+    }, {
+      "package": {"type": "RadialCapacitor", "spec": "thick"},
+      "title": "CP-R-10x16",
+      "body": {"diameter": 10.0, "height": 16.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 9.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.6, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 5.0},
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "source": "EPCOS B41851 and B43851 series specifications"
+    }, {
+      "package": {"type": "RadialCapacitor", "spec": "thick"},
+      "title": "CP-R-10x20",
+      "body": {"diameter": 10.0, "height": 20.0, "curvature": 0.25, "edges": 24, "band": 1.5, "stripe": true},
+      "caps": {"diameter": 9.2, "depth": 0.125, "chamfer": 0.025},
+      "pins": {"diameter": 0.6, "height": 2.54, "curvature": 0.075, "edges": 12, "spacing": 5.0},
+      "pads": {"diameter": 1.4, "drill": 0.8},
+      "source": "EPCOS B41851 and B43851 series specifications"
     }
   ]
 }
