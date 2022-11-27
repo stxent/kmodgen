@@ -194,6 +194,25 @@
       "mark": {"dot": true, "tri": true},
       "description": "SC-70-6",
       "source": "NXP specifications for reflow soldering"
+    }, {
+      "package": {"type": "SOT", "spec": "thin"},
+      "title": "SOT-666",
+      "band": {"offset": -0.145},
+      "body": {"size": [1.6, 1.2, 0.55]},
+      "pads": {
+          "default": {"size": [0.38, 0.5], "offset": [0.0, 0.05]},
+          "2": {"size": [0.3, 0.65], "offset": [0.0, 0.125]},
+          "5": {"size": [0.3, 0.65], "offset": [0.0, 0.125]}
+      },
+      "pins": {
+          "count": 6,
+          "flat": true,
+          "pitch": 0.5,
+
+          "default": {"shape": [0.22, 0.13], "length": 0.2}
+      },
+      "mark": {"dot": true, "tri": true},
+      "source": "NXP specifications for reflow soldering"
     }
   ]
 }

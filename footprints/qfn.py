@@ -15,17 +15,31 @@ class QFN(exporter.Footprint):
         super().__init__(name=descriptor['title'],
                          description=QFN.describe(descriptor), spec=spec)
 
+        heatsink_size = None
         try:
-            self.heatsink_size = numpy.array(descriptor['heatsink']['size'])
+            heatsink_size = numpy.array(descriptor['pads']['heatsink'])
         except KeyError:
-            self.heatsink_size = None
+            pass
+        if heatsink_size is None:
+            try:
+                heatsink_size = numpy.array(descriptor['heatsink']['size'])
+            except KeyError:
+                pass
+        self.heatsink_size = heatsink_size
+
+        try:
+            columns, rows = descriptor['pins']['columns'], descriptor['pins']['rows']
+        except KeyError:
+            columns, rows = descriptor['pins']['count'] // 2, 0
+        self.count = numpy.array([columns, rows])
 
         self.body_size = numpy.array(descriptor['body']['size'])
         self.pad_size = numpy.array(descriptor['pads']['size'])
-        self.count = numpy.array([descriptor['pins']['columns'], descriptor['pins']['rows']])
         self.margin = descriptor['pins']['margin']
         self.pitch = descriptor['pins']['pitch']
-        self.title = 'QFN-{:d}'.format(sum(self.count) * 2)
+
+        prefix = 'QFN' if rows > 0 else 'DFN'
+        self.title = f'{prefix}-{sum(self.count) * 2}'
 
     def pad(self, rev):
         x_offset, y_offset = self.pad_size
@@ -40,14 +54,16 @@ class QFN(exporter.Footprint):
         first_pin_offset = (numpy.asfarray(self.count) - 1.0) * self.pitch / 2.0
 
         # Body outline
-        top_corner = self.body_size / 2.0
-        silkscreen_raw.extend(
-            exporter.Rect(self.body_size / 2.0, -self.body_size / 2.0, self.thickness).lines)
+        top_corner_from_body = self.body_size[0:2] / 2.0
+        top_corner_from_pins = numpy.array([
+            first_pin_offset[0] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap,
+            first_pin_offset[1] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap])
+        top_corner = numpy.maximum(top_corner_from_body, top_corner_from_pins)
+        silkscreen_raw.extend(exporter.Rect(top_corner, -top_corner, self.thickness).lines)
 
         # Outer first pin mark
-        dot_offset_from_pin = (self.pad_size[0] / 2.0 + self.thickness + self.gap
-                               + first_pin_offset[0])
-        dot_offset_from_body = top_corner[0] - self.thickness / 2.0
+        dot_offset_from_pin = top_corner_from_pins[0] + self.thickness / 2.0
+        dot_offset_from_body = (self.body_size[0] - self.thickness) / 2.0
         dot_mark_x_offset = -max(dot_offset_from_pin, dot_offset_from_body)
         dot_mark_y_offset = top_corner[1] + self.gap + self.thickness * 1.5
         dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
@@ -87,7 +103,12 @@ class QFN(exporter.Footprint):
         if 'description' in descriptor:
             return descriptor['description']
 
-        pin_count = (descriptor['pins']['columns'] + descriptor['pins']['rows']) * 2
+        try:
+            columns, rows = descriptor['pins']['columns'], descriptor['pins']['rows']
+        except KeyError:
+            columns, rows = descriptor['pins']['count'] // 2, 0
+
+        pin_count = (columns + rows) * 2
         size_str = [primitives.round1f(x) for x in descriptor['body']['size'][0:2]]
         height_str = primitives.round2f(descriptor['body']['size'][2])
         pitch_str = primitives.round2f(descriptor['pins']['pitch'])
@@ -95,4 +116,14 @@ class QFN(exporter.Footprint):
             pin_count, size_str[0], size_str[1], height_str, pitch_str)
 
 
-types = [QFN]
+class DFN(QFN):
+    pass
+
+
+class LGA(QFN):
+    def __init__(self, spec, descriptor):
+        super().__init__(spec=spec, descriptor=descriptor)
+        self.title = f'LGA-{sum(self.count) * 2}'
+
+
+types = [QFN, DFN, LGA]

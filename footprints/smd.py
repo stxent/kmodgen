@@ -187,6 +187,126 @@ class ChipArray(exporter.Footprint):
         return descriptor['description'] if 'description' in descriptor else None
 
 
+class DPAK(exporter.Footprint):
+    class PadDesc:
+        def __init__(self, number, position, pattern, side, descriptor=None):
+            if descriptor is None and pattern is None:
+                # Not enough information
+                raise Exception()
+            if number is None != position is None:
+                raise Exception()
+
+            if number is not None:
+                self.number = number
+
+            try:
+                self.name = descriptor['name']
+            except (KeyError, TypeError):
+                if number is not None:
+                    self.name = str(number)
+                else:
+                    self.name = None
+
+            try:
+                self.offset = numpy.array(descriptor['offset'])
+            except (KeyError, TypeError):
+                self.offset = pattern.offset if pattern is not None else numpy.zeros(2)
+
+            try:
+                self.size = numpy.array(descriptor['size'])
+            except (KeyError, TypeError):
+                self.size = pattern.size
+
+            self.position = self.offset * [1, side]
+            if position is not None:
+                self.position += position
+
+        @classmethod
+        def make_pattern(cls, descriptor):
+            if descriptor is None:
+                raise Exception()
+
+            return cls(None, None, None, 1, descriptor)
+
+
+    def __init__(self, spec, descriptor):
+        super().__init__(name=descriptor['title'], description=DPAK.describe(descriptor),
+                         model=DPAK.assign_model(descriptor), spec=spec)
+
+        self.count = descriptor['pins']['count']
+        self.pitch = descriptor['pins']['pitch']
+        self.body_size = numpy.array(descriptor['body']['size'])
+
+        try:
+            pad_pattern = DPAK.PadDesc.make_pattern(descriptor['pads']['default'])
+        except KeyError:
+            pad_pattern = None
+
+        self.pads = []
+
+        for i, key in [(i, str(i)) for i in range(1, self.count + 1)]:
+            if key in descriptor['pins'] and descriptor['pins'][key] is None:
+                continue
+
+            position_x = self.calc_pad_position_x(i - 1)
+
+            try:
+                self.pads.append(DPAK.PadDesc(i, [position_x, 0.0], pad_pattern, 1,
+                    descriptor['pads'][key]))
+            except KeyError:
+                self.pads.append(DPAK.PadDesc(i, [position_x, 0.0], pad_pattern, 1))
+
+        try:
+            self.pads.append(DPAK.PadDesc(i, [0.0, 0.0], pad_pattern, -1,
+                descriptor['pads']['heatsink']))
+        except KeyError:
+            pass
+
+
+        lower_bound = min([pad.position[1] - pad.size[1] / 2.0 for pad in self.pads])
+        lower_bound -= self.gap + self.thickness / 2.0
+        lower_bound = min(-self.body_size[1] / 2.0, lower_bound)
+        upper_bound = self.body_size[1] / 2.0
+
+        # XXX
+        # https://www.infineon.com/cms/en/product/packages/PG-TO252/PG-TO252-3-11/
+        self.border_size = numpy.array([self.body_size[0], upper_bound - lower_bound])
+        self.border_center = numpy.array([0.0, lower_bound + upper_bound])
+
+    def calc_pad_position_x(self, number):
+        if number >= self.count:
+            raise Exception()
+        return self.pitch * (number - (self.count - 1) / 2.0)
+
+    def generate(self):
+        objects, pads = [], []
+        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
+
+        # Body outline
+        outline = exporter.Rect(self.border_size / 2.0 + self.border_center,
+            self.border_size / -2.0 + self.border_center, self.thickness)
+
+        for entry in self.pads:
+            pads.append(exporter.SmdPad(entry.name, entry.size, entry.position))
+
+        pads.sort(key=lambda x: x.number)
+        process_func = lambda x: exporter.collide_line(x, pads, self.thickness, self.gap)
+
+        for line in outline.lines:
+            objects.extend(process_func(line))
+        objects.extend(pads)
+
+        return objects
+
+    @staticmethod
+    def describe(descriptor):
+        return descriptor['description'] if 'description' in descriptor else None
+
+    @staticmethod
+    def assign_model(descriptor):
+        return descriptor['body']['model'] if 'model' in descriptor['body'] else None
+
+
 class MELF(Chip):
     def __init__(self, spec, descriptor):
         descriptor['body']['size'] = numpy.array([
@@ -346,139 +466,30 @@ class SOT(exporter.Footprint):
         return descriptor['body']['model'] if 'model' in descriptor['body'] else None
 
 
-class DPAK(exporter.Footprint):
-    class PadDesc:
-        def __init__(self, number, position, pattern, side, descriptor=None):
-            if descriptor is None and pattern is None:
-                # Not enough information
-                raise Exception()
-            if number is None != position is None:
-                raise Exception()
-
-            if number is not None:
-                self.number = number
-
-            try:
-                self.name = descriptor['name']
-            except (KeyError, TypeError):
-                if number is not None:
-                    self.name = str(number)
-                else:
-                    self.name = None
-
-            try:
-                self.offset = numpy.array(descriptor['offset'])
-            except (KeyError, TypeError):
-                self.offset = pattern.offset if pattern is not None else numpy.zeros(2)
-
-            try:
-                self.size = numpy.array(descriptor['size'])
-            except (KeyError, TypeError):
-                self.size = pattern.size
-
-            self.position = self.offset * [1, side]
-            if position is not None:
-                self.position += position
-
-        @classmethod
-        def make_pattern(cls, descriptor):
-            if descriptor is None:
-                raise Exception()
-
-            return cls(None, None, None, 1, descriptor)
-
-
-    def __init__(self, spec, descriptor):
-        super().__init__(name=descriptor['title'], description=DPAK.describe(descriptor),
-                         model=DPAK.assign_model(descriptor), spec=spec)
-
-        self.count = descriptor['pins']['count']
-        self.pitch = descriptor['pins']['pitch']
-        self.body_size = numpy.array(descriptor['body']['size'])
-
-        try:
-            pad_pattern = DPAK.PadDesc.make_pattern(descriptor['pads']['default'])
-        except KeyError:
-            pad_pattern = None
-
-        self.pads = []
-
-        for i, key in [(i, str(i)) for i in range(1, self.count + 1)]:
-            if key in descriptor['pins'] and descriptor['pins'][key] is None:
-                continue
-
-            position_x = self.calc_pad_position_x(i - 1)
-
-            try:
-                self.pads.append(DPAK.PadDesc(i, [position_x, 0.0], pad_pattern, 1,
-                    descriptor['pads'][key]))
-            except KeyError:
-                self.pads.append(DPAK.PadDesc(i, [position_x, 0.0], pad_pattern, 1))
-
-        try:
-            self.pads.append(DPAK.PadDesc(i, [0.0, 0.0], pad_pattern, -1,
-                descriptor['pads']['heatsink']))
-        except KeyError:
-            pass
-
-
-        lower_bound = min([pad.position[1] - pad.size[1] / 2.0 for pad in self.pads])
-        lower_bound -= self.gap + self.thickness / 2.0
-        lower_bound = min(-self.body_size[1] / 2.0, lower_bound)
-        upper_bound = self.body_size[1] / 2.0
-
-        # XXX
-        # https://www.infineon.com/cms/en/product/packages/PG-TO252/PG-TO252-3-11/
-        for pad in self.pads:
-            print(pad.name, pad.position, pad.size)
-        print('body', self.body_size / 2.0)
-        print(lower_bound, upper_bound)
-
-        self.border_size = numpy.array([self.body_size[0], upper_bound - lower_bound])
-        self.border_center = numpy.array([0.0, lower_bound + upper_bound])
-
-    def calc_pad_position_x(self, number):
-        if number >= self.count:
-            raise Exception()
-        return self.pitch * (number - (self.count - 1) / 2.0)
-
-    def generate(self):
-        objects, pads = [], []
-        objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
-
-        # Body outline
-        outline = exporter.Rect(self.border_size / 2.0 + self.border_center,
-            self.border_size / -2.0 + self.border_center, self.thickness)
-
-        for entry in self.pads:
-            pads.append(exporter.SmdPad(entry.name, entry.size, entry.position))
-
-        pads.sort(key=lambda x: x.number)
-        process_func = lambda x: exporter.collide_line(x, pads, self.thickness, self.gap)
-
-        for line in outline.lines:
-            objects.extend(process_func(line))
-        objects.extend(pads)
-
-        return objects
-
-    @staticmethod
-    def describe(descriptor):
-        return descriptor['description'] if 'description' in descriptor else None
-
-    @staticmethod
-    def assign_model(descriptor):
-        return descriptor['body']['model'] if 'model' in descriptor['body'] else None
-
-
 class CDRH(Chip):
+    pass
+
+
+class ChipCapacitor(Chip):
+    pass
+
+
+class ChipFerrite(Chip):
+    pass
+
+
+class ChipInductor(Chip):
     pass
 
 
 types = [
     Chip,
     ChipArray,
+    DPAK,
     MELF,
     SOT,
-    DPAK,
-    CDRH]
+    CDRH,
+    ChipCapacitor,
+    ChipFerrite,
+    ChipInductor
+]

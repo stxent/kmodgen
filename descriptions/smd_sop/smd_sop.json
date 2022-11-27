@@ -47,6 +47,13 @@
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "SOP", "subtype": "SO", "spec": "thick"},
+      "title": "SO-16_7.1x12.7mm_P1.27mm",
+      "body": {"size": [12.7, 7.1, 2.0]},
+      "pads": {"size": [0.8, 1.5], "margin": 0.15},
+      "pins": {"shape": [0.51, 0.25], "length": 1.27, "count": 16, "pitch": 1.27},
+      "source": "Pulse Electronics specifications"
+    }, {
+      "package": {"type": "SOP", "subtype": "SO", "spec": "thick"},
       "title": "SO-16_7.5x10.3mm_P1.27mm",
       "body": {"size": [10.3, 7.5, 2.35]},
       "pads": {"size": [0.6, 1.5], "margin": 0.25},

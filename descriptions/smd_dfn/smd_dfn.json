@@ -1,0 +1,71 @@
+{
+  "materials": {
+    "Body": {
+      "shininess": 0.059,
+      "diffuse": [0.15, 0.15, 0.15],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Mark": {
+      "shininess": 0.059,
+      "diffuse": [0.6, 0.6, 0.6],
+      "specular": [0.161, 0.161, 0.161],
+      "ambient": [0.333, 0.333, 0.333]
+    },
+    "Pin": {
+      "shininess": 0.098,
+      "diffuse": [0.83, 0.83, 0.83],
+      "specular": [0.401, 0.401, 0.401],
+      "ambient": [0.333, 0.333, 0.333]
+    }
+  },
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "DFN", "spec": "thin"},
+      "title": "DFN-6-1EP_3x3mm_P1.0mm_EP2.4x1.5mm",
+      "body": {"size": [3.0, 3.0, 1.1]},
+      "heatsink": {"size": [2.4, 1.5]},
+      "mark": {"radius": 0.25},
+      "pads": {"size": [0.4, 0.6]},
+      "pins": {"count": 6, "pitch": 1.0, "length": 0.4, "width": 0.4, "margin": -0.100},
+      "source": "Sensirion specifications"
+    }, {
+      "package": {"type": "DFN", "spec": "thin"},
+      "title": "LGA-8_2x2.5mm_P0.65mm",
+      "body": {"size": [2.5, 2.0, 0.95]},
+      "mark": {"radius": 0.2},
+      "pads": {"size": [0.35, 0.5]},
+      "pins": {"count": 8, "pitch": 0.65, "length": 0.35, "width": 0.35, "margin": -0.200},
+      "source": "Bosch specifications"
+    }, {
+      "package": {"type": "DFN", "spec": "thin"},
+      "title": "LGA-8_3x5mm_P1.25mm",
+      "body": {"size": [5.0, 3.0, 1.0]},
+      "mark": {"radius": 0.25},
+      "pads": {"size": [0.6, 1.1]},
+      "pins": {"count": 8, "pitch": 1.25, "length": 0.9, "width": 0.5, "margin": -0.400},
+      "source": "TE Connectivity specifications"
+    }, {
+      "package": {"type": "DFN", "spec": "thin"},
+      "title": "UDFN2020-6-1EP_2x2mm_P0.65mm_EP1.65x0.96mm",
+      "body": {"size": [2.0, 2.0, 0.6]},
+      "heatsink": {"size": [1.65, 0.96]},
+      "mark": {"radius": 0.2},
+      "pads": {"size": [0.35, 0.52], "heatsink": [1.7, 1.02]},
+      "pins": {"count": 6, "pitch": 0.65, "length": 0.3, "width": 0.3, "margin": -0.060},
+      "source": "Diodes Incorporated specifications"
+    }, {
+      "package": {"type": "DFN", "spec": "thin"},
+      "title": "WSON-8-1EP_8x6mm_P1.27mm_EP3.4x4.3mm",
+      "body": {"size": [6.0, 8.0, 0.75]},
+      "heatsink": {"size": [4.3, 3.4]},
+      "pads": {"size": [0.8, 1.5], "heatsink": [4.05, 3.25]},
+      "pins": {"count": 8, "pitch": 1.27, "length": 0.5, "width": 0.4, "margin": 0.150},
+      "source": "Winbond specifications"
+    }
+  ]
+}

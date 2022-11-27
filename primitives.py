@@ -9,6 +9,7 @@ import math
 import numpy
 
 from wrlconv import curves
+from wrlconv import geometry
 from wrlconv import model
 
 def limit_vector_pair(a, b): # pylint: disable=invalid-name
@@ -43,8 +44,8 @@ def round2f(value):
         return '{:.1f}'.format(value)
     return '{:.2f}'.format(value)
 
-def reorder_points(e, n): # pylint: disable=invalid-name
-    return [e[1], e[0]] if e[0] != n else e
+def reorder_points(edge, origin):
+    return [edge[1], edge[0]] if edge[1] == origin else edge
 
 def reverse_projection(a, b): # pylint: disable=invalid-name
     a_norm = model.normalize(a)
@@ -68,47 +69,55 @@ def calc_bezier_weight(a=None, b=None, angle=None): # pylint: disable=invalid-na
 def sort_edge_points(points):
     return (min(points), max(points))
 
-def default_quad_face_functor(points, resolution=(1, 1), inversion=False):
-    return curves.BezierQuad(
+def default_quad_face_functor(points, resolution=(1, 1), inversion=False, roundness=1.0 / 3.0):
+    p01_vec = (points[1] - points[0]) * roundness
+    p03_vec = (points[3] - points[0]) * roundness
+    p21_vec = (points[1] - points[2]) * roundness
+    p23_vec = (points[3] - points[2]) * roundness
+
+    p10_vec = -p01_vec
+    p12_vec = -p21_vec
+    p30_vec = -p03_vec
+    p32_vec = -p23_vec
+
+    line0 = (points[1], points[1] + p10_vec, points[0] + p01_vec, points[0])
+    edge1 = (points[1] + p12_vec, points[0] + p03_vec)
+    edge2 = (points[2] + p21_vec, points[3] + p30_vec)
+    line3 = (points[2], points[2] + p23_vec, points[3] + p32_vec, points[3])
+
+    line1 = (
+        edge1[0],
+        edge1[0] + (edge1[1] - edge1[0]) * roundness,
+        edge1[1] + (edge1[0] - edge1[1]) * roundness,
+        edge1[1]
+    )
+    line2 = (
+        edge2[0],
+        edge2[0] + (edge2[1] - edge2[0]) * roundness,
+        edge2[1] + (edge2[0] - edge2[1]) * roundness,
+        edge2[1]
+    )
+
+    return curves.BezierQuad(line0, line1, line2, line3, resolution, inversion)
+
+def default_tri_face_functor(points, resolution=1, inversion=False, roundness=1.0 / 3.0):
+    return curves.BezierTri(
         (
-            points[1],
-            points[1] + (points[0] - points[1]) / 3.0,
-            points[0] + (points[1] - points[0]) / 3.0,
-            points[0]
-        ), (
-            points[1] + (points[2] - points[1]) / 3.0,
-            points[1] + (points[2] - points[1]) / 3.0 + (points[0] - points[1]) / 3.0,
-            points[0] + (points[3] - points[0]) / 3.0 + (points[1] - points[0]) / 3.0,
-            points[0] + (points[3] - points[0]) / 3.0
-        ), (
-            points[2] + (points[1] - points[2]) / 3.0,
-            points[2] + (points[1] - points[2]) / 3.0 + (points[3] - points[2]) / 3.0,
-            points[3] + (points[0] - points[3]) / 3.0 + (points[2] - points[3]) / 3.0,
-            points[3] + (points[0] - points[3]) / 3.0
+            points[0],
+            points[0] + (points[2] - points[0]) * roundness,
+            points[0] + (points[1] - points[0]) * roundness
         ), (
             points[2],
-            points[2] + (points[3] - points[2]) / 3.0,
-            points[3] + (points[2] - points[3]) / 3.0,
-            points[3]
-        ), resolution, inversion)
-
-def default_tri_face_functor(points, resolution=1, inversion=False):
-    return curves.BezierTriangle(
-            (
-                    points[0],
-                    points[0] + (points[2] - points[0]) / 3.0,
-                    points[0] + (points[1] - points[0]) / 3.0
-            ), (
-                    points[2],
-                    points[2] + (points[1] - points[2]) / 3.0,
-                    points[2] + (points[0] - points[2]) / 3.0
-            ), (
-                    points[1],
-                    points[1] + (points[0] - points[1]) / 3.0,
-                    points[1] + (points[2] - points[1]) / 3.0
-            ),
-            (points[0] + points[1] + points[2]) / 3.0,
-            resolution, inversion)
+            points[2] + (points[1] - points[2]) * roundness,
+            points[2] + (points[0] - points[2]) * roundness
+        ), (
+            points[1],
+            points[1] + (points[0] - points[1]) * roundness,
+            points[1] + (points[2] - points[1]) * roundness
+        ),
+        (points[0] + points[1] + points[2]) / 3.0,
+        resolution, inversion
+    )
 
 
 class JointEdge:
@@ -167,7 +176,7 @@ class JointEdge:
 
 
 class TriJoint:
-    def __init__(self, vertices, num, neighbors, chamfer):
+    def __init__(self, vertices, num, neighbors, chamfers):
         self.num = num
         self.pos = vertices[self.num]
 
@@ -177,10 +186,19 @@ class TriJoint:
         v_vec = vertices[v_num] - self.pos
         w_vec = vertices[w_num] - self.pos
 
+        try:
+            u_chamfer = chamfers[0]
+            v_chamfer = chamfers[1]
+            w_chamfer = chamfers[2]
+        except TypeError:
+            u_chamfer = chamfers
+            v_chamfer = chamfers
+            w_chamfer = chamfers
+
         # pylint: disable=invalid-name
-        self.u = JointEdge(u_num, u_vec, w_num, w_vec, v_num, v_vec, chamfer)
-        self.v = JointEdge(v_num, v_vec, w_num, w_vec, u_num, u_vec, chamfer)
-        self.w = JointEdge(w_num, w_vec, v_num, v_vec, u_num, u_vec, chamfer)
+        self.u = JointEdge(u_num, u_vec, w_num, w_vec, v_num, v_vec, u_chamfer)
+        self.v = JointEdge(v_num, v_vec, w_num, w_vec, u_num, u_vec, v_chamfer)
+        self.w = JointEdge(w_num, w_vec, v_num, v_vec, u_num, u_vec, w_chamfer)
         # pylint: enable=invalid-name
 
         self.u.shrink(self.v)
@@ -192,10 +210,12 @@ class TriJoint:
         self.edges[self.v.num] = self.v
         self.edges[self.w.num] = self.w
 
-    def face(self, keys):
-        return (self.pos
-                + self.edges[keys[0]].normals[keys[1]]
-                + self.edges[keys[1]].normals[keys[0]])
+    def face_point(self, keys):
+        return (
+            self.pos
+            + self.edges[keys[0]].normals[keys[1]]
+            + self.edges[keys[1]].normals[keys[0]]
+        )
 
     def mesh(self, resolution, inversion=False):
         # pylint: disable=invalid-name
@@ -209,7 +229,8 @@ class TriJoint:
         w_roundness = self.w.roundness
         inversion = inversion ^ (numpy.linalg.det(numpy.array([uv, uw, vw])) < 0.0)
 
-        return curves.BezierTriangle(
+        # TODO Replace 0.114 with calculated value
+        return curves.BezierTri(
             (
                 self.pos + uv,
                 self.pos + uv - self.u.n * u_roundness,
@@ -224,9 +245,10 @@ class TriJoint:
                 self.pos + vw - self.w.m * w_roundness
             ),
             self.pos + (uv + uw + vw) * 0.114,
-            resolution, inversion)
+            resolution, inversion
+        )
 
-    def nearest(self, p0, p1, constraints=None): # pylint: disable=invalid-name
+    def nearest_face(self, p0, p1, constraints=None): # pylint: disable=invalid-name
         pairs = [(self.u.num, self.v.num), (self.u.num, self.w.num), (self.v.num, self.w.num)]
 
         if constraints is not None:
@@ -237,7 +259,7 @@ class TriJoint:
                         break
 
         raw_normal = numpy.cross(p0 - self.pos, p1 - self.pos)
-        positions = [self.face(pair) for pair in pairs]
+        positions = [self.face_point(pair) for pair in pairs]
         normals = [numpy.cross(p0 - x, p1 - x) for x in positions]
         angles = [model.angle(raw_normal, x) for x in normals]
         return pairs[angles.index(min(angles))]
@@ -251,10 +273,19 @@ class QuadJoint:
             self.v = v
             # pylint: enable=invalid-name
 
+        def set_roundness(self, roundness):
+            self.u.roundness = roundness
+            self.v.roundness = roundness
 
-    def __init__(self, vertices, num, neighbors, chamfer, sharpness):
+
+    def __init__(self, vertices, num, neighbors, chamfers, sharpness):
         self.num = num
         self.pos = vertices[self.num]
+
+        try:
+            values = {neighbors[i]: chamfers[i] for i in range(0, len(neighbors))}
+        except TypeError:
+            values = {neighbors[i]: chamfers for i in range(0, neighbors)}
 
         vecs = {i: vertices[i] - self.pos for i in neighbors}
         mean = sum(vecs.values())
@@ -268,13 +299,13 @@ class QuadJoint:
             dirs.append((vertex, angle))
         dirs = sorted(dirs, key=lambda x: x[1])
         sections = ((dirs[0][0], dirs[2][0]), (dirs[1][0], dirs[3][0]))
-        angles = (model.angle(vecs[sections[0][0]], vecs[sections[0][1]]),
-                  model.angle(vecs[sections[1][0]], vecs[sections[1][1]]))
+        angles = (
+            model.angle(vecs[sections[0][0]], vecs[sections[0][1]]),
+            model.angle(vecs[sections[1][0]], vecs[sections[1][1]])
+        )
 
         self.flat0 = angles[0] > sharpness
         self.flat1 = angles[1] > sharpness
-        self.roundness0 = calc_bezier_weight(angle=abs(angles[0]))
-        self.roundness1 = calc_bezier_weight(angle=abs(angles[1]))
 
         if self.flat0:
             self.diag0 = QuadJoint.Diag(
@@ -282,24 +313,30 @@ class QuadJoint:
                     sections[1][0], vecs[sections[1][0]],
                     sections[0][0], numpy.zeros(3),
                     sections[0][1], numpy.zeros(3),
-                    chamfer),
+                    values[sections[1][0]]
+                ),
                 JointEdge(
                     sections[1][1], vecs[sections[1][1]],
                     sections[0][0], numpy.zeros(3),
                     sections[0][1], numpy.zeros(3),
-                    chamfer))
+                    values[sections[1][1]]
+                )
+            )
         else:
             self.diag0 = QuadJoint.Diag(
                 JointEdge(
                     sections[1][0], vecs[sections[1][0]],
                     sections[0][0], vecs[sections[0][0]],
                     sections[0][1], vecs[sections[0][1]],
-                    chamfer, not self.flat1),
+                    values[sections[1][0]], not self.flat1
+                ),
                 JointEdge(
                     sections[1][1], vecs[sections[1][1]],
                     sections[0][0], vecs[sections[0][0]],
                     sections[0][1], vecs[sections[0][1]],
-                    chamfer, not self.flat1))
+                    values[sections[1][1]], not self.flat1
+                )
+            )
 
         if self.flat1:
             self.diag1 = QuadJoint.Diag(
@@ -307,24 +344,35 @@ class QuadJoint:
                     sections[0][0], vecs[sections[0][0]],
                     sections[1][0], numpy.zeros(3),
                     sections[1][1], numpy.zeros(3),
-                    chamfer),
+                    values[sections[0][0]]
+                ),
                 JointEdge(
                     sections[0][1], vecs[sections[0][1]],
                     sections[1][0], numpy.zeros(3),
                     sections[1][1], numpy.zeros(3),
-                    chamfer))
+                    values[sections[0][1]]
+                )
+            )
         else:
             self.diag1 = QuadJoint.Diag(
                 JointEdge(
                     sections[0][0], vecs[sections[0][0]],
                     sections[1][0], vecs[sections[1][0]],
                     sections[1][1], vecs[sections[1][1]],
-                    chamfer, not self.flat0),
+                    values[sections[0][0]], not self.flat0
+                ),
                 JointEdge(
                     sections[0][1], vecs[sections[0][1]],
                     sections[1][0], vecs[sections[1][0]],
                     sections[1][1], vecs[sections[1][1]],
-                    chamfer, not self.flat0))
+                    values[sections[0][1]], not self.flat0
+                )
+            )
+
+        roundness0 = calc_bezier_weight(angle=abs(angles[0]))
+        self.diag0.set_roundness(roundness0)
+        roundness1 = calc_bezier_weight(angle=abs(angles[1]))
+        self.diag1.set_roundness(roundness1)
 
         if self.flat0:
             self.diag1.u.equalize(self.diag1.v)
@@ -342,53 +390,65 @@ class QuadJoint:
         self.edges[sections[0][0]] = self.diag1.u
         self.edges[sections[0][1]] = self.diag1.v
 
-    def face(self, keys):
-        return (self.pos
-                + self.edges[keys[0]].normals[keys[1]]
-                + self.edges[keys[1]].normals[keys[0]])
+    def face_point(self, keys):
+        return (
+            self.pos
+            + self.edges[keys[0]].normals[keys[1]]
+            + self.edges[keys[1]].normals[keys[0]]
+        )
 
     def mesh(self, resolution, inversion=False):
         if self.flat0 or self.flat1:
             return None
 
-        corners = [self.diag0.u.m + self.diag1.u.m,
-                   self.diag0.u.n + self.diag1.v.m,
-                   self.diag0.v.n + self.diag1.v.n,
-                   self.diag0.v.m + self.diag1.u.n]
+        corners = [
+            self.diag0.u.m + self.diag1.u.m,
+            self.diag0.u.n + self.diag1.v.m,
+            self.diag0.v.n + self.diag1.v.n,
+            self.diag0.v.m + self.diag1.u.n
+        ]
         inversion = inversion ^ (numpy.linalg.det(numpy.array([*corners[0:3]])) < 0.0)
 
         return curves.BezierQuad(
             (
                 self.pos + corners[0],
-                self.pos + corners[0] - self.diag0.u.m * self.roundness0,
-                self.pos + corners[1] - self.diag0.u.n * self.roundness0,
+                self.pos + corners[0] - self.diag0.u.m * self.diag0.u.roundness,
+                self.pos + corners[1] - self.diag0.u.n * self.diag0.u.roundness,
                 self.pos + corners[1]
             ), (
-                self.pos + corners[0] - self.diag1.u.m * self.roundness1,
+                self.pos + corners[0] - self.diag1.u.m * self.diag1.u.roundness,
                 self.pos + corners[0]
-                    - self.diag1.u.m * self.roundness1 - self.diag0.u.m * self.roundness0,
+                    - self.diag1.u.m * self.diag1.u.roundness
+                    - self.diag0.u.m * self.diag0.u.roundness,
                 self.pos + corners[1]
-                    - self.diag1.v.m * self.roundness1 - self.diag0.u.n * self.roundness0,
-                self.pos + corners[1] - self.diag1.v.m * self.roundness1
+                    - self.diag1.v.m * self.diag1.v.roundness
+                    - self.diag0.u.n * self.diag0.u.roundness,
+                self.pos + corners[1] - self.diag1.v.m * self.diag1.v.roundness
             ), (
-                self.pos + corners[3] - self.diag1.u.n * self.roundness1,
+                self.pos + corners[3] - self.diag1.u.n * self.diag1.u.roundness,
                 self.pos + corners[3]
-                    - self.diag1.u.n * self.roundness1 - self.diag0.v.m * self.roundness0,
+                    - self.diag1.u.n * self.diag1.u.roundness
+                    - self.diag0.v.m * self.diag0.v.roundness,
                 self.pos + corners[2]
-                    - self.diag1.v.n * self.roundness1 - self.diag0.v.n * self.roundness0,
-                self.pos + corners[2] - self.diag1.v.n * self.roundness1
+                    - self.diag1.v.n * self.diag1.v.roundness
+                    - self.diag0.v.n * self.diag0.v.roundness,
+                self.pos + corners[2] - self.diag1.v.n * self.diag1.v.roundness
             ), (
                 self.pos + corners[3],
-                self.pos + corners[3] - self.diag0.v.m * self.roundness0,
-                self.pos + corners[2] - self.diag0.v.n * self.roundness0,
+                self.pos + corners[3] - self.diag0.v.m * self.diag0.v.roundness,
+                self.pos + corners[2] - self.diag0.v.n * self.diag0.v.roundness,
                 self.pos + corners[2]
-            ), resolution, inversion)
+            ),
+            resolution, inversion
+        )
 
-    def nearest(self, p0, p1, constraints=None): # pylint: disable=invalid-name
-        pairs = [(self.diag0.u.num, self.diag1.u.num),
-                 (self.diag0.u.num, self.diag1.v.num),
-                 (self.diag0.v.num, self.diag1.v.num),
-                 (self.diag0.v.num, self.diag1.u.num)]
+    def nearest_face(self, p0, p1, constraints=None): # pylint: disable=invalid-name
+        pairs = [
+            (self.diag0.u.num, self.diag1.u.num),
+            (self.diag0.u.num, self.diag1.v.num),
+            (self.diag0.v.num, self.diag1.v.num),
+            (self.diag0.v.num, self.diag1.u.num)
+        ]
 
         if constraints is not None:
             for constraint in constraints:
@@ -398,56 +458,94 @@ class QuadJoint:
                         break
 
         raw_normal = numpy.cross(p0 - self.pos, p1 - self.pos)
-        positions = [self.face(pair) for pair in pairs]
+        positions = [self.face_point(pair) for pair in pairs]
         normals = [numpy.cross(p0 - x, p1 - x) for x in positions]
         angles = [model.angle(raw_normal, x) for x in normals]
         return pairs[angles.index(min(angles))]
 
 
-def make_body_cap(corners, radius, offset, edges):
+def append_hollow_cap(mesh, outer, inner, normal):
+    inner_mean = numpy.zeros(3)
+    for vertex in inner.values():
+        inner_mean += vertex
+    inner_mean /= len(inner)
+
+    direction = inner[next(iter(inner))] - inner_mean
+    inner_indices = geometry.sort_vertices_by_angle(inner, inner_mean, normal, direction)
+    outer_indices = geometry.sort_vertices_by_angle(outer, inner_mean, normal, direction)
+
+    i_count, o_count = len(inner_indices), len(outer_indices)
+    i_index, o_index = 0, 0
+    i_offset = len(mesh.geo_vertices)
+    polygons = []
+
+    while o_index < o_count:
+        if o_index < o_count - 1:
+            threshold = (outer_indices[o_index + 1][1] + outer_indices[o_index][1]) / 2.0
+        else:
+            threshold = outer_indices[o_index][1]
+
+        while i_index < i_count and (inner_indices[i_index][1] < threshold
+                                     or o_index == o_count - 1):
+            polygons.append([
+                outer_indices[o_index][0],
+                inner_indices[(i_index + 1) % i_count][0] + i_offset,
+                inner_indices[i_index][0] + i_offset
+            ])
+            i_index += 1
+
+        polygons.append([
+            outer_indices[o_index][0],
+            outer_indices[(o_index + 1) % o_count][0],
+            inner_indices[i_index % i_count][0] + i_offset
+        ])
+        o_index += 1
+
+    for i in range(0, len(inner)):
+        mesh.geo_vertices.append(inner[i])
+    mesh.geo_polygons.extend(polygons)
+
+def append_solid_cap(mesh, vertices, origin=None, normal=None):
+    if origin is None and normal is None:
+        raise Exception()
+
+    mean = numpy.zeros(3)
+    for vertex in vertices.values():
+        mean += vertex
+    mean /= len(vertices)
+
+    if normal is None:
+        normal = model.normalize(mean - origin)
+
+    indices = [x[0] for x in geometry.sort_vertices_by_angle(vertices, mean, normal)]
+    mean_index = len(mesh.geo_vertices)
+    mesh.geo_vertices.append(mean)
+
+    count = len(indices)
+    polygons = [] 
+    for i in range(0, count):
+        polygons.append([indices[i % count], indices[(i + 1) % count], mean_index])
+    mesh.geo_polygons.extend(polygons)
+
+def make_body_cap(corners, radius, offset, edges, resolution=(1, 1)):
     if edges % 4 != 0:
         raise Exception()
     if len(corners) != 4:
         raise Exception()
 
     mesh = model.Mesh()
-    z_mean = sum([corner[2] for corner in corners]) / float(len(corners))
+    mean = sum(corners) / len(corners)
+    circle_offset = mean + numpy.array([*offset, 0.0])
 
-    angle, delta = 0, math.pi * 2.0 / edges
-    for i in range(0, edges):
-        # pylint: disable=invalid-name
-        x = radius * math.cos(angle) + offset[0]
-        y = radius * math.sin(angle) + offset[1]
-        # pylint: enable=invalid-name
+    outer_vertices = geometry.make_bezier_quad_outline(corners, resolution)
+    inner_vertices = geometry.make_circle_outline(circle_offset, radius, edges)
 
-        mesh.geo_vertices.append(numpy.array([x, y, z_mean]))
-        angle += delta
-
-    for corner in corners:
-        mesh.geo_vertices.append(corner)
-
-    sectors = int(edges / 4)
-    for i in range(0, 4):
-        for j in range(0, sectors):
-            mesh.geo_polygons.append([sectors * i + j, edges + i, (sectors * i + j + 1) % edges])
-        mesh.geo_polygons.append([edges + i, sectors * i, edges + (i - 1) % 4])
-
+    for i in range(0, len(outer_vertices)):
+        mesh.geo_vertices.append(outer_vertices[i])
+    append_hollow_cap(mesh, outer_vertices, inner_vertices, numpy.array([0.0, 0.0, 1.0]))
     return mesh
 
-def make_body_mark(radius, edges):
-    mesh = model.Mesh()
-
-    angle, delta = 0, math.pi * 2.0 / edges
-    for i in range(0, edges):
-        x, y = radius * math.cos(angle), radius * math.sin(angle) # pylint: disable=invalid-name
-        mesh.geo_vertices.append(numpy.array([x, y, 0.0]))
-        angle += delta
-    for i in range(1, edges - 1):
-        mesh.geo_polygons.append([0, i, i + 1])
-
-    return mesh
-
-def make_rounded_edge(beg, end, resolution, inversion=False):
+def make_rounded_edge(beg, end, resolution, inversion=False, roundness=1.0 / 3.0):
     edges = list(beg.edges[end.num].normals.keys())
     beg_pos_m = beg.pos + beg.edges[edges[0]].normals[end.num]
     beg_pos_n = beg.pos + beg.edges[edges[1]].normals[end.num]
@@ -465,55 +563,78 @@ def make_rounded_edge(beg, end, resolution, inversion=False):
 
     beg_roundness = beg.edges[end.num].roundness
     end_roundness = end.edges[beg.num].roundness
-    direction = ((end_pos_m + end_pos_n) / 2.0 - (beg_pos_m + beg_pos_n) / 2.0) / 3.0
 
-    if numpy.linalg.det(numpy.array([beg_dir_m, beg_dir_n, direction])) < 0.0:
+    direction = (end_pos_m + end_pos_n) - (beg_pos_m + beg_pos_n)
+    if numpy.linalg.det(numpy.array([beg_dir_m, beg_dir_n, direction])) > 0.0:
         beg_dir_m, beg_dir_n = beg_dir_n, beg_dir_m
         beg_pos_m, beg_pos_n = beg_pos_n, beg_pos_m
     if numpy.linalg.det(numpy.array([end_dir_m, end_dir_n, direction])) < 0.0:
         end_dir_m, end_dir_n = end_dir_n, end_dir_m
         end_pos_m, end_pos_n = end_pos_n, end_pos_m
 
-    # TODO Interpolate start, end in middle points along direction
-    return curves.BezierQuad(
-        (
-            beg_pos_m + beg_dir_m,
-            beg_pos_m + beg_dir_m * (1.0 - beg_roundness),
-            beg_pos_n + beg_dir_n * (1.0 - beg_roundness),
-            beg_pos_n + beg_dir_n
-        ), (
-            beg_pos_m + direction + beg_dir_m,
-            beg_pos_m + direction + beg_dir_m * (1.0 - beg_roundness),
-            beg_pos_n + direction + beg_dir_n * (1.0 - beg_roundness),
-            beg_pos_n + direction + beg_dir_n
-        ), (
-            end_pos_m - direction + end_dir_m,
-            end_pos_m - direction + end_dir_m * (1.0 - end_roundness),
-            end_pos_n - direction + end_dir_n * (1.0 - end_roundness),
-            end_pos_n - direction + end_dir_n
-        ), (
-            end_pos_m + end_dir_m,
-            end_pos_m + end_dir_m * (1.0 - end_roundness),
-            end_pos_n + end_dir_n * (1.0 - end_roundness),
-            end_pos_n + end_dir_n
-        ), resolution, inversion)
+    line0 = (
+        beg_pos_n + beg_dir_n,
+        beg_pos_n + beg_dir_n * (1.0 - beg_roundness),
+        beg_pos_m + beg_dir_m * (1.0 - beg_roundness),
+        beg_pos_m + beg_dir_m
+    )
+    line3 = (
+        end_pos_m + end_dir_m,
+        end_pos_m + end_dir_m * (1.0 - end_roundness),
+        end_pos_n + end_dir_n * (1.0 - end_roundness),
+        end_pos_n + end_dir_n
+    )
+
+    line1 = (
+        line0[0] + (line3[0] - line0[0]) * roundness,
+        line0[1] + (line3[1] - line0[1]) * roundness,
+        line0[2] + (line3[2] - line0[2]) * roundness,
+        line0[3] + (line3[3] - line0[3]) * roundness
+    )
+    line2 = (
+        line3[0] + (line0[0] - line3[0]) * roundness,
+        line3[1] + (line0[1] - line3[1]) * roundness,
+        line3[2] + (line0[2] - line3[2]) * roundness,
+        line3[3] + (line0[3] - line3[3]) * roundness
+    )
+
+    return curves.BezierQuad(line0, line1, line2, line3, resolution, inversion)
 
 def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolution, line_resolution):
     meshes = []
-    tesselated_edges = []
     processed_edges = []
+    tessellated_edges = []
     vertex_counters = {}
 
-    for entry in edges:
-        for i in range(0, len(entry) - 1):
-            tesselated_edges.append((entry[i], entry[i + 1]))
+    for edge_info in edges:
+        if isinstance(edge_info, tuple):
+            edge_vertices = edge_info[0]
+            edge_weight = edge_info[1]
+            edge_details = edge_info[2]
+        else:
+            edge_vertices = edge_info
+            edge_weight = 1.0
+            edge_details = line_resolution
 
-    for edge in tesselated_edges:
-        for vertex in edge:
+        for i in range(0, len(edge_vertices) - 1):
+            tessellated_edges.append((
+                (edge_vertices[i], edge_vertices[i + 1]),
+                edge_weight,
+                edge_details
+            ))
+
+    for edge_vertices, _1, _2 in tessellated_edges:
+        for vertex in edge_vertices:
             if vertex in vertex_counters:
                 vertex_counters[vertex] += 1
             else:
                 vertex_counters[vertex] = 1
+
+    def get_edge_resolution(key):
+        for edge_vertices, _, edge_details in tessellated_edges:
+            if sort_edge_points(edge_vertices) == key:
+                return edge_details
+        return line_resolution
 
     joints = {}
 
@@ -521,11 +642,13 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
     tri_joint_indices = filter(lambda x: vertex_counters[x] == 3, vertex_counters)
 
     for vertex in tri_joint_indices:
+        chamfers = []
         neighbors = []
-        for edge in tesselated_edges:
-            if vertex in edge:
-                neighbors.append(reorder_points(edge, vertex)[1])
-        joints[vertex] = TriJoint(vertices, vertex, neighbors, chamfer)
+        for edge_vertices, edge_weight, _ in tessellated_edges:
+            if vertex in edge_vertices:
+                chamfers.append(chamfer * edge_weight)
+                neighbors.append(reorder_points(edge_vertices, vertex)[1])
+        joints[vertex] = TriJoint(vertices, vertex, neighbors, chamfers)
         mesh = joints[vertex].mesh(edge_resolution)
         if mesh is not None:
             meshes.append(mesh)
@@ -534,11 +657,13 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
     quad_joint_indices = filter(lambda x: vertex_counters[x] == 4, vertex_counters)
 
     for vertex in quad_joint_indices:
+        chamfers = []
         neighbors = []
-        for edge in tesselated_edges:
-            if vertex in edge:
-                neighbors.append(reorder_points(edge, vertex)[1])
-        joints[vertex] = QuadJoint(vertices, vertex, neighbors, chamfer, sharpness)
+        for edge_vertices, edge_weight, _ in tessellated_edges:
+            if vertex in edge_vertices:
+                chamfers.append(chamfer * edge_weight)
+                neighbors.append(reorder_points(edge_vertices, vertex)[1])
+        joints[vertex] = QuadJoint(vertices, vertex, neighbors, chamfers, sharpness)
         mesh = joints[vertex].mesh((edge_resolution, edge_resolution))
         if mesh is not None:
             meshes.append(mesh)
@@ -546,38 +671,61 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
     for vertex in joints:
         for key in joints[vertex].edges:
             uname = sort_edge_points((vertex, key))
-            if uname not in processed_edges:
-                processed_edges.append(uname)
-            else:
+            if uname in processed_edges:
                 continue
+            processed_edges.append(uname)
 
-            mesh = make_rounded_edge(joints[vertex], joints[key],
-                                     (line_resolution, edge_resolution))
-            if mesh is not None:
-                meshes.append(mesh)
+            try:
+                beg_joint = joints[vertex]
+                end_joint = joints[key]
+                seg_resolution = get_edge_resolution(uname)
+                mesh = make_rounded_edge(beg_joint, end_joint, (seg_resolution, edge_resolution))
+                if mesh is not None:
+                    meshes.append(mesh)
+            except KeyError:
+                pass
 
     for entry in faces:
         try:
-            indices, size = entry[0], len(entry[0])
-            functor = entry[1]
+            indices, count = entry[0], len(entry[0])
+            functor = lambda points, _: entry[1](points)
         except TypeError:
-            indices, size = entry, len(entry)
-            functor = default_quad_face_functor if size == 4 else default_tri_face_functor
+            indices, count = entry, len(entry)
+            if count == 4:
+                functor = lambda points, resolution: default_quad_face_functor(points=points,
+                    resolution=resolution)
+            else:
+                functor = lambda points, resolution: default_tri_face_functor(points=points,
+                    resolution=resolution)
 
+        face_details = []
         face_vertices = []
-        for i in range(0, size):
-            next_edge, prev_edge = indices[(i + 1) % size], indices[i - 1]
-            joint = joints[indices[i]]
-            constraints = []
 
+        for i in range(0, count):
+            next_edge, prev_edge = indices[(i + 1) % count], indices[i - 1]
+            joint = joints[indices[i]]
+
+            face_details.append(get_edge_resolution(sort_edge_points((prev_edge, indices[i]))))
+
+            constraints = []
             if next_edge in joint.edges:
                 constraints.append(next_edge)
             if prev_edge in joint.edges:
                 constraints.append(prev_edge)
 
-            pos = joint.face(joint.nearest(vertices[prev_edge], vertices[next_edge], constraints))
-            face_vertices.append(pos)
-        meshes.append(functor(face_vertices))
+            nearest = joint.nearest_face(vertices[prev_edge], vertices[next_edge], constraints)
+            face_vertices.append(joint.face_point(nearest))
+
+        if len(face_details) == 3:
+            if face_details[0] != face_details[1] or face_details[1] != face_details[2]:
+                raise Exception()
+            face_resolution = face_details[0]
+        else:
+            if face_details[0] != face_details[2] or face_details[1] != face_details[3]:
+                raise Exception()
+            face_resolution = (face_details[0], face_details[1])
+
+        meshes.append(functor(face_vertices, face_resolution))
 
     # Build resulting mesh
     mesh = model.Mesh()
@@ -587,16 +735,23 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
 
     return mesh
 
-def make_box(size, chamfer, edge_resolution, line_resolution, band=None, band_width=0.0,
+def make_box(size, chamfer, edge_resolution, line_resolution, band_size=None, band_offset=0.0,
              mark_radius=None, mark_offset=numpy.array([0.0, 0.0]), mark_resolution=24):
-    x, y, z = numpy.array(size) / 2.0 # pylint: disable=invalid-name
-    band_offset = band_width * math.sqrt(0.5) if band is not None else 0.0
+    try:
+        resolutions = (line_resolution[0], line_resolution[1], line_resolution[2])
+        # TODO Select default resolution
+        default_resolution = max(resolutions)
+    except TypeError:
+        resolutions = (line_resolution, line_resolution, line_resolution)
+        default_resolution = line_resolution
 
     if mark_radius is not None:
-        top_face_func = lambda vertices: make_body_cap(vertices, mark_radius, mark_offset,
-            mark_resolution)
+        top_face_func = lambda points: make_body_cap(points, mark_radius, mark_offset,
+            mark_resolution, (resolutions[0], resolutions[1]))
     else:
-        top_face_func = default_quad_face_functor
+        top_face_func = None
+
+    x, y, z = numpy.array(size) / 2.0 # pylint: disable=invalid-name
 
     vertices = [
         numpy.array([ x,  y, z]),
@@ -604,64 +759,230 @@ def make_box(size, chamfer, edge_resolution, line_resolution, band=None, band_wi
         numpy.array([-x, -y, z]),
         numpy.array([ x, -y, z]),
 
-        numpy.array([ x + band_offset,  y + band_offset, band]),
-        numpy.array([-x - band_offset,  y + band_offset, band]),
-        numpy.array([-x - band_offset, -y - band_offset, band]),
-        numpy.array([ x + band_offset, -y - band_offset, band]),
-
         numpy.array([ x,  y, -z]),
         numpy.array([-x,  y, -z]),
         numpy.array([-x, -y, -z]),
-        numpy.array([ x, -y, -z])]
+        numpy.array([ x, -y, -z])
+    ]
     edges = [
         # Top
-        [0, 1, 2, 3, 0],
-        # Middle
-        [4, 5, 6, 7, 4],
+        ([0, 1], 1.0, resolutions[0]),
+        ([1, 2], 1.0, resolutions[1]),
+        ([2, 3], 1.0, resolutions[0]),
+        ([3, 0], 1.0, resolutions[1]),
         # Bottom
-        [8, 9, 10, 11, 8],
-        # Sides, upper half
-        [0, 4],
-        [1, 5],
-        [2, 6],
-        [3, 7],
-        # Sides, lower half
-        [4, 8],
-        [5, 9],
-        [6, 10],
-        [7, 11]]
+        ([4, 5], 1.0, resolutions[0]),
+        ([5, 6], 1.0, resolutions[1]),
+        ([6, 7], 1.0, resolutions[0]),
+        ([7, 4], 1.0, resolutions[1])
+    ]
     faces = [
-        # Top
-        ([0, 1, 2, 3], top_face_func),
         # Bottom
-        [11, 10, 9, 8],
-        # Sides, upper half
-        [4, 5, 1, 0],
-        [5, 6, 2, 1],
-        [6, 7, 3, 2],
-        [7, 4, 0, 3],
-        # Sides, lower half
-        [8, 9, 5, 4],
-        [9, 10, 6, 5],
-        [10, 11, 7, 6],
-        [11, 8, 4, 7]]
+        [7, 6, 5, 4]
+    ]
+
+    # Top
+    if top_face_func is not None:
+        faces.append(([0, 1, 2, 3], top_face_func))
+    else:
+        faces.append([0, 1, 2, 3])
+
+    if band_size is not None:
+        band_offset_xy = band_size * math.sqrt(0.5)
+        band_offset_z = band_offset
+
+        vertices.extend([
+            numpy.array([ x + band_offset_xy,  y + band_offset_xy, band_offset_z]),
+            numpy.array([-x - band_offset_xy,  y + band_offset_xy, band_offset_z]),
+            numpy.array([-x - band_offset_xy, -y - band_offset_xy, band_offset_z]),
+            numpy.array([ x + band_offset_xy, -y - band_offset_xy, band_offset_z])
+        ])
+        edges.extend([
+            # Middle
+            ([8, 9], 1.0, resolutions[0]),
+            ([9, 10], 1.0, resolutions[1]),
+            ([10, 11], 1.0, resolutions[0]),
+            ([11, 8], 1.0, resolutions[1]),
+            # Sides, upper half
+            ([0, 8], 1.0, resolutions[2]),
+            ([1, 9], 1.0, resolutions[2]),
+            ([2, 10], 1.0, resolutions[2]),
+            ([3, 11], 1.0, resolutions[2]),
+            # Sides, lower half
+            ([8, 4], 1.0, resolutions[2]),
+            ([9, 5], 1.0, resolutions[2]),
+            ([10, 6], 1.0, resolutions[2]),
+            ([11, 7], 1.0, resolutions[2])
+        ])
+        faces.extend([
+            # Sides, upper half
+            [8, 9, 1, 0],
+            [9, 10, 2, 1],
+            [10, 11, 3, 2],
+            [11, 8, 0, 3],
+            # Sides, lower half
+            [4, 5, 9, 8],
+            [5, 6, 10, 9],
+            [6, 7, 11, 10],
+            [7, 4, 8, 11]
+        ])
+    else:
+        edges.extend([
+            # Sides
+            ([0, 4], 1.0, resolutions[2]),
+            ([1, 5], 1.0, resolutions[2]),
+            ([2, 6], 1.0, resolutions[2]),
+            ([3, 7], 1.0, resolutions[2])
+        ])
+        faces.extend([
+            # Sides
+            [4, 5, 1, 0],
+            [5, 6, 2, 1],
+            [6, 7, 3, 2],
+            [7, 4, 0, 3]
+        ])
 
     body = round_model_edges(vertices=vertices, edges=edges, faces=faces, chamfer=chamfer,
                              sharpness=math.pi * (5.0 / 6.0), edge_resolution=edge_resolution,
+                             line_resolution=default_resolution)
+    return body
+
+def make_chip_body(size, chamfer, edge_resolution, line_resolution):
+    x_half = size[0] / 2.0
+    y, z = size[1], size[2] # pylint: disable=invalid-name
+
+    path_points = [
+        numpy.array([x_half, 0.0, 0.0]),
+        numpy.array([-x_half, 0.0, 0.0])]
+
+    shape = make_rounded_rect(size=numpy.array([y, z]), roundness=chamfer,
+                              segments=edge_resolution)
+    shape_points = []
+    for element in shape:
+        shape_points.extend(element.tessellate())
+    shape_points = curves.optimize(shape_points)
+
+    slices = curves.loft(path=path_points, shape=shape_points)
+    return build_loft_mesh(slices, False, False)
+
+def make_chip_lead_cap(size, chamfer, invert, edge_resolution, line_resolution):
+    x, y, z = numpy.array(size) / 2.0 # pylint: disable=invalid-name
+
+    vertices = [
+        numpy.array([ x,  y, -z]),
+        numpy.array([-x,  y, -z]),
+        numpy.array([-x, -y, -z]),
+        numpy.array([ x, -y, -z]),
+
+        numpy.array([ x, y, z]),
+        numpy.array([-x, y, z]),
+        numpy.array([-x, -y, z]),
+        numpy.array([ x, -y, z])
+    ]
+    edges = [
+        [0, 1],
+        [2, 3],
+        [4, 5],
+        [6, 7]
+    ]
+    faces = []
+
+    if invert:
+        edges.append([1, 2, 6, 5, 1])
+        faces.append([1, 2, 6, 5])
+    else:
+        edges.append([3, 0, 4, 7, 3])
+        faces.append([3, 0, 4, 7])
+
+    return round_model_edges(vertices=vertices, edges=edges, faces=faces, chamfer=chamfer,
+                             sharpness=math.pi * (5.0 / 6.0), edge_resolution=edge_resolution,
                              line_resolution=line_resolution)
 
-    if mark_radius is not None:
-        mark = make_body_mark(mark_radius, mark_resolution)
-        mark.translate(numpy.array([*mark_offset, z]))
-        mark.apply()
-    else:
-        mark = None
-    return (body, mark)
+def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, invert,
+                         edge_resolution, line_resolution):
+    roundness = lead_chamfer / math.sqrt(2.0)
+    x_lead_half = lead_size[0] / 2.0
+    y_case, z_case = case_size[1], case_size[2]
+    y_lead, z_lead = lead_size[1], lead_size[2]
 
-def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution, band=None,
-                     band_width=0.0, mark_radius=None, mark_offset=numpy.array([0.0, 0.0]),
+    if invert:
+        p0 = numpy.array([-x_lead_half + roundness, 0.0, 0.0])
+        p1 = numpy.array([x_lead_half - roundness, 0.0, 0.0])
+        p2 = numpy.array([x_lead_half, 0.0, 0.0])
+    else:
+        p0 = numpy.array([x_lead_half - roundness, 0.0, 0.0])
+        p1 = numpy.array([-x_lead_half + roundness, 0.0, 0.0])
+        p2 = numpy.array([-x_lead_half, 0.0, 0.0])
+
+    path = []
+    path.append(curves.Line(p0, p1, line_resolution))
+    path.append(curves.Bezier(p1, (p2 - p1) / 3.0, p2, (p1 - p2) / 3.0, edge_resolution))
+
+    path_points = []
+    for element in path:
+        path_points.extend(element.tessellate())
+    path_points = curves.optimize(path_points)
+
+    case_shape = make_rounded_rect(size=numpy.array([y_case, z_case]),
+                                   roundness=case_chamfer, segments=edge_resolution)
+    case_points = []
+    for element in case_shape:
+        case_points.extend(element.tessellate())
+    case_points = curves.optimize(case_points)
+
+    lead_shape = make_rounded_rect(size=numpy.array([y_lead, z_lead]),
+                                   roundness=roundness, segments=edge_resolution)
+    lead_points = []
+    for element in lead_shape:
+        lead_points.extend(element.tessellate())
+    lead_points = curves.optimize(lead_points)
+
+    def mesh_morphing_func(position):
+        current = int(position * (len(path_points) - 1))
+        if current >= line_resolution:
+            current = edge_resolution - (current - line_resolution)
+            t_pos = math.sin((math.pi / 2.0) * (current / edge_resolution))
+            points = []
+            for i, point in enumerate(case_points):
+                points.append(point + (lead_points[i] - point) * t_pos)
+            return points
+        return lead_points
+
+    slices = curves.loft(path=path_points, shape=None, morphing=mesh_morphing_func)
+    return build_loft_mesh(slices, False, False)
+
+def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resolution,
+                    line_resolution):
+    mesh_a = make_chip_lead_cap(size=lead_size, chamfer=lead_chamfer, invert=False,
+                                edge_resolution=edge_resolution, line_resolution=line_resolution)
+    mesh_a.translate(numpy.array([(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
+    slope_a = make_chip_lead_slope(case_size=case_size, lead_size=lead_size,
+                                   case_chamfer=case_chamfer, lead_chamfer=lead_chamfer,
+                                   invert=False, edge_resolution=edge_resolution,
+                                   line_resolution=line_resolution)
+    slope_a.translate(numpy.array([(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
+
+    mesh_b = make_chip_lead_cap(size=lead_size, chamfer=lead_chamfer, invert=True,
+                                edge_resolution=edge_resolution, line_resolution=line_resolution)
+    mesh_b.translate(numpy.array([-(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
+    slope_b = make_chip_lead_slope(case_size=case_size, lead_size=lead_size,
+                                   case_chamfer=case_chamfer, lead_chamfer=lead_chamfer,
+                                   invert=True, edge_resolution=edge_resolution,
+                                   line_resolution=line_resolution)
+    slope_b.translate(numpy.array([-(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
+
+    mesh = model.Mesh()
+    mesh.append(mesh_a)
+    mesh.append(mesh_b)
+    mesh.append(slope_a)
+    mesh.append(slope_b)
+    mesh.optimize()
+    return mesh
+
+def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution, band_size=None,
+                     band_offset=0.0, mark_radius=None, mark_offset=numpy.array([0.0, 0.0]),
                      mark_resolution=24):
-    if band is None:
+    if band_size is None:
         raise Exception() # TODO
 
     # pylint: disable=invalid-name
@@ -669,13 +990,15 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
     r = roundness * math.sqrt(0.5)
     # pylint: enable=invalid-name
 
-    band_offset = band_width * math.sqrt(0.5)
+    band_offset_xy = band_size * math.sqrt(0.5)
+    band_offset_z = band_offset
 
     if mark_radius is not None:
-        top_face_func = lambda vertices: make_body_cap(vertices, mark_radius, mark_offset,
-            mark_resolution)
+        top_face_func = lambda points: make_body_cap(points, mark_radius, mark_offset,
+            mark_resolution, (line_resolution, line_resolution))
     else:
-        top_face_func = default_quad_face_functor
+        top_face_func = lambda points: default_quad_face_functor(points,
+            (line_resolution, line_resolution))
 
     vertices = [
         numpy.array([     x,  y - r, z]),
@@ -687,14 +1010,14 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         numpy.array([ x - r,     -y, z]),
         numpy.array([     x, -y + r, z]),
 
-        numpy.array([     x + band_offset,  y - r + band_offset, band]),
-        numpy.array([ x - r + band_offset,      y + band_offset, band]),
-        numpy.array([-x + r - band_offset,      y + band_offset, band]),
-        numpy.array([    -x - band_offset,  y - r + band_offset, band]),
-        numpy.array([    -x - band_offset, -y + r - band_offset, band]),
-        numpy.array([-x + r - band_offset,     -y - band_offset, band]),
-        numpy.array([ x - r + band_offset,     -y - band_offset, band]),
-        numpy.array([     x + band_offset, -y + r - band_offset, band]),
+        numpy.array([     x + band_offset_xy,  y - r + band_offset_xy, band_offset_z]),
+        numpy.array([ x - r + band_offset_xy,      y + band_offset_xy, band_offset_z]),
+        numpy.array([-x + r - band_offset_xy,      y + band_offset_xy, band_offset_z]),
+        numpy.array([    -x - band_offset_xy,  y - r + band_offset_xy, band_offset_z]),
+        numpy.array([    -x - band_offset_xy, -y + r - band_offset_xy, band_offset_z]),
+        numpy.array([-x + r - band_offset_xy,     -y - band_offset_xy, band_offset_z]),
+        numpy.array([ x - r + band_offset_xy,     -y - band_offset_xy, band_offset_z]),
+        numpy.array([     x + band_offset_xy, -y + r - band_offset_xy, band_offset_z]),
 
         numpy.array([     x,  y - r, -z]),
         numpy.array([ x - r,      y, -z]),
@@ -760,26 +1083,20 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
     body = round_model_edges(vertices=vertices, edges=edges, faces=faces, chamfer=chamfer,
                              sharpness=math.pi * (5.0 / 6.0), edge_resolution=edge_resolution,
                              line_resolution=line_resolution)
-
-    if mark_radius is not None:
-        mark = make_body_mark(mark_radius, mark_resolution)
-        mark.translate(numpy.array([*mark_offset, z]))
-        mark.apply()
-    else:
-        mark = None
-    return (body, mark)
+    return body
 
 def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_resolution,
-                    band=None, band_width=0.0):
-    if band is None:
+                    band_size=None, band_offset=0.0):
+    if band_size is None:
         raise Exception() # TODO
 
     x, y, z = numpy.array(size) / 2.0 # pylint: disable=invalid-name
     z_mean = z - slope_height
     y_slope = y - slope_height / math.tan(slope)
 
-    band_offset = band_width * math.sqrt(0.5)
-    offset = band_offset - z_mean * (band_offset / z)
+    band_offset_xy = band_size * math.sqrt(0.5)
+    band_offset_z = band_offset
+    offset = band_offset_xy - z_mean * (band_offset_xy / z)
     x_mean = x + offset
     y_mean = y + offset
 
@@ -789,10 +1106,10 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
         numpy.array([-x, -y, -z]),
         numpy.array([ x, -y, -z]),
 
-        numpy.array([ x + band_offset,  y + band_offset, band]),
-        numpy.array([-x - band_offset,  y + band_offset, band]),
-        numpy.array([-x - band_offset, -y - band_offset, band]),
-        numpy.array([ x + band_offset, -y - band_offset, band]),
+        numpy.array([ x + band_offset_xy,  y + band_offset_xy, band_offset_z]),
+        numpy.array([-x - band_offset_xy,  y + band_offset_xy, band_offset_z]),
+        numpy.array([-x - band_offset_xy, -y - band_offset_xy, band_offset_z]),
+        numpy.array([ x + band_offset_xy, -y - band_offset_xy, band_offset_z]),
 
         numpy.array([ x_mean, y_mean, z_mean]),
         numpy.array([-x_mean, y_mean, z_mean]),
@@ -849,9 +1166,34 @@ def make_rounded_rect(size, roundness, segments):
 
     return shape
 
+def make_flat_pin_curve(pin_shape_size, pin_length, pin_offset, chamfer, roundness,
+                        chamfer_resolution=2, line_resolution=1):
+    curve = []
+
+    y_pos = [pin_shape_size[1] / 2.0] * 3
+
+    x_pos = [pin_offset] * 3
+    x_pos[0] += pin_length
+    x_pos[1] += pin_length - chamfer
+
+    points = [
+        numpy.array([x_pos[0], 0.0, y_pos[0]]),
+        numpy.array([x_pos[1], 0.0, y_pos[1]]),
+        numpy.array([x_pos[2], 0.0, y_pos[2]])
+    ]
+
+    # Control points of segment 0
+    p0t1 = (points[1] - points[0]) / 3.0
+    p1t0 = (points[0] - points[1]) / 3.0
+
+    curve.append(curves.Bezier(points[0], p0t1, points[1], p1t0, chamfer_resolution))
+    curve.append(curves.Line(points[1], points[2], line_resolution))
+
+    return curve
+
 def make_pin_curve(pin_shape_size, pin_height, pin_length, pin_slope, chamfer, roundness,
                    pivot=0.5, outer_radius_k=0.35, inner_radius_k=0.3, chamfer_resolution=2,
-                   edge_resolution=3):
+                   edge_resolution=3, line_resolution=1):
     curve = []
 
     y_mean = pin_height / 2.0
@@ -906,11 +1248,11 @@ def make_pin_curve(pin_shape_size, pin_height, pin_length, pin_slope, chamfer, r
     p5t4 = numpy.array([lp4p5, 0.0, 0.0]) * roundness
 
     curve.append(curves.Bezier(points[0], p0t1, points[1], p1t0, chamfer_resolution))
-    curve.append(curves.Line(points[1], points[2], 1))
+    curve.append(curves.Line(points[1], points[2], line_resolution))
     curve.append(curves.Bezier(points[2], p2t3, points[3], p3t2, edge_resolution))
-    curve.append(curves.Line(points[3], points[4], 1))
+    curve.append(curves.Line(points[3], points[4], line_resolution))
     curve.append(curves.Bezier(points[4], p4t5, points[5], p5t4, edge_resolution))
-    curve.append(curves.Line(points[5], points[6], 1))
+    curve.append(curves.Line(points[5], points[6], line_resolution))
 
     return curve
 
@@ -929,10 +1271,12 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
 
     for i in range(0, len(slices) - 1):
         for j in range(0, number - 1):
-            mesh.geo_polygons.append([i * number + j,
-                                      (i + 1) * number + j,
-                                      (i + 1) * number + j + 1,
-                                      i * number + j + 1])
+            mesh.geo_polygons.append([
+                i * number + j,
+                (i + 1) * number + j,
+                (i + 1) * number + j + 1,
+                i * number + j + 1
+            ])
 
     if fill_end:
         v_index = len(mesh.geo_vertices)
@@ -953,23 +1297,39 @@ def calc_median_point(vertices):
     return (max_pos + min_pos) / 2.0
 
 def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
-                  chamfer_resolution, edge_resolution):
+                  chamfer_resolution, edge_resolution, line_resolution, flat=False):
     chamfer = min(pin_shape_size) / 10.0
     curve_roundness = calc_bezier_weight(angle=math.pi / 2.0 + pin_slope)
+
+    if flat:
+        shape_correction = pin_shape_size[1] * math.cos(math.atan(end_slope))
+        shape_scaling = numpy.array([1.0, pin_shape_size[1] / shape_correction, 1.0])
+    else:
+        shape_scaling = numpy.ones(3)
 
     shape = make_rounded_rect(size=pin_shape_size, roundness=chamfer, segments=chamfer_resolution)
     shape_points = []
     for element in shape:
-        shape_points.extend(element.tesselate())
+        shape_points.extend(element.tessellate())
     shape_points = curves.optimize(shape_points)
 
-    path = make_pin_curve(pin_shape_size=pin_shape_size, pin_height=pin_height,
-                          pin_length=pin_length, pin_slope=pin_slope,
-                          chamfer=chamfer, roundness=curve_roundness, pivot=0.45,
-                          chamfer_resolution=chamfer_resolution, edge_resolution=edge_resolution)
+    if flat:
+        length_correction = (pin_height - pin_shape_size[1] / 2.0) * end_slope
+        path = make_flat_pin_curve(pin_shape_size=pin_shape_size, pin_length=pin_length,
+                                   pin_offset=length_correction, chamfer=chamfer,
+                                   roundness=curve_roundness,
+                                   chamfer_resolution=chamfer_resolution,
+                                   line_resolution=line_resolution)
+    else:
+        path = make_pin_curve(pin_shape_size=pin_shape_size, pin_height=pin_height,
+                              pin_length=pin_length, pin_slope=pin_slope,
+                              chamfer=chamfer, roundness=curve_roundness, pivot=0.45,
+                              chamfer_resolution=chamfer_resolution,
+                              edge_resolution=edge_resolution, line_resolution=line_resolution)
+
     path_points = []
     for element in path:
-        path_points.extend(element.tesselate())
+        path_points.extend(element.tessellate())
     path_points = curves.optimize(path_points)
 
     def mesh_rotation_func(position):
@@ -979,16 +1339,15 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
         return numpy.zeros(3)
 
     def mesh_scaling_func(position):
-        if chamfer_resolution >= 1:
-            current = int(position * (len(path_points) - 1))
-
-            if current < chamfer_resolution:
-                size = numpy.array(pin_shape_size)
-                scale = (size - chamfer * 2.0) / size
-                t_seg = math.sin((math.pi / 2.0) * (current / chamfer_resolution))
-                t_scale = scale + (numpy.array([1.0, 1.0]) - scale) * t_seg
-                return numpy.array([*t_scale, 1.0])
-            return numpy.ones(3)
+        current = int(position * (len(path_points) - 1))
+        if current == len(path_points) - 1:
+            return shape_scaling
+        if chamfer_resolution >= 1 and current < chamfer_resolution:
+            shape = numpy.array(pin_shape_size)
+            scale = (shape - chamfer * 2.0) / shape
+            t_pos = math.sin((math.pi / 2.0) * (current / chamfer_resolution))
+            t_scale = scale + (numpy.array([1.0, 1.0]) - scale) * t_pos
+            return numpy.array([*t_scale, 1.0])
         return numpy.ones(3)
 
     slices = curves.loft(path=path_points, shape=shape_points, rotation=mesh_rotation_func,

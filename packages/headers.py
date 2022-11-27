@@ -156,7 +156,7 @@ class BoxHeader:
         left_part, right_part = model.Transform(), model.Transform()
         left_part.translate([-delta, 0.0, 0.0])
         right_part.translate([delta, 0.0, 0.0])
-        transforms = [model.Transform(), left_part, right_part]
+        transforms = {1: left_part, 2: right_part}
         body = copy.deepcopy(model_body)
         body.apply_transform(transforms)
         body.translate([delta, pitch / 2.0, 0.001])
@@ -185,8 +185,9 @@ class BoxHeader:
 
         # Modified BH models
         regions = [
-            (((0.7, 3.0, 4.0), (-2.5, -3.0, -0.5)), 1),
-            (((6.5, 3.0, 4.0), ( 4.5, -3.0, -0.5)), 2)]
+            ((0.7, 3.0, 4.0), (-2.5, -3.0, -0.5), 1),
+            ((6.5, 3.0, 4.0), ( 4.5, -3.0, -0.5), 2)
+        ]
 
         bh_attributed_body = model.AttributedMesh(name='PatBHAttributed', regions=regions)
         bh_attributed_body.append(bh_body)

@@ -19,8 +19,8 @@ class SOP:
     BAND_WIDTH = primitives.hmils(0.1)
 
     CHAMFER_RESOLUTION = 1
-    LINE_RESOLUTION    = 1
     EDGE_RESOLUTION    = 3
+    LINE_RESOLUTION    = 1
 
     @staticmethod
     def generate_package_pins(pattern, count, size, offset, pitch):
@@ -62,8 +62,9 @@ class SOP:
             slope_height=body_size[2] / 5.0,
             edge_resolution=SOP.EDGE_RESOLUTION,
             line_resolution=SOP.LINE_RESOLUTION,
-            band=SOP.BAND_OFFSET,
-            band_width=SOP.BAND_WIDTH)
+            band_size=SOP.BAND_WIDTH,
+            band_offset=SOP.BAND_OFFSET
+        )
 
         if 'Body' in materials:
             body_mesh.appearance().material = materials['Body']
@@ -71,13 +72,15 @@ class SOP:
         body_mesh.rename('Body')
 
         pin_mesh = primitives.make_pin_mesh(
-                pin_shape_size=pin_shape,
-                pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
-                pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
-                pin_slope=math.pi * (10.0 / 180.0),
-                end_slope=body_slope,
-                chamfer_resolution=SOP.CHAMFER_RESOLUTION,
-                edge_resolution=SOP.EDGE_RESOLUTION)
+            pin_shape_size=pin_shape,
+            pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
+            pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
+            pin_slope=math.pi * (10.0 / 180.0),
+            end_slope=body_slope,
+            chamfer_resolution=SOP.CHAMFER_RESOLUTION,
+            edge_resolution=SOP.EDGE_RESOLUTION,
+            line_resolution=SOP.LINE_RESOLUTION
+        )
         if 'Pin' in materials:
             pin_mesh.appearance().material = materials['Pin']
 
@@ -86,7 +89,8 @@ class SOP:
             count=descriptor['pins']['count'],
             size=body_size,
             offset=band_width_proj - pin_offset,
-            pitch=primitives.hmils(descriptor['pins']['pitch']))
+            pitch=primitives.hmils(descriptor['pins']['pitch'])
+        )
 
         return pins + [body_mesh]
 

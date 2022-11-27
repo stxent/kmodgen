@@ -10,6 +10,7 @@ import math
 import numpy
 
 from wrlconv import curves
+from wrlconv import geometry
 from wrlconv import model
 import primitives
 from packages import generic
@@ -233,8 +234,8 @@ class SOT:
     MARK_RADIUS = primitives.hmils(0.2)
 
     CHAMFER_RESOLUTION = 1
-    LINE_RESOLUTION    = 1
     EDGE_RESOLUTION    = 3
+    LINE_RESOLUTION    = 1
 
 
     class PinDesc:
@@ -282,6 +283,11 @@ class SOT:
             band_offset = 0.0
 
         try:
+            flat_pin = descriptor['pins']['flat']
+        except KeyError:
+            flat_pin = False
+
+        try:
             mark_radius = SOT.MARK_RADIUS if primitives.hmils(descriptor['mark']['dot']) else None
         except KeyError:
             mark_radius = None
@@ -289,31 +295,38 @@ class SOT:
         body_size = primitives.hmils(descriptor['body']['size'])
         mark_offset = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
 
-        body_mesh, mark_mesh = primitives.make_box(
+        body_offset_z = body_size[2] / 2.0
+        if not flat_pin:
+            body_offset_z += SOT.BODY_OFFSET_Z
+
+        body_mesh = primitives.make_box(
             size=body_size,
             chamfer=SOT.BODY_CHAMFER,
             edge_resolution=SOT.EDGE_RESOLUTION,
             line_resolution=SOT.LINE_RESOLUTION,
-            band=band_offset,
-            band_width=SOT.BAND_WIDTH,
+            band_size=SOT.BAND_WIDTH,
+            band_offset=band_offset,
             mark_radius=mark_radius,
             mark_offset=mark_offset,
-            mark_resolution=SOT.EDGE_RESOLUTION * 8)
+            mark_resolution=SOT.EDGE_RESOLUTION * 8
+        )
+        if mark_radius is not None:
+            mark_mesh = geometry.Circle(mark_radius, SOT.EDGE_RESOLUTION * 8)
+            mark_mesh.translate(numpy.array([*mark_offset, body_offset_z + body_size[2] / 2.0]))
+        else:
+            mark_mesh = None
 
-        body_transform = model.Transform()
-        body_transform.translate([0.0, 0.0, body_size[2] / 2.0 + SOT.BODY_OFFSET_Z])
         meshes = []
 
         if 'Body' in materials:
             body_mesh.appearance().material = materials['Body']
-        body_mesh.apply(body_transform)
+        body_mesh.translate(numpy.array([0.0, 0.0, body_offset_z]))
         body_mesh.rename('Body')
         meshes.append(body_mesh)
 
         if mark_mesh is not None:
             if 'Mark' in materials:
                 mark_mesh.appearance().material = materials['Mark']
-            mark_mesh.apply(body_transform)
             mark_mesh.rename('Mark')
             meshes.append(mark_mesh)
 
@@ -321,6 +334,10 @@ class SOT:
 
     @staticmethod
     def generate_pins(materials, descriptor):
+        try:
+            flat_pin = descriptor['pins']['flat']
+        except KeyError:
+            flat_pin = False
         try:
             pin_slope = descriptor['pins']['slope'] * math.pi / 180.0
         except KeyError:
@@ -333,7 +350,7 @@ class SOT:
         try:
             band_inversion = descriptor['band']['inverse']
         except KeyError:
-            band_inversion = False
+            band_inversion = flat_pin
 
         body_size = primitives.hmils(descriptor['body']['size'])
         band_width_proj = SOT.BAND_WIDTH * math.sqrt(0.5)
@@ -341,7 +358,10 @@ class SOT:
             body_slope = -math.atan(band_width_proj / (body_size[2] / 2.0 + band_offset))
         else:
             body_slope = math.atan(band_width_proj / (body_size[2] / 2.0 - band_offset))
-        pin_height = body_size[2] / 2.0 + band_offset + SOT.BODY_OFFSET_Z
+
+        pin_height = body_size[2] / 2.0 + band_offset
+        if not flat_pin:
+            pin_height += SOT.BODY_OFFSET_Z
 
         try:
             pin_pattern = SOT.PinDesc.make_pattern(body_slope, descriptor['pins']['default'])
@@ -367,7 +387,10 @@ class SOT:
                 pin_slope=pin_slope,
                 end_slope=body_slope,
                 chamfer_resolution=SOT.CHAMFER_RESOLUTION,
-                edge_resolution=SOT.EDGE_RESOLUTION)
+                edge_resolution=SOT.EDGE_RESOLUTION,
+                line_resolution=SOT.LINE_RESOLUTION,
+                flat=flat_pin
+            )
 
             if 'Pin' in materials:
                 mesh.appearance().material = materials['Pin']
@@ -418,4 +441,5 @@ class SOT:
 types = [
     Chip,
     MELF,
-    SOT]
+    SOT
+]

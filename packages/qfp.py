@@ -8,6 +8,7 @@
 import math
 import numpy
 
+from wrlconv import geometry
 from wrlconv import model
 import primitives
 
@@ -23,8 +24,8 @@ class QFP:
     MARK_RADIUS = primitives.hmils(0.5)
 
     CHAMFER_RESOLUTION = 1
-    LINE_RESOLUTION    = 1
     EDGE_RESOLUTION    = 3
+    LINE_RESOLUTION    = 1
 
     @staticmethod
     def generate_package_pins(pattern, count, size, offset, pitch):
@@ -68,29 +69,28 @@ class QFP:
         body_slope = math.atan(2.0 * band_width_proj / body_size[2])
         pin_offset = pin_shape[1] * math.sin(body_slope) / 2.0
 
-        body_transform = model.Transform()
-        body_transform.translate([0.0, 0.0, pin_height])
-
-        body_mesh, mark_mesh = primitives.make_rounded_box(
+        body_mesh = primitives.make_rounded_box(
             size=body_size,
             roundness=QFP.BODY_ROUNDNESS,
             chamfer=QFP.BODY_CHAMFER,
             edge_resolution=QFP.EDGE_RESOLUTION,
             line_resolution=QFP.LINE_RESOLUTION,
-            band=QFP.BAND_OFFSET,
-            band_width=QFP.BAND_WIDTH,
+            band_size=QFP.BAND_WIDTH,
+            band_offset=QFP.BAND_OFFSET,
             mark_radius=QFP.MARK_RADIUS,
             mark_offset=mark_offset,
-            mark_resolution=24)
+            mark_resolution=QFP.EDGE_RESOLUTION * 8
+        )
+        mark_mesh = geometry.Circle(QFP.MARK_RADIUS, QFP.EDGE_RESOLUTION * 8)
+        mark_mesh.translate(numpy.array([*mark_offset, body_size[2] + QFP.BODY_OFFSET_Z]))
 
         if 'Body' in materials:
             body_mesh.appearance().material = materials['Body']
-        body_mesh.apply(body_transform)
+        body_mesh.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0 + QFP.BODY_OFFSET_Z]))
         body_mesh.rename('Body')
 
         if 'Mark' in materials:
             mark_mesh.appearance().material = materials['Mark']
-        mark_mesh.apply(body_transform)
         mark_mesh.rename('Mark')
 
         pin_mesh = primitives.make_pin_mesh(
@@ -100,7 +100,9 @@ class QFP:
             pin_slope=math.pi * (10.0 / 180.0),
             end_slope=body_slope,
             chamfer_resolution=QFP.CHAMFER_RESOLUTION,
-            edge_resolution=QFP.EDGE_RESOLUTION)
+            edge_resolution=QFP.EDGE_RESOLUTION,
+            line_resolution=QFP.LINE_RESOLUTION
+        )
         if 'Pin' in materials:
             pin_mesh.appearance().material = materials['Pin']
 
@@ -109,7 +111,8 @@ class QFP:
             count=pin_count,
             size=body_size,
             offset=band_width_proj - pin_offset,
-            pitch=pin_pitch)
+            pitch=pin_pitch
+        )
 
         return pins + [body_mesh] + [mark_mesh]
 

@@ -116,7 +116,7 @@ def render_models(models, is_fast, is_simple, is_debug):
         render_ogl41.debug_enabled = True
 
     effects = {} if is_fast else {'antialiasing': 4}
-    helper_objects = [] if is_simple else helpers.create_grid()
+    helper_objects = [] if is_simple else helpers.make_grid()
     export_list = []
     for entry in models:
         export_list.extend(entry[0])
