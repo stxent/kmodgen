@@ -32,4 +32,5 @@ types = [
     IPX,
     MemoryCard,
     SMA,
-    USB]
+    USB
+]

@@ -997,8 +997,7 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         top_face_func = lambda points: make_body_cap(points, mark_radius, mark_offset,
             mark_resolution, (line_resolution, line_resolution))
     else:
-        top_face_func = lambda points: default_quad_face_functor(points,
-            (line_resolution, line_resolution))
+        top_face_func = None
 
     vertices = [
         numpy.array([     x,  y - r, z]),
@@ -1026,7 +1025,8 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         numpy.array([    -x, -y + r, -z]),
         numpy.array([-x + r,     -y, -z]),
         numpy.array([ x - r,     -y, -z]),
-        numpy.array([     x, -y + r, -z])]
+        numpy.array([     x, -y + r, -z])
+    ]
     edges = [
         # Top
         [0, 1, 2, 3, 4, 5, 6, 7, 0],
@@ -1051,11 +1051,11 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         [12, 20],
         [13, 21],
         [14, 22],
-        [15, 23]]
+        [15, 23]
+    ]
     faces = [
         # Top
         [0, 1, 2, 3],
-        ([0, 3, 4, 7], top_face_func),
         [7, 4, 5, 6],
         # Bottom
         [19, 18, 17, 16],
@@ -1078,7 +1078,14 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         [20, 21, 13, 12],
         [21, 22, 14, 13],
         [22, 23, 15, 14],
-        [23, 16, 8, 15]]
+        [23, 16, 8, 15]
+    ]
+
+    # Top
+    if top_face_func is not None:
+        faces.append(([0, 3, 4, 7], top_face_func))
+    else:
+        faces.append([0, 3, 4, 7])
 
     body = round_model_edges(vertices=vertices, edges=edges, faces=faces, chamfer=chamfer,
                              sharpness=math.pi * (5.0 / 6.0), edge_resolution=edge_resolution,
@@ -1282,7 +1289,7 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
         v_index = len(mesh.geo_vertices)
         mesh.geo_vertices.append(calc_median_point(slices[-1]))
         for i in range((len(slices) - 1) * number, len(slices) * number):
-            mesh.geo_polygons.append([i, i + 1, v_index])
+            mesh.geo_polygons.append([i + 1, i, v_index])
 
     return mesh
 

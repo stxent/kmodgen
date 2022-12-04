@@ -38,7 +38,8 @@ class MELF:
         if band_length > 0.0:
             band.append(curves.Line(
                 (band_offset - band_length / 2.0, 0.0, body_radius),
-                (band_offset + band_length / 2.0, 0.0, body_radius), line_resolution))
+                (band_offset + band_length / 2.0, 0.0, body_radius), line_resolution
+            ))
 
         return [band]
 
@@ -54,23 +55,27 @@ class MELF:
             (0.0, 0.0, body_curvature * weight),
             (-length / 2.0 + contact_length + body_curvature, 0.0, body_radius),
             (-body_curvature * weight, 0.0, 0.0),
-            edge_resolution))
+            edge_resolution
+        ))
 
         if band_length > 0.0:
             # Package glass to the left of the band
             left_part.append(curves.Line(
                 (-length / 2.0 + contact_length + body_curvature, 0.0, body_radius),
-                (band_offset - band_length / 2.0, 0.0, body_radius), line_resolution))
+                (band_offset - band_length / 2.0, 0.0, body_radius), line_resolution
+            ))
             # Package glass to the right of the band
             right_part.append(curves.Line(
                 (band_offset + band_length / 2.0, 0.0, body_radius),
                 (length / 2.0 - contact_length - body_curvature, 0.0, body_radius),
-                line_resolution))
+                line_resolution
+            ))
         else:
             left_part.append(curves.Line(
                 (-length / 2.0 + contact_length + body_curvature, 0.0, body_radius),
                 (length / 2.0 - contact_length - body_curvature, 0.0, body_radius),
-                line_resolution))
+                line_resolution
+            ))
 
         # Right rounded edge
         right_part.append(curves.Bezier(
@@ -78,7 +83,8 @@ class MELF:
             (body_curvature * weight, 0.0, 0.0),
             (length / 2.0 - contact_length, 0.0, body_radius - body_curvature),
             (0.0, 0.0, body_curvature * weight),
-            edge_resolution))
+            edge_resolution
+        ))
 
         return [left_part, right_part]
 
@@ -94,27 +100,32 @@ class MELF:
         left_contact.append(curves.Line(
             (-length / 2.0, 0.0, 0.0),
             (-length / 2.0, 0.0, contact_radius - contact_curvature),
-            line_resolution))
+            line_resolution
+        ))
         left_contact.append(curves.Bezier(
             (-length / 2.0, 0.0, contact_radius - contact_curvature),
             (0.0, 0.0, contact_curvature * weight),
             (-length / 2.0 + contact_curvature, 0.0, contact_radius),
             (-contact_curvature * weight, 0.0, 0.0),
-            edge_resolution))
+            edge_resolution
+        ))
         left_contact.append(curves.Line(
             (-length / 2.0 + contact_curvature, 0.0, contact_radius),
             (-length / 2.0 + contact_length - contact_curvature, 0.0, contact_radius),
-            line_resolution))
+            line_resolution
+        ))
         left_contact.append(curves.Bezier(
             (-length / 2.0 + contact_length - contact_curvature, 0.0, contact_radius),
             (contact_curvature * weight, 0.0, 0.0),
             (-length / 2.0 + contact_length, 0.0, contact_radius - contact_curvature),
             (0.0, 0.0, contact_curvature * weight),
-            edge_resolution))
+            edge_resolution
+        ))
         left_contact.append(curves.Line(
             (-length / 2.0 + contact_length, 0.0, contact_radius - contact_curvature),
             (-length / 2.0 + contact_length, 0.0, body_radius - body_curvature),
-            line_resolution))
+            line_resolution
+        ))
 
         right_contact = copy.deepcopy(left_contact)
         right_contact.reverse()
@@ -150,7 +161,8 @@ class MELF:
             body_radius=body_radius,
             band_length=band_length,
             band_offset=band_offset,
-            line_resolution=MELF.LINE_RESOLUTION)
+            line_resolution=MELF.LINE_RESOLUTION
+        )
         if len(band_curves) > 0:
             band_slices = []
             for entry in band_curves:
@@ -176,7 +188,8 @@ class MELF:
             band_length=band_length,
             band_offset=band_offset,
             edge_resolution=MELF.BODY_RESOLUTION,
-            line_resolution=MELF.LINE_RESOLUTION)
+            line_resolution=MELF.LINE_RESOLUTION
+        )
         body_slices = []
         for entry in body_curves:
             body_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
@@ -423,14 +436,16 @@ class SOT:
             if i + columns in entries:
                 entry = entries[i + columns]
                 mesh = patterns[hash(entry)]
-                meshes.append(make_pin(mesh, [x_offset, y_offset + entry.planar_offset],
-                    math.pi, i + columns))
+                meshes.append(make_pin(
+                    mesh, [x_offset, y_offset + entry.planar_offset], math.pi, i + columns
+                ))
 
             if i in entries:
                 entry = entries[i]
                 mesh = patterns[hash(entry)]
-                meshes.append(make_pin(mesh, [-x_offset, -(y_offset + entry.planar_offset)],
-                    0.0, i))
+                meshes.append(make_pin(
+                    mesh, [-x_offset, -(y_offset + entry.planar_offset)], 0.0, i
+                ))
 
         return meshes
 

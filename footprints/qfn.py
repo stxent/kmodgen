@@ -33,6 +33,16 @@ class QFN(exporter.Footprint):
             columns, rows = descriptor['pins']['count'] // 2, 0
         self.count = numpy.array([columns, rows])
 
+        try:
+            self.mark_aligned = descriptor['mark']['aligned']
+        except KeyError:
+            self.mark_aligned = False
+
+        try:
+            self.model = descriptor['model']
+        except KeyError:
+            pass
+
         self.body_size = numpy.array(descriptor['body']['size'])
         self.pad_size = numpy.array(descriptor['pads']['size'])
         self.margin = descriptor['pins']['margin']
@@ -62,11 +72,17 @@ class QFN(exporter.Footprint):
         silkscreen_raw.extend(exporter.Rect(top_corner, -top_corner, self.thickness).lines)
 
         # Outer first pin mark
-        dot_offset_from_pin = top_corner_from_pins[0] + self.thickness / 2.0
-        dot_offset_from_body = (self.body_size[0] - self.thickness) / 2.0
-        dot_mark_x_offset = -max(dot_offset_from_pin, dot_offset_from_body)
-        dot_mark_y_offset = top_corner[1] + self.gap + self.thickness * 1.5
-        dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
+        if self.mark_aligned:
+            pin_border = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
+            dot_mark_x_offset = -first_pin_offset[0]
+            dot_mark_y_offset = pin_border + self.gap + self.thickness
+            dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
+        else:
+            dot_offset_from_pin = top_corner_from_pins[0] + self.thickness / 2.0
+            dot_offset_from_body = (self.body_size[0] - self.thickness) / 2.0
+            dot_mark_x_offset = -max(dot_offset_from_pin, dot_offset_from_body)
+            dot_mark_y_offset = top_corner[1] + self.gap + self.thickness * 1.5
+            dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
         silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
 
         # Horizontal pads
@@ -126,4 +142,10 @@ class LGA(QFN):
         self.title = f'LGA-{sum(self.count) * 2}'
 
 
-types = [QFN, DFN, LGA]
+class OptoPLCC(QFN):
+    def __init__(self, spec, descriptor):
+        super().__init__(spec=spec, descriptor=descriptor)
+        self.title = f'PLCC-{sum(self.count) * 2}'
+
+
+types = [QFN, DFN, LGA, OptoPLCC]

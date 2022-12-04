@@ -1,0 +1,44 @@
+{
+  "templates": [
+    "opto_plcc.x3d"
+  ],
+  "specs": {
+    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
+    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+  },
+  "parts": [
+    {
+      "package": {"type": "OptoPLCC", "spec": "thin"},
+      "title": "LED3528-PLCC4_3.2x2.8mm_P1.6mm",
+      "body": {"size": [2.8, 3.2, 1.9]},
+      "mark": {"aligned": true},
+      "pads": {"size": [1.0, 1.5]},
+      "pins": {"count": 4, "pitch": 1.6, "length": 0.75, "width": 0.75, "margin": -0.100},
+      "source": "Foryard specifications"
+    }, {
+      "package": {"type": "OptoPLCC", "spec": "thin"},
+      "title": "LED3528-PLCC6_3.2x2.8mm_P0.8mm",
+      "body": {"size": [2.8, 3.2, 1.8]},
+      "mark": {"aligned": true},
+      "pads": {"size": [0.7, 1.2]},
+      "pins": {"count": 6, "pitch": 0.8, "length": 0.8, "width": 0.5, "margin": -0.250},
+      "source": "Foryard specifications"
+    }, {
+      "package": {"type": "OptoPLCC", "spec": "thick"},
+      "title": "LED5050-PLCC6_5x5mm_P1.8mm",
+      "body": {"size": [5.0, 5.0, 1.65]},
+      "mark": {"aligned": true},
+      "pads": {"size": [1.4, 2.4]},
+      "pins": {"count": 6, "pitch": 1.8, "length": 1.4, "width": 1.0, "margin": 0.000},
+      "source": "Foryard specifications"
+    }, {
+      "package": {"type": "OptoPLCC", "spec": "thick"},
+      "title": "LED5050-PLCC6_5x5mm_P1.6mm",
+      "body": {"size": [5.0, 5.0, 1.6]},
+      "mark": {"aligned": true},
+      "pads": {"size": [1.3, 2.0]},
+      "pins": {"count": 6, "pitch": 1.6, "length": 1.0, "width": 1.1, "margin": -0.300},
+      "source": "Songxin specifications"
+    }
+  ]
+}
