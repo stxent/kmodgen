@@ -1,9 +1,8 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-project(kmodgen NONE)
 cmake_minimum_required(VERSION 3.6)
-cmake_policy(SET CMP0054 NEW)
+project(kmodgen NONE)
 
 # Build options
 set(DESC_DIR "${PROJECT_SOURCE_DIR}/descriptions" CACHE STRING "Path to the description directory.")
@@ -93,7 +92,7 @@ foreach(DESC_PATH ${DESC_LIST})
         list(FIND FOOTPRINT_LIST ${PART_TYPE} TYPE_EXISTS)
 
         if(NOT ${TYPE_EXISTS} EQUAL -1)
-            if(${USE_PRETTY})
+            if(USE_PRETTY)
                 set(FP_PATH ${CMAKE_BINARY_DIR}/lib/${DESC_LIB}.pretty/${PART_NAME}.kicad_mod)
             else()
                 set(FP_PATH ${CMAKE_BINARY_DIR}/obj/${DESC_LIB}.obj/${PART_NAME}.mod.obj)
@@ -110,7 +109,7 @@ foreach(DESC_PATH ${DESC_LIST})
 
     list(LENGTH FP_LIST FP_LIST_LENGTH)
     if(${FP_LIST_LENGTH} GREATER 0)
-        if(${USE_PRETTY})
+        if(USE_PRETTY)
             add_custom_target(${DESC_NAME}_fp ALL SOURCES ${FP_LIST})
             message(STATUS "Library ${DESC_LIB}: added footprints from ${DESC_FILE}")
         else()
@@ -128,7 +127,7 @@ foreach(DESC_PATH ${DESC_LIST})
         list(FIND MODEL_LIST ${PART_TYPE} TYPE_EXISTS)
 
         if(NOT ${TYPE_EXISTS} EQUAL -1)
-            if(${USE_X3D})
+            if(USE_X3D)
                 set(MOD_PATH ${OUTPUT_DIR}/${DESC_LIB}/${PART_NAME}.x3d)
             else()
                 set(MOD_PATH ${OUTPUT_DIR}/${DESC_LIB}/${PART_NAME}.wrl)
@@ -150,7 +149,7 @@ foreach(DESC_PATH ${DESC_LIST})
     endif()
 endforeach()
 
-if(NOT ${USE_PRETTY})
+if(NOT USE_PRETTY)
     foreach(LIB_NAME ${LIB_NAMES})
         list(LENGTH ${LIB_NAME}_SOURCES FP_LIST_LENGTH)
         if(${FP_LIST_LENGTH} GREATER 0)

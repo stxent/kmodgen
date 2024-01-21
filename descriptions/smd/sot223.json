@@ -43,7 +43,6 @@
           "5": {"shape": [3.05, 0.3]},
           "6": null
       },
-      "mark": {"dot": true, "tri": true},
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "SOT", "spec": "thick"},

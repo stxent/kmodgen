@@ -33,6 +33,13 @@
       "source": "NXP specifications for reflow soldering"
     }, {
       "package": {"type": "SOP", "subtype": "SO", "spec": "thick"},
+      "title": "SO-8_5.3x5.3mm_P1.27mm",
+      "body": {"size": [5.3, 5.3, 1.8]},
+      "pads": {"size": [0.6, 1.5], "margin": 0.25},
+      "pins": {"shape": [0.42, 0.2], "length": 1.35, "count": 8, "pitch": 1.27},
+      "source": "Infineon specifications"
+    }, {
+      "package": {"type": "SOP", "subtype": "SO", "spec": "thick"},
       "title": "SO-14_3.9x8.7mm_P1.27mm",
       "body": {"size": [8.7, 3.9, 1.35]},
       "pads": {"size": [0.6, 1.3], "margin": 0.05},
