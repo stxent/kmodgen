@@ -84,6 +84,42 @@
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
     }, {
+      "package": {"type": "ChipCapacitor", "spec": "thin"},
+      "title": "C0805-6",
+      "body": {"size": [2.0, 1.25, 0.6]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.0, "size": [0.9, 1.35]},
+      "mark": {"wrap": true},
+      "description": "0805 ceramic capacitor, 2.0x1.25x0.6 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thin"},
+      "title": "C0805-9",
+      "body": {"size": [2.0, 1.25, 0.85]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.0, "size": [0.9, 1.35]},
+      "mark": {"wrap": true},
+      "description": "0805 ceramic capacitor, 2.0x1.25x0.85 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thin"},
+      "title": "C0805-A",
+      "body": {"size": [2.0, 1.25, 1.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.0, "size": [0.9, 1.35]},
+      "mark": {"wrap": true},
+      "description": "0805 ceramic capacitor, 2.0x1.25x1.0 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thin"},
+      "title": "C0805-B",
+      "body": {"size": [2.0, 1.25, 1.25]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.0, "size": [0.9, 1.35]},
+      "mark": {"wrap": true},
+      "description": "0805 ceramic capacitor, 2.0x1.25x1.25 mm body",
+      "source": "Murata specifications"
+    }, {
       "package": {"type": "ChipCapacitor", "spec": "thick"},
       "title": "C1206",
       "body": {"size": [3.2, 1.6, 1.15]},
@@ -91,6 +127,51 @@
       "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1206-6",
+      "body": {"size": [3.2, 1.6, 0.6]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
+      "mark": {"wrap": true},
+      "description": "1206 ceramic capacitor, 3.2x1.6x0.6 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1206-9",
+      "body": {"size": [3.2, 1.6, 0.85]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
+      "mark": {"wrap": true},
+      "description": "1206 ceramic capacitor, 3.2x1.6x0.85 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1206-A",
+      "body": {"size": [3.2, 1.6, 1.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
+      "mark": {"wrap": true},
+      "description": "1206 ceramic capacitor, 3.2x1.6x1.0 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1206-M",
+      "body": {"size": [3.2, 1.6, 1.15]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
+      "mark": {"wrap": true},
+      "description": "1206 ceramic capacitor, 3.2x1.6x1.15 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1206-C",
+      "body": {"size": [3.2, 1.6, 1.6]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 1.8]},
+      "mark": {"wrap": true},
+      "description": "1206 ceramic capacitor, 3.2x1.6x1.6 mm body",
+      "source": "Murata specifications"
     }, {
       "package": {"type": "ChipCapacitor", "spec": "thick"},
       "title": "C1210",
@@ -101,12 +182,93 @@
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1210-9",
+      "body": {"size": [3.2, 2.5, 0.85]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
+      "mark": {"wrap": true},
+      "description": "1210 ceramic capacitor, 3.2x2.5x0.85 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1210-A",
+      "body": {"size": [3.2, 2.5, 1.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
+      "mark": {"wrap": true},
+      "description": "1210 ceramic capacitor, 3.2x2.5x1.0 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1210-M",
+      "body": {"size": [3.2, 2.5, 1.15]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
+      "mark": {"wrap": true},
+      "description": "1210 ceramic capacitor, 3.2x2.5x1.15 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1210-N",
+      "body": {"size": [3.2, 2.5, 1.35]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
+      "mark": {"wrap": true},
+      "description": "1210 ceramic capacitor, 3.2x2.5x1.35 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1210-R",
+      "body": {"size": [3.2, 2.5, 1.8]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
+      "mark": {"wrap": true},
+      "description": "1210 ceramic capacitor, 3.2x2.5x1.8 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1210-E",
+      "body": {"size": [3.2, 2.5, 2.5]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 1.8, "size": [1.2, 2.7]},
+      "mark": {"wrap": true},
+      "description": "1210 ceramic capacitor, 3.2x2.5x2.5 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
       "title": "C1808",
       "body": {"size": [4.5, 2.0, 1.25]},
       "pins": {"width": 0.5},
       "pads": {"pitch": 3.2, "size": [1.2, 2.2]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1808-A",
+      "body": {"size": [4.5, 2.0, 1.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.2, "size": [1.2, 2.2]},
+      "mark": {"wrap": true},
+      "description": "1808 ceramic capacitor, 4.5x2.0x1.0 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1808-Q",
+      "body": {"size": [4.5, 2.0, 1.5]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.2, "size": [1.2, 2.2]},
+      "mark": {"wrap": true},
+      "description": "1808 ceramic capacitor, 4.5x2.0x1.5 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1808-D",
+      "body": {"size": [4.5, 2.0, 2.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.2, "size": [1.2, 2.2]},
+      "mark": {"wrap": true},
+      "description": "1808 ceramic capacitor, 4.5x2.0x2.0 mm body",
+      "source": "Murata specifications"
     }, {
       "package": {"type": "ChipCapacitor", "spec": "thick"},
       "title": "C1812",
@@ -117,12 +279,120 @@
       "source": "Murata specifications for reflow soldering"
     }, {
       "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1812-M",
+      "body": {"size": [4.5, 3.2, 1.15]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
+      "mark": {"wrap": true},
+      "description": "1812 ceramic capacitor, 4.5x3.2x1.15 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1812-N",
+      "body": {"size": [4.5, 3.2, 1.35]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
+      "mark": {"wrap": true},
+      "description": "1812 ceramic capacitor, 4.5x3.2x1.35 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1812-Q",
+      "body": {"size": [4.5, 3.2, 1.5]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
+      "mark": {"wrap": true},
+      "description": "1812 ceramic capacitor, 4.5x3.2x1.5 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1812-R",
+      "body": {"size": [4.5, 3.2, 1.8]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
+      "mark": {"wrap": true},
+      "description": "1812 ceramic capacitor, 4.5x3.2x1.8 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1812-D",
+      "body": {"size": [4.5, 3.2, 2.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
+      "mark": {"wrap": true},
+      "description": "1812 ceramic capacitor, 4.5x3.2x2.0 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C1812-E",
+      "body": {"size": [4.5, 3.2, 2.5]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 3.1, "size": [1.2, 3.3]},
+      "mark": {"wrap": true},
+      "description": "1812 ceramic capacitor, 4.5x3.2x2.5 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
       "title": "C2220",
       "body": {"size": [5.7, 5.0, 1.15]},
       "pins": {"width": 0.5},
       "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
       "mark": {"wrap": true},
       "source": "Murata specifications for reflow soldering"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C2220-M",
+      "body": {"size": [5.7, 5.0, 1.15]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
+      "mark": {"wrap": true},
+      "description": "2220 ceramic capacitor, 5.7x5.0x1.15 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C2220-N",
+      "body": {"size": [5.7, 5.0, 1.35]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
+      "mark": {"wrap": true},
+      "description": "2220 ceramic capacitor, 5.7x5.0x1.35 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C2220-C",
+      "body": {"size": [5.7, 5.0, 1.6]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
+      "mark": {"wrap": true},
+      "description": "2220 ceramic capacitor, 5.7x5.0x1.6 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C2220-R",
+      "body": {"size": [5.7, 5.0, 1.8]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
+      "mark": {"wrap": true},
+      "description": "2220 ceramic capacitor, 5.7x5.0x1.8 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C2220-D",
+      "body": {"size": [5.7, 5.0, 2.0]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
+      "mark": {"wrap": true},
+      "description": "2220 ceramic capacitor, 5.7x5.0x2.0 mm body",
+      "source": "Murata specifications"
+    }, {
+      "package": {"type": "ChipCapacitor", "spec": "thick"},
+      "title": "C2220-E",
+      "body": {"size": [5.7, 5.0, 2.5]},
+      "pins": {"width": 0.5},
+      "pads": {"pitch": 4.5, "size": [1.4, 5.2]},
+      "mark": {"wrap": true},
+      "description": "2220 ceramic capacitor, 5.7x5.0x2.5 mm body",
+      "source": "Murata specifications"
     }, {
       "package": {"type": "Chip", "spec": "thick"},
       "title": "CP3216",
@@ -202,6 +472,14 @@
       "pads": {"pitch": 2.0, "size": [3.0, 3.5]},
       "mark": {"wrap": false},
       "source": "Laird specifications"
+    }, {
+      "package": {"type": "Chip", "spec": "thin"},
+      "title": "LED0603",
+      "body": {"size": [1.6, 0.8]},
+      "pins": {},
+      "pads": {"pitch": 0.7, "size": [0.8, 0.8], "names": ["C", "A"]},
+      "mark": {"dot": true, "wrap": true},
+      "source": "Foryard specifications"
     }, {
       "package": {"type": "Chip", "spec": "thin"},
       "title": "LED0805",

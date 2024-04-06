@@ -6,6 +6,14 @@
   "parts": [
     {
       "package": {"type": "CDRH", "spec": "thick"},
+      "title": "CD32",
+      "body": {"size": [3.0, 3.5, 2.1]},
+      "pins": {},
+      "pads": {"pitch": 1.2, "size": [1.4, 3.5]},
+      "mark": {"wrap": false},
+      "source": "Shuoxing Electronics"
+    }, {
+      "package": {"type": "CDRH", "spec": "thick"},
       "title": "CD43",
       "body": {"size": [4.0, 4.5, 3.2]},
       "pins": {},
