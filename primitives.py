@@ -522,7 +522,7 @@ def append_solid_cap(mesh, vertices, origin=None, normal=None):
     mesh.geo_vertices.append(mean)
 
     count = len(indices)
-    polygons = [] 
+    polygons = []
     for i in range(0, count):
         polygons.append([indices[i % count], indices[(i + 1) % count], mean_index])
     mesh.geo_polygons.extend(polygons)
@@ -855,7 +855,7 @@ def make_chip_body(size, chamfer, edge_resolution, line_resolution):
         numpy.array([x_half, 0.0, 0.0]),
         numpy.array([-x_half, 0.0, 0.0])]
 
-    shape = make_rounded_rect(size=numpy.array([y, z]), roundness=chamfer,
+    shape = make_rounded_rect(size=numpy.array([z, y]), roundness=chamfer,
                               segments=edge_resolution)
     shape_points = []
     for element in shape:
@@ -923,14 +923,14 @@ def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, inver
         path_points.extend(element.tessellate())
     path_points = curves.optimize(path_points)
 
-    case_shape = make_rounded_rect(size=numpy.array([y_case, z_case]),
+    case_shape = make_rounded_rect(size=numpy.array([z_case, y_case]),
                                    roundness=case_chamfer, segments=edge_resolution)
     case_points = []
     for element in case_shape:
         case_points.extend(element.tessellate())
     case_points = curves.optimize(case_points)
 
-    lead_shape = make_rounded_rect(size=numpy.array([y_lead, z_lead]),
+    lead_shape = make_rounded_rect(size=numpy.array([z_lead, y_lead]),
                                    roundness=roundness, segments=edge_resolution)
     lead_points = []
     for element in lead_shape:
@@ -1314,7 +1314,8 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
     else:
         shape_scaling = numpy.ones(3)
 
-    shape = make_rounded_rect(size=pin_shape_size, roundness=chamfer, segments=chamfer_resolution)
+    shape = make_rounded_rect(size=numpy.array([pin_shape_size[1], pin_shape_size[0]]),
+                              roundness=chamfer, segments=chamfer_resolution)
     shape_points = []
     for element in shape:
         shape_points.extend(element.tessellate())
