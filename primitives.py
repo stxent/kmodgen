@@ -12,6 +12,32 @@ from wrlconv import curves
 from wrlconv import geometry
 from wrlconv import model
 
+def calc_bezier_weight(a=None, b=None, angle=None): # pylint: disable=invalid-name
+    if angle is None:
+        if a is None or b is None:
+            # User must provide vectors a and b when angle argument is not used
+            raise TypeError()
+        angle = model.angle(a, b)
+
+    return (4.0 / 3.0) * math.tan(angle / 4.0)
+
+def calc_median_point(vertices):
+    if len(vertices) == 0:
+        raise ValueError()
+
+    max_pos = min_pos = vertices[0]
+    for vertex in vertices:
+        max_pos = numpy.maximum(max_pos, vertex)
+        min_pos = numpy.minimum(min_pos, vertex)
+    return (max_pos + min_pos) / 2.0
+
+def hmils(values):
+    # Convert millimeters to hundreds of mils
+    try:
+        return numpy.array([value / 2.54 for value in values])
+    except TypeError:
+        return values / 2.54
+
 def limit_vector_pair(a, b): # pylint: disable=invalid-name
     ab_sum = a + b
     a_proj_ab, b_proj_ab = reverse_projection(a, ab_sum), reverse_projection(b, ab_sum)
@@ -21,13 +47,6 @@ def limit_vector_pair(a, b): # pylint: disable=invalid-name
         ab_part = b_proj_ab
     scale = numpy.linalg.norm(ab_part) / numpy.linalg.norm(ab_sum)
     return a * scale, b * scale
-
-def hmils(values):
-    # Convert millimeters to hundreds of mils
-    try:
-        return numpy.array([value / 2.54 for value in values])
-    except TypeError:
-        return values / 2.54
 
 def projection(a, b): # pylint: disable=invalid-name
     # Return projection of a vector a in the direction of a vector b
@@ -53,18 +72,9 @@ def reverse_projection(a, b): # pylint: disable=invalid-name
     dot = numpy.dot(a_norm, b_norm)
 
     if dot == 0.0:
-        # Two segments lie on a same line
-        raise Exception()
+        # Two segments are orthogonal
+        raise ValueError()
     return (numpy.linalg.norm(a) / dot) * b_norm
-
-def calc_bezier_weight(a=None, b=None, angle=None): # pylint: disable=invalid-name
-    if angle is None:
-        if a is None or b is None:
-            # User must provide vectors a and b when angle argument is not used
-            raise Exception()
-        angle = model.angle(a, b)
-
-    return (4.0 / 3.0) * math.tan(angle / 4.0)
 
 def sort_edge_points(points):
     return (min(points), max(points))
@@ -736,7 +746,7 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
     return mesh
 
 def make_box(size, chamfer, edge_resolution, line_resolution, band_size=None, band_offset=0.0,
-             mark_radius=None, mark_offset=numpy.array([0.0, 0.0]), mark_resolution=24):
+             mark_radius=None, mark_offset=numpy.zeros(2), mark_resolution=24):
     try:
         resolutions = (line_resolution[0], line_resolution[1], line_resolution[2])
         # TODO Select default resolution
@@ -865,7 +875,7 @@ def make_chip_body(size, chamfer, edge_resolution, line_resolution):
     slices = curves.loft(path=path_points, shape=shape_points)
     return build_loft_mesh(slices, False, False)
 
-def make_chip_lead_cap(size, chamfer, invert, edge_resolution, line_resolution):
+def make_chip_lead_cap(size, chamfer, invert, edge_resolution, line_resolution, axis):
     x, y, z = numpy.array(size) / 2.0 # pylint: disable=invalid-name
 
     vertices = [
@@ -874,25 +884,39 @@ def make_chip_lead_cap(size, chamfer, invert, edge_resolution, line_resolution):
         numpy.array([-x, -y, -z]),
         numpy.array([ x, -y, -z]),
 
-        numpy.array([ x, y, z]),
-        numpy.array([-x, y, z]),
+        numpy.array([ x,  y, z]),
+        numpy.array([-x,  y, z]),
         numpy.array([-x, -y, z]),
         numpy.array([ x, -y, z])
     ]
-    edges = [
-        [0, 1],
-        [2, 3],
-        [4, 5],
-        [6, 7]
-    ]
+
+    edges = []
     faces = []
 
-    if invert:
-        edges.append([1, 2, 6, 5, 1])
-        faces.append([1, 2, 6, 5])
+    if axis == 0:
+        edges.extend([[1, 0], [2, 3], [5, 4], [6, 7]])
+        if invert:
+            edges.append([1, 2, 6, 5, 1])
+            faces.append([1, 2, 6, 5])
+        else:
+            edges.append([3, 0, 4, 7, 3])
+            faces.append([3, 0, 4, 7])
+    elif axis == 1:
+        edges.extend([[2, 1], [3, 0], [6, 5], [7, 4]])
+        if invert:
+            edges.append([2, 3, 7, 6, 2])
+            faces.append([2, 3, 7, 6])
+        else:
+            edges.append([0, 1, 5, 4, 0])
+            faces.append([0, 1, 5, 4])
     else:
-        edges.append([3, 0, 4, 7, 3])
-        faces.append([3, 0, 4, 7])
+        edges.extend([[0, 4], [1, 5], [2, 6], [3, 7]])
+        if invert:
+            edges.append([0, 1, 2, 3, 0])
+            faces.append([0, 1, 2, 3])
+        else:
+            edges.append([4, 5, 6, 7, 4])
+            faces.append([4, 5, 6, 7])
 
     return round_model_edges(vertices=vertices, edges=edges, faces=faces, chamfer=chamfer,
                              sharpness=math.pi * (5.0 / 6.0), edge_resolution=edge_resolution,
@@ -937,11 +961,10 @@ def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, inver
         lead_points.extend(element.tessellate())
     lead_points = curves.optimize(lead_points)
 
-    def mesh_morphing_func(position):
-        current = int(position * (len(path_points) - 1))
-        if current >= line_resolution:
-            current = edge_resolution - (current - line_resolution)
-            t_pos = math.sin((math.pi / 2.0) * (current / edge_resolution))
+    def mesh_morphing_func(number):
+        if number >= line_resolution:
+            number = edge_resolution - (number - line_resolution)
+            t_pos = math.sin((math.pi / 2.0) * (number / edge_resolution))
             points = []
             for i, point in enumerate(case_points):
                 points.append(point + (lead_points[i] - point) * t_pos)
@@ -954,7 +977,8 @@ def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, inver
 def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resolution,
                     line_resolution):
     mesh_a = make_chip_lead_cap(size=lead_size, chamfer=lead_chamfer, invert=False,
-                                edge_resolution=edge_resolution, line_resolution=line_resolution)
+                                edge_resolution=edge_resolution, line_resolution=line_resolution,
+                                axis=0)
     mesh_a.translate(numpy.array([(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
     slope_a = make_chip_lead_slope(case_size=case_size, lead_size=lead_size,
                                    case_chamfer=case_chamfer, lead_chamfer=lead_chamfer,
@@ -963,7 +987,8 @@ def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resol
     slope_a.translate(numpy.array([(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
 
     mesh_b = make_chip_lead_cap(size=lead_size, chamfer=lead_chamfer, invert=True,
-                                edge_resolution=edge_resolution, line_resolution=line_resolution)
+                                edge_resolution=edge_resolution, line_resolution=line_resolution,
+                                axis=0)
     mesh_b.translate(numpy.array([-(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
     slope_b = make_chip_lead_slope(case_size=case_size, lead_size=lead_size,
                                    case_chamfer=case_chamfer, lead_chamfer=lead_chamfer,
@@ -980,7 +1005,7 @@ def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resol
     return mesh
 
 def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution, band_size=None,
-                     band_offset=0.0, mark_radius=None, mark_offset=numpy.array([0.0, 0.0]),
+                     band_offset=0.0, mark_radius=None, mark_offset=numpy.zeros(2),
                      mark_resolution=24):
     if band_size is None:
         raise Exception() # TODO
@@ -1173,6 +1198,34 @@ def make_rounded_rect(size, roundness, segments):
 
     return shape
 
+def make_rounded_rect_half(size, rotate, roundness, segments):
+    # pylint: disable=invalid-name
+    dx, dy = size[0], size[1]
+    r, rb = roundness, roundness * calc_bezier_weight(angle=math.pi / 2.0)
+    # pylint: enable=invalid-name
+
+    shape = []
+    if not rotate:
+        dy /= 2.0
+        shape.append(curves.Line((0.0, dy, 0.0), (dx - r, dy, 0.0), 1))
+        shape.append(curves.Bezier((dx - r, dy, 0.0), (rb, 0.0, 0.0),
+                                   (dx, dy - r, 0.0), (0.0, rb, 0.0), segments))
+        shape.append(curves.Line((dx, dy - r, 0.0), (dx, -dy + r, 0.0), 1))
+        shape.append(curves.Bezier((dx, -dy + r, 0.0), (0.0, -rb, 0.0),
+                                   (dx - r, -dy, 0.0), (rb, 0.0, 0.0), segments))
+        shape.append(curves.Line((dx - r, -dy, 0.0), (0.0, -dy, 0.0), 1))
+    else:
+        dx /= 2.0
+        shape.append(curves.Line((-dx, 0.0, 0.0), (-dx, dy - r, 0.0), 1))
+        shape.append(curves.Bezier((-dx, dy - r, 0.0), (0.0, rb, 0.0),
+                                   (-dx + r, dy, 0.0), (-rb, 0.0, 0.0), segments))
+        shape.append(curves.Line((-dx + r, dy, 0.0), (dx - r, dy, 0.0), 1))
+        shape.append(curves.Bezier((dx - r, dy, 0.0), (rb, 0.0, 0.0),
+                                   (dx, dy - r, 0.0), (0.0, rb, 0.0), segments))
+        shape.append(curves.Line((dx, dy - r, 0.0), (dx, 0.0, 0.0), 1))
+
+    return shape
+
 def make_flat_pin_curve(pin_shape_size, pin_length, pin_offset, chamfer, roundness,
                         chamfer_resolution=2, line_resolution=1):
     curve = []
@@ -1271,10 +1324,14 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
         mesh.geo_vertices.extend(points)
 
     if fill_start:
-        v_index = len(mesh.geo_vertices)
+        v_center_index = len(mesh.geo_vertices)
         mesh.geo_vertices.append(calc_median_point(slices[0]))
+
         for i in range(0, number - 1):
-            mesh.geo_polygons.append([i, i + 1, v_index])
+            mesh.geo_polygons.append([i, i + 1, v_center_index])
+        if not model.Mesh.isclose(slices[0][0], slices[0][-1]):
+            # Slice is not closed, append additional polygon
+            mesh.geo_polygons.append([number - 1, 0, v_center_index])
 
     for i in range(0, len(slices) - 1):
         for j in range(0, number - 1):
@@ -1286,22 +1343,17 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
             ])
 
     if fill_end:
-        v_index = len(mesh.geo_vertices)
+        v_center_index = len(mesh.geo_vertices)
+        v_start_index = (len(slices) - 1) * number
         mesh.geo_vertices.append(calc_median_point(slices[-1]))
-        for i in range((len(slices) - 1) * number, len(slices) * number):
-            mesh.geo_polygons.append([i + 1, i, v_index])
+
+        for i in range(v_start_index, v_start_index + number - 1):
+            mesh.geo_polygons.append([i + 1, i, v_center_index])
+        if not model.Mesh.isclose(slices[-1][0], slices[-1][-1]):
+            # Slice is not closed, append additional polygon
+            mesh.geo_polygons.append([v_start_index, v_start_index + number - 1, v_center_index])
 
     return mesh
-
-def calc_median_point(vertices):
-    if len(vertices) == 0:
-        raise Exception()
-
-    max_pos = min_pos = vertices[0]
-    for vertex in vertices:
-        max_pos = numpy.maximum(max_pos, vertex)
-        min_pos = numpy.minimum(min_pos, vertex)
-    return (max_pos + min_pos) / 2.0
 
 def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
                   chamfer_resolution, edge_resolution, line_resolution, flat=False):
@@ -1340,21 +1392,19 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
         path_points.extend(element.tessellate())
     path_points = curves.optimize(path_points)
 
-    def mesh_rotation_func(position):
-        current = int(position * (len(path_points) - 1))
-        if current == len(path_points) - 1:
+    def mesh_rotation_func(number):
+        if number == len(path_points) - 1:
             return numpy.array([end_slope, 0.0, 0.0])
         return numpy.zeros(3)
 
-    def mesh_scaling_func(position):
-        current = int(position * (len(path_points) - 1))
-        if current == len(path_points) - 1:
+    def mesh_scaling_func(number):
+        if number == len(path_points) - 1:
             return shape_scaling
-        if chamfer_resolution >= 1 and current < chamfer_resolution:
+        if chamfer_resolution >= 1 and number < chamfer_resolution:
             shape = numpy.array(pin_shape_size)
             scale = (shape - chamfer * 2.0) / shape
-            t_pos = math.sin((math.pi / 2.0) * (current / chamfer_resolution))
-            t_scale = scale + (numpy.array([1.0, 1.0]) - scale) * t_pos
+            t_pos = math.sin((math.pi / 2.0) * (number / chamfer_resolution))
+            t_scale = scale + (numpy.ones(2) - scale) * t_pos
             return numpy.array([*t_scale, 1.0])
         return numpy.ones(3)
 

@@ -358,7 +358,7 @@ class QFN:
 
     @staticmethod
     def make_qfn_body(size, count, chamfer, pin_pitch, pin_width, pin_height, pin_length,
-                      heatsink=None, mark_radius=None, mark_offset=numpy.array([0.0, 0.0]),
+                      heatsink=None, mark_radius=None, mark_offset=numpy.zeros(2),
                       edge_resolution=3, line_resolution=1, mark_resolution=24):
         chamfer_width = chamfer / math.sqrt(2.0)
         resolution = count * 2 + 3
@@ -434,7 +434,7 @@ class QFN:
             mark_offset = QFN.calc_mark_offset(body_size, mark_radius, QFN.BODY_CHAMFER)
         else:
             mark_radius = None
-            mark_offset = numpy.array([0.0, 0.0])
+            mark_offset = numpy.zeros(2)
 
         try:
             pin_height = primitives.hmils(descriptor['pins']['height'])

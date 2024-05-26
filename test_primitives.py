@@ -29,6 +29,7 @@ def serialize_models(models, path, name):
 
 
 class TestChips:
+    FILE_CHIP_CAPS = 'test_chip_caps.x3d'
     FILE_CHIP_HP = 'test_chip_hp.x3d'
     FILE_CHIP_LP = 'test_chip_lp.x3d'
 
@@ -68,6 +69,68 @@ class TestChips:
         serialized = serialize_models(meshes, path, name)
         assert compare_models(name, serialized) == True
 
+    @staticmethod
+    def make_chip_caps(path, name, edge_resolution, line_resolution):
+        model.reset_allocator()
+
+        box_size = (2.0, 1.5, 1.0)
+        box_chamfer = 0.1
+
+        cap_xp = primitives.make_chip_lead_cap(
+            size=box_size,
+            chamfer=box_chamfer,
+            invert=False,
+            edge_resolution=edge_resolution[0],
+            line_resolution=line_resolution[0],
+            axis=0
+        )
+        cap_xn = primitives.make_chip_lead_cap(
+            size=box_size,
+            chamfer=box_chamfer,
+            invert=True,
+            edge_resolution=edge_resolution[1],
+            line_resolution=line_resolution[1],
+            axis=0
+        )
+        cap_yp = primitives.make_chip_lead_cap(
+            size=box_size,
+            chamfer=box_chamfer,
+            invert=False,
+            edge_resolution=edge_resolution[1],
+            line_resolution=line_resolution[1],
+            axis=1
+        )
+        cap_yn = primitives.make_chip_lead_cap(
+            size=box_size,
+            chamfer=box_chamfer,
+            invert=True,
+            edge_resolution=edge_resolution[2],
+            line_resolution=line_resolution[2],
+            axis=1
+        )
+        cap_zp = primitives.make_chip_lead_cap(
+            size=box_size,
+            chamfer=box_chamfer,
+            invert=False,
+            edge_resolution=edge_resolution[2],
+            line_resolution=line_resolution[2],
+            axis=2
+        )
+        cap_zn = primitives.make_chip_lead_cap(
+            size=box_size,
+            chamfer=box_chamfer,
+            invert=True,
+            edge_resolution=edge_resolution[0],
+            line_resolution=line_resolution[0],
+            axis=2
+        )
+        meshes = [cap_xp, cap_xn, cap_yp, cap_yn, cap_zp, cap_zn]
+        serialized = serialize_models(meshes, path, name)
+        assert compare_models(name, serialized) == True
+
+    def test_make_chip_caps(self, tmp_path):
+        TestChips.make_chip_caps(tmp_path, TestChips.FILE_CHIP_CAPS, (2, 3, 4), (1, 2, 3))
+
     def test_make_chip_hp(self, tmp_path):
         TestChips.make_chip(tmp_path, TestChips.FILE_CHIP_HP, 3, 3)
 
@@ -76,36 +139,78 @@ class TestChips:
 
 
 class TestHelpers:
-    def test_hmils(self):
-        val_a = primitives.hmils(2.54)
-        assert math.isclose(val_a, 1.0) == True
+    def test_bezier_weight(self):
+        try:
+            value = primitives.calc_bezier_weight((1.0, 0.0, 0.0), None, None)
+        except TypeError:
+            value = None
+        assert value == None
 
-        val_b = primitives.hmils(numpy.array([0.254, 1.27]))
-        assert math.isclose(val_b[0], 0.1) == True
-        assert math.isclose(val_b[1], 0.5) == True
+        try:
+            value = primitives.calc_bezier_weight(None, (1.0, 0.0, 0.0), None)
+        except TypeError:
+            value = None
+        assert value == None
+
+        value = primitives.calc_bezier_weight((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), None)
+        assert math.isclose(value, 0.5522847498307933) == True
+
+        value = primitives.calc_bezier_weight(None, None, 1.5707963267948966)
+        assert math.isclose(value, 0.5522847498307933) == True
+
+    def test_hmils(self):
+        value = primitives.hmils(2.54)
+        assert math.isclose(value, 1.0) == True
+
+        value = primitives.hmils(numpy.array([0.254, 1.27]))
+        assert math.isclose(value[0], 0.1) == True
+        assert math.isclose(value[1], 0.5) == True
+
+    def test_median_point(self):
+        try:
+            value = primitives.calc_median_point([])
+        except ValueError:
+            value = None
+        assert value == None
+
+        value = primitives.calc_median_point([(1.0, 0.0, 0.0)])
+        assert numpy.isclose(value, (1.0, 0.0, 0.0)).all() == True
+
+        value = primitives.calc_median_point([(1.0, 1.0, 1.0), (-1.0, -1.0, -1.0)])
+        assert numpy.isclose(value, (0.0, 0.0, 0.0)).all() == True
+
+    def test_reverse_projection(self):
+        try:
+            value = primitives.reverse_projection((1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+        except ValueError:
+            value = None
+        assert value == None
 
     def test_round1f(self):
-        val_a = primitives.round1f(1.0)
-        assert val_a == '1'
+        value = primitives.round1f(1.0)
+        assert value == '1'
 
-        val_b = primitives.round1f(1.5)
-        assert val_b == '1.5'
+        value = primitives.round1f(1.5)
+        assert value == '1.5'
 
-        val_c = primitives.round1f(1.75)
-        assert val_c == '1.8'
+        value = primitives.round1f(1.75)
+        assert value == '1.8'
 
     def test_round2f(self):
-        val_a = primitives.round2f(1.0)
-        assert val_a == '1.0'
+        value = primitives.round2f(1.0)
+        assert value == '1.0'
 
-        val_b = primitives.round2f(1.5)
-        assert val_b == '1.5'
+        value = primitives.round2f(1.5)
+        assert value == '1.5'
 
-        val_c = primitives.round2f(1.75)
-        assert val_c == '1.75'
+        value = primitives.round2f(1.09)
+        assert value == '1.09'
 
-        val_d = primitives.round2f(1.875)
-        assert val_d == '1.88'
+        value = primitives.round2f(1.75)
+        assert value == '1.75'
+
+        value = primitives.round2f(1.875)
+        assert value == '1.88'
 
 
 class TestPins:
@@ -122,8 +227,8 @@ class TestPins:
             pin_shape_size=numpy.array([0.5, 0.25]),
             pin_height=2.0,
             pin_length=4.0,
-            pin_slope=math.pi * (20.0 / 180.0),
-            end_slope=math.pi * (10.0 / 180.0),
+            pin_slope=numpy.deg2rad(20.0),
+            end_slope=numpy.deg2rad(10.0),
             chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
@@ -141,8 +246,8 @@ class TestPins:
             pin_shape_size=numpy.array([0.5, 0.25]),
             pin_height=2.0,
             pin_length=4.0,
-            pin_slope=math.pi * (20.0 / 180.0),
-            end_slope=math.pi * (10.0 / 180.0),
+            pin_slope=numpy.deg2rad(20.0),
+            end_slope=numpy.deg2rad(10.0),
             chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
@@ -169,6 +274,7 @@ class TestPrimitives:
     FILE_BODY_CAP = 'test_body_cap.x3d'
     FILE_LOFT_MESH = 'test_loft_mesh.x3d'
     FILE_SOLID_CAP = 'test_solid_cap.x3d'
+    FILE_RECT_HALF = 'test_rect_half.x3d'
     FILE_ROTATION_MESH = 'test_rotation_mesh.x3d'
 
     @staticmethod
@@ -268,6 +374,36 @@ class TestPrimitives:
         primitives.append_solid_cap(mesh, vertices, origin=numpy.array([0.0, 0.0, -1.0]))
 
         serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) == True
+
+    def test_make_rect_half(self, tmp_path):
+        name = TestPrimitives.FILE_RECT_HALF
+        model.reset_allocator()
+
+        path_curve = curves.Line((-1.0, 0.0, 0.0), (1.0, 0.0, 0.0), 1)
+        path_points = path_curve.tessellate()
+
+        edge_resolution = 3
+        rect_roundness = 0.1 / math.sqrt(2.0)
+        rect_size = (0.25, 0.5)
+
+        def make_mesh(rotate):
+            shape_curve = primitives.make_rounded_rect_half(
+                size=rect_size,
+                rotate=rotate,
+                roundness=rect_roundness,
+                segments=edge_resolution
+            )
+            shape_points = []
+            [shape_points.extend(element.tessellate()) for element in shape_curve]
+            slices = curves.loft(path_points, shape_points)
+            return primitives.build_loft_mesh(slices, not rotate, rotate)
+
+        meshes = [make_mesh(False), make_mesh(True)]
+        meshes[0].translate((0.0, 0.5, 0.0))
+        meshes[1].translate((0.0, -0.5, 0.0))
+
+        serialized = serialize_models(meshes, tmp_path, name)
         assert compare_models(name, serialized) == True
 
     def test_make_rotation_mesh(self, tmp_path):

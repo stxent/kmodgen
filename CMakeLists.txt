@@ -60,6 +60,7 @@ file(GLOB_RECURSE DESC_LIST "${DESC_DIR}/*.json")
 foreach(DESC_PATH ${DESC_LIST})
     string(REPLACE "${DESC_DIR}/" "" DESC_LIB ${DESC_PATH})
     get_filename_component(DESC_LIB ${DESC_LIB} DIRECTORY)
+
     list(FIND LIB_NAMES ${DESC_LIB} LIB_NAME_EXISTS)
     if(${LIB_NAME_EXISTS} EQUAL -1)
         list(APPEND LIB_NAMES ${DESC_LIB})
