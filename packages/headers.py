@@ -12,11 +12,6 @@ import re
 from wrlconv import model
 import primitives
 
-# TODO Replace with is_close
-def equals(a, b): # pylint: disable=invalid-name
-    tolerance = 0.001
-    return a - tolerance <= b <= a + tolerance
-
 def lookup(mesh_list, mesh_name):
     for entry in mesh_list:
         if re.search(mesh_name, entry.ident, re.S) is not None:
@@ -25,8 +20,10 @@ def lookup(mesh_list, mesh_name):
 
 
 class PinHeader:
-    @staticmethod
-    def generate_header_body(materials, model_body, model_edge, model_pin, body_transform,
+    def __init__(self, material='PinHeader'):
+        self.material = material
+
+    def generate_header_body(self, materials, model_body, model_edge, model_pin, body_transform,
                              count, pitch, name):
         shift = pitch / 2.0 if count[1] > 1 else 0.0
 
@@ -49,22 +46,22 @@ class PinHeader:
             pin = model.Mesh(parent=model_pin, name='{:s}_{:d}Pin{:d}'.format(name,
                 count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, shift, 0.001])
-            if 'Pin' in materials:
-                pin.appearance().material = materials['Pin']
+            if f'{self.material}.Lead' in materials:
+                pin.appearance().material = materials[f'{self.material}.Lead']
             pins.append(pin)
 
         body.transform = copy.deepcopy(body_transform)
         body.translate([0.0, 0.0, 0.001])
         body.optimize()
-        if 'Body' in materials:
-            body.appearance().material = materials['Body']
+        if f'{self.material}.Plastic' in materials:
+            body.appearance().material = materials[f'{self.material}.Plastic']
 
         return [body] + pins
 
-    def generate(self, materials, templates, descriptor):
+    def generate(self, materials, _, templates, descriptor):
         transform = model.Transform()
-        pitch200 = equals(descriptor['pins']['pitch'], 2.0)
-        pitch254 = equals(descriptor['pins']['pitch'], 2.54)
+        pitch200 = math.isclose(descriptor['pins']['pitch'], 2.0, rel_tol=0.001)
+        pitch254 = math.isclose(descriptor['pins']['pitch'], 2.54, rel_tol=0.001)
 
         if not pitch200 and not pitch254:
             raise Exception()
@@ -84,20 +81,24 @@ class PinHeader:
 
         reference_object = [lookup(templates, name).parent for name in object_names]
 
-        return PinHeader.generate_header_body(
+        return self.generate_header_body(
             materials,
             reference_object[0], reference_object[1], reference_object[2], transform,
             (descriptor['pins']['columns'], descriptor['pins']['rows']),
             primitives.hmils(descriptor['pins']['pitch']),
-            descriptor['title'])
+            descriptor['title']
+        )
 
 
 class Jumper(PinHeader):
-    def generate(self, materials, templates, descriptor):
-        objects = PinHeader.generate(self, materials, templates, descriptor)
+    def __init__(self):
+        super().__init__('Jumper')
 
-        pitch200 = equals(descriptor['pins']['pitch'], 2.0)
-        pitch254 = equals(descriptor['pins']['pitch'], 2.54)
+    def generate(self, materials, resolutions, templates, descriptor):
+        objects = PinHeader.generate(self, materials, resolutions, templates, descriptor)
+
+        pitch200 = math.isclose(descriptor['pins']['pitch'], 2.0, rel_tol=0.001)
+        pitch254 = math.isclose(descriptor['pins']['pitch'], 2.54, rel_tol=0.001)
 
         if pitch200:
             body = lookup(templates, 'PatPLS2Jumper').parent
@@ -109,11 +110,14 @@ class Jumper(PinHeader):
         return objects + [body]
 
 
-class RightAnglePinHeader(PinHeader):
-    def generate(self, materials, templates, descriptor):
+class AngularPinHeader(PinHeader):
+    def __init__(self):
+        super().__init__('AngularPinHeader')
+
+    def generate(self, materials, _, templates, descriptor):
         transform = model.Transform()
-        pitch200 = equals(descriptor['pins']['pitch'], 2.0)
-        pitch254 = equals(descriptor['pins']['pitch'], 2.54)
+        pitch200 = math.isclose(descriptor['pins']['pitch'], 2.0, rel_tol=0.001)
+        pitch254 = math.isclose(descriptor['pins']['pitch'], 2.54, rel_tol=0.001)
 
         if pitch200:
             transform.translate([0.0, -0.391, 0.3937])
@@ -144,7 +148,8 @@ class RightAnglePinHeader(PinHeader):
             reference_object[0], reference_object[1], reference_object[2], transform,
             (descriptor['pins']['columns'], descriptor['pins']['rows']),
             primitives.hmils(descriptor['pins']['pitch']),
-            descriptor['title'])
+            descriptor['title']
+        )
 
 
 class BoxHeader:
@@ -160,24 +165,24 @@ class BoxHeader:
         body = copy.deepcopy(model_body)
         body.apply_transform(transforms)
         body.translate([delta, pitch / 2.0, 0.001])
-        if 'Body' in materials:
-            body.appearance().material = materials['Body']
+        if 'BoxHeader.Plastic' in materials:
+            body.appearance().material = materials['BoxHeader.Plastic']
 
         pins = []
         for i in range(0, count[0]):
             pin = model.Mesh(parent=model_pin, name='{:s}_{:d}Pin{:d}'.format(name,
                 count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, pitch / 2.0, 0.001])
-            if 'Pin' in materials:
-                pin.appearance().material = materials['Pin']
+            if 'BoxHeader.Lead' in materials:
+                pin.appearance().material = materials['BoxHeader.Lead']
             pins.append(pin)
 
         return [body] + pins
 
-    def generate(self, materials, templates, descriptor):
+    def generate(self, materials, _, templates, descriptor):
         if descriptor['pins']['rows'] != 2:
             raise Exception()
-        if not equals(descriptor['pins']['pitch'], 2.54):
+        if not math.isclose(descriptor['pins']['pitch'], 2.54, rel_tol=0.001):
             raise Exception()
 
         bh_body = lookup(templates, 'PatBHBody').parent
@@ -195,12 +200,12 @@ class BoxHeader:
 
         return BoxHeader.generate_header_body(
             materials,
-            bh_attributed_body,
-            bh_pin,
+            bh_attributed_body, bh_pin,
             (descriptor['pins']['columns'], descriptor['pins']['rows']),
             primitives.hmils(descriptor['body']['size'][0]),
             primitives.hmils(descriptor['pins']['pitch']),
-            descriptor['title'])
+            descriptor['title']
+        )
 
 
-types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper]
+types = [BoxHeader, PinHeader, AngularPinHeader, Jumper]

@@ -17,9 +17,8 @@ class QFN:
     BODY_CHAMFER = primitives.hmils(0.05)
     MARK_RADIUS  = primitives.hmils(0.5)
 
-    CHAMFER_RESOLUTION = 2
-    LINE_RESOLUTION    = 1
-    MARK_RESOLUTION    = 24
+    def __init__(self, material='QFN'):
+        self.material = material
 
     @staticmethod
     def blow_top_vertices(mesh, size, band, chamfer):
@@ -43,7 +42,7 @@ class QFN:
         result.apply_transform({1: transform})
         return result
 
-    # @staticmethod
+    @staticmethod
     def detach_pads(mesh, count, size, band, pin_width, pin_pitch, first_pin_offset):
         detach_regions = []
         for i in range(0, count[0]):
@@ -409,7 +408,7 @@ class QFN:
 
         return [final_forming, pin_mesh, mark_mesh]
 
-    def generate(self, materials, _, descriptor):
+    def generate(self, materials, resolutions, _, descriptor):
         try:
             pin_columns, pin_rows = descriptor['pins']['columns'], descriptor['pins']['rows']
         except KeyError:
@@ -457,32 +456,32 @@ class QFN:
             heatsink=heatsink_size,
             mark_radius=mark_radius,
             mark_offset=mark_offset,
-            edge_resolution=QFN.CHAMFER_RESOLUTION,
-            line_resolution=QFN.LINE_RESOLUTION,
-            mark_resolution=QFN.MARK_RESOLUTION
+            edge_resolution=resolutions['chamfer'],
+            line_resolution=resolutions['line'],
+            mark_resolution=resolutions['circle']
         )
 
         meshes = []
         body_transform = model.Transform()
         body_transform.translate([0.0, 0.0, body_size[2] / 2.0])
 
-        if 'Body' in materials:
-            body_mesh.appearance().material = materials['Body']
+        if f'{self.material}.Plastic' in materials:
+            body_mesh.appearance().material = materials[f'{self.material}.Plastic']
         body_mesh.apply(body_transform)
         body_mesh.rename('Body')
         meshes.append(body_mesh)
 
-        if 'Pin' in materials:
-            pin_mesh.appearance().material = materials['Pin']
+        if f'{self.material}.Lead' in materials:
+            pin_mesh.appearance().material = materials[f'{self.material}.Lead']
         pin_mesh.apply(body_transform)
         pin_mesh.rename('Pins')
         meshes.append(pin_mesh)
 
         if mark_mesh is not None:
-            if 'Mark' in materials:
-                mark_mesh.appearance().material = materials['Mark']
+            if f'{self.material}.Dot' in materials:
+                mark_mesh.appearance().material = materials[f'{self.material}.Dot']
             mark_mesh.apply(body_transform)
-            mark_mesh.rename('Mark')
+            mark_mesh.rename('Dot')
             meshes.append(mark_mesh)
 
         return meshes
@@ -494,11 +493,13 @@ class QFN:
 
 
 class DFN(QFN):
-    pass
+    def __init__(self):
+        super().__init__('DFN')
 
 
 class LGA(QFN):
-    pass
+    def __init__(self):
+        super().__init__('LGA')
 
 
 types = [QFN, DFN, LGA]

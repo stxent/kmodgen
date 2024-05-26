@@ -22,7 +22,7 @@ from wrlconv import x3d_import
 
 from packages import *
 
-def load_materials(entries):
+def load_materials(settings, entries):
     def decode(desc, title):
         material = model.Material()
         material.color.ident = title.capitalize()
@@ -41,11 +41,32 @@ def load_materials(entries):
         return material
 
     materials = {}
-    for entry in entries:
-        materials.update({entry.capitalize(): decode(entries[entry], entry)})
+
+    # First pass to load complete descriptions
+    for key in settings['materials']:
+        entry = settings['materials'][key]
+        if not isinstance(entry, str):
+            materials.update({key: decode(entry, key)})
+    # Second pass to process aliases
+    for key in settings['materials']:
+        entry = settings['materials'][key]
+        if isinstance(entry, str):
+            materials[key] = materials[entry]
+
+    # First pass to load complete descriptions
+    for key in entries:
+        entry = entries[key]
+        if not isinstance(entry, str):
+            materials.update({key: decode(entry, key)})
+    # Second pass to process aliases
+    for key in entries:
+        entry = entries[key]
+        if isinstance(entry, str):
+            materials[key] = materials[entry]
+
     return materials
 
-def load_models(files, pattern):
+def load_models(config, files, pattern):
     builders = [entry[1] for entry in inspect.getmembers(sys.modules['packages'])
         if inspect.ismodule(entry[1]) and entry[1].__name__.startswith('packages.')]
     types = []
@@ -58,16 +79,27 @@ def load_models(files, pattern):
     for filename in files:
         desc = json.load(open(filename, 'rb'))
 
-        materials = load_materials(desc['materials']) if 'materials' in desc else {}
+        materials = load_materials(config, desc['materials'] if 'materials' in desc else {})
+        resolutions = load_resolutions(config, desc['resolutions'] if 'resolutions' in desc else {})
         templates = load_templates(desc['templates'],
                                    os.path.dirname(filename)) if 'templates' in desc else []
 
         for part in filter(lambda x: pattern_re.search(x['title']) is not None, desc['parts']):
             for package in types:
                 if package.__name__ == part['package']['type']:
-                    models.append((package().generate(materials, templates, part), part['title']))
+                    models.append((package().generate(materials, resolutions, templates, part),
+                                  part['title']))
 
     return models
+
+def load_resolutions(settings, entries):
+    resolutions = settings['resolutions']
+
+    for key in resolutions:
+        if key in entries:
+            resolutions[key] = entries[key]
+
+    return resolutions
 
 def load_templates(entries, path):
     templates = []
@@ -81,8 +113,11 @@ def load_templates(entries, path):
     return templates
 
 def parse_args():
+    config_path = f'{os.path.dirname(os.path.realpath(__file__))}/config.json'
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('-c', dest='config', help='path to a configuration file',
+                        default=config_path)
     parser.add_argument('-d', dest='debug', help='show debug information',
                         default=False, action='store_true')
     parser.add_argument('-f', dest='pattern', help='filter parts by name',
@@ -139,7 +174,8 @@ def write_models(models, library, output, is_vrml, is_debug=False):
             print('Model {:s}:{:s} was exported'.format(group[1], extension))
 
 def main(options):
-    models = load_models(options.files, options.pattern)
+    config = json.load(open(options.config, 'rb'))
+    models = load_models(config, options.files, options.pattern)
 
     if options.output != '':
         write_models(models, options.library, options.output, options.vrml, options.debug)

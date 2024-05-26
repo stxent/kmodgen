@@ -1,31 +1,12 @@
 {
   "materials": {
-    "Band": {
-      "shininess": 0.9,
-      "diffuse": [0.15, 0.15, 0.15],
-      "specular": [0.621, 0.621, 0.621],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Contact": {
-      "shininess": 0.098,
-      "diffuse": [0.83, 0.83, 0.83],
-      "specular": [0.401, 0.401, 0.401],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Glass": {
-      "shininess": 0.9,
-      "diffuse": [0.5, 0.115, 0.071],
-      "specular": [0.621, 0.621, 0.621],
-      "ambient": [0.333, 0.333, 0.333]
-    }
+    "MELF.Band": "RedGlassBand",
+    "MELF.Glass": "RedGlass",
+    "MELF.Lead": "Lead"
   },
   "templates": [
     "smd_tantalum.x3d"
   ],
-  "specs": {
-    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
-    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
-  },
   "parts": [
     {
       "package": {"type": "MELF", "spec": "thick"},

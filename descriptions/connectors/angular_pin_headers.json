@@ -1,119 +1,119 @@
 {
+  "materials": {
+    "AngularPinHeader.Lead": "Gold",
+    "AngularPinHeader.Plastic": "BlackPlastic"
+  },
   "templates": [
     "headers.x3d"
   ],
-  "specs": {
-    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
-    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
-  },
   "parts": [
     {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-2R",
       "pins": {"columns": 2, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-3R",
       "pins": {"columns": 3, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-4R",
       "pins": {"columns": 4, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-5R",
       "pins": {"columns": 5, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-6R",
       "pins": {"columns": 6, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-8R",
       "pins": {"columns": 8, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLS-10R",
       "pins": {"columns": 10, "rows": 1, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-6R",
       "pins": {"columns": 3, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-8R",
       "pins": {"columns": 4, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-10R",
       "pins": {"columns": 5, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-12R",
       "pins": {"columns": 6, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-14R",
       "pins": {"columns": 7, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-16R",
       "pins": {"columns": 8, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-18R",
       "pins": {"columns": 9, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-20R",
       "pins": {"columns": 10, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-22R",
       "pins": {"columns": 11, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-24R",
       "pins": {"columns": 12, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-26R",
       "pins": {"columns": 13, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-28R",
       "pins": {"columns": 14, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-30R",
       "pins": {"columns": 15, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-32R",
       "pins": {"columns": 16, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}
     }, {
-      "package": {"type": "RightAnglePinHeader", "spec": "thick"},
+      "package": {"type": "AngularPinHeader", "spec": "thick"},
       "title": "PLD-40R",
       "pins": {"columns": 20, "rows": 2, "pitch": 2.54, "length": 10.0},
       "pads": {"diameter": 1.6, "drill": 1.0}

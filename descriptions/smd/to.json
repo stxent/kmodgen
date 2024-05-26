@@ -1,21 +1,7 @@
 {
   "materials": {
-    "Body": {
-      "shininess": 0.059,
-      "diffuse": [0.15, 0.15, 0.15],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Pin": {
-      "shininess": 0.098,
-      "diffuse": [0.83, 0.83, 0.83],
-      "specular": [0.401, 0.401, 0.401],
-      "ambient": [0.333, 0.333, 0.333]
-    }
-  },
-  "specs": {
-    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
-    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
+    "DPAK.Plastic": "BlackPlastic",
+    "DPAK.Lead": "Lead"
   },
   "parts": [
     {

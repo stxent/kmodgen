@@ -22,7 +22,7 @@ class GenericModelFilter:
     def __init__(self, alignment=PIVOT_NONE):
         self.alignment = alignment
 
-    def generate(self, _, templates, descriptor):
+    def generate(self, _1, _2, templates, descriptor):
         meshes = lookup(templates, descriptor['title'])
 
         if len(meshes) > 0 and self.alignment != GenericModelFilter.PIVOT_NONE:

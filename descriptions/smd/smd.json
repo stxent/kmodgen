@@ -1,63 +1,15 @@
 {
   "materials": {
-    "Body": {
-      "shininess": 0.059,
-      "diffuse": [0.15, 0.15, 0.15],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Capacitor": {
-      "shininess": 0.059,
-      "diffuse": [0.5, 0.44, 0.26],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Inductor": {
-      "shininess": 0.059,
-      "diffuse": [0.5, 0.5, 0.5],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Ferrite": {
-      "shininess": 0.059,
-      "diffuse": [0.25, 0.25, 0.25],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Mark": {
-      "shininess": 0.059,
-      "diffuse": [0.6, 0.6, 0.6],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "Pin": {
-      "shininess": 0.098,
-      "diffuse": [0.83, 0.83, 0.83],
-      "specular": [0.401, 0.401, 0.401],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "ResistorGlass": {
-      "shininess": 0.059,
-      "diffuse": [0.5, 0.5, 0.5],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    },
-    "ResistorSubstrate": {
-      "shininess": 0.059,
-      "diffuse": [0.5, 0.5, 0.5],
-      "specular": [0.161, 0.161, 0.161],
-      "ambient": [0.333, 0.333, 0.333]
-    }
+    "ChipCapacitor.Ceramic": "BrownCeramic",
+    "ChipCapacitor.Lead": "Lead",
+    "ChipInductor.Ceramic": "BlackCeramic",
+    "ChipInductor.Lead": "Lead"
   },
   "templates": [
     "smd_led.x3d",
     "smd_tantalum.x3d",
     "smd.x3d"
   ],
-  "specs": {
-    "thick": {"thickness": 0.2, "font": 1.0, "gap": 0.25},
-    "thin": {"thickness": 0.16, "font": 0.82, "gap": 0.18}
-  },
   "parts": [
     {
       "package": {"type": "ChipCapacitor", "spec": "thin"},

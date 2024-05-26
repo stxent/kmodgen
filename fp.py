@@ -78,7 +78,11 @@ class Generator:
 
 
 def main():
+    config_path = f'{os.path.dirname(os.path.realpath(__file__))}/config.json'
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('-c', dest='config', help='path to a configuration file',
+                        default=config_path)
     parser.add_argument('-d', dest='debug', help='show debug information',
                         default=False, action='store_true')
     parser.add_argument('-f', dest='pattern', help='filter parts by name',
@@ -98,7 +102,7 @@ def main():
 
     for filename in options.files:
         desc = json.load(open(filename, 'rb'))
-        specs = desc['specs'] if options.specs is None else json.load(open(options.specs, 'rb'))
+        specs = desc['specs'] if 'specs' in desc else json.load(open(options.config, 'rb'))['specs']
         pattern = re.compile(options.pattern, re.S)
         generator = Generator(options.library, options.output, options.legacy, options.vrml)
         generator.generate(specs, desc['parts'], pattern, options.debug)

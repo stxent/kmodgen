@@ -77,7 +77,7 @@ class PinHeader(exporter.Footprint):
         return descriptor['description'] if 'description' in descriptor else None
 
 
-class RightAnglePinHeader(PinHeader):
+class AngularPinHeader(PinHeader):
     def __init__(self, spec, descriptor):
         super().__init__(spec, descriptor)
 
@@ -119,4 +119,4 @@ class ScrewTerminalBlock(PinHeader):
     pass
 
 
-types = [PinHeader, RightAnglePinHeader, BoxHeader, Jumper, ScrewTerminalBlock]
+types = [PinHeader, AngularPinHeader, BoxHeader, Jumper, ScrewTerminalBlock]

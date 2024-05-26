@@ -18,10 +18,6 @@ class SOP:
     BAND_OFFSET = primitives.hmils(0.0)
     BAND_WIDTH = primitives.hmils(0.1)
 
-    CHAMFER_RESOLUTION = 1
-    EDGE_RESOLUTION    = 3
-    LINE_RESOLUTION    = 1
-
     @staticmethod
     def generate_package_pins(pattern, count, size, offset, pitch):
         def make_pin(x, y, angle, number): # pylint: disable=invalid-name
@@ -42,7 +38,7 @@ class SOP:
 
         return pins
 
-    def generate(self, materials, _, descriptor):
+    def generate(self, materials, resolutions, _, descriptor):
         body_size = primitives.hmils(descriptor['body']['size'])
         pin_height = body_size[2] / 2.0 + SOP.BODY_OFFSET_Z
         pin_shape = primitives.hmils(descriptor['pins']['shape'])
@@ -60,14 +56,14 @@ class SOP:
             chamfer=SOP.BODY_CHAMFER,
             slope=math.pi / 4.0,
             slope_height=body_size[2] / 5.0,
-            edge_resolution=SOP.EDGE_RESOLUTION,
-            line_resolution=SOP.LINE_RESOLUTION,
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line'],
             band_size=SOP.BAND_WIDTH,
             band_offset=SOP.BAND_OFFSET
         )
 
-        if 'Body' in materials:
-            body_mesh.appearance().material = materials['Body']
+        if 'SOP.Plastic' in materials:
+            body_mesh.appearance().material = materials['SOP.Plastic']
         body_mesh.apply(body_transform)
         body_mesh.rename('Body')
 
@@ -75,14 +71,14 @@ class SOP:
             pin_shape_size=pin_shape,
             pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
             pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
-            pin_slope=math.pi * (10.0 / 180.0),
+            pin_slope=numpy.deg2rad(10.0),
             end_slope=body_slope,
-            chamfer_resolution=SOP.CHAMFER_RESOLUTION,
-            edge_resolution=SOP.EDGE_RESOLUTION,
-            line_resolution=SOP.LINE_RESOLUTION
+            chamfer_resolution=resolutions['chamfer'],
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
         )
-        if 'Pin' in materials:
-            pin_mesh.appearance().material = materials['Pin']
+        if 'SOP.Lead' in materials:
+            pin_mesh.appearance().material = materials['SOP.Lead']
 
         pins = SOP.generate_package_pins(
             pattern=pin_mesh,

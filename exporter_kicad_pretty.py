@@ -87,7 +87,7 @@ class Converter:
     def circle_to_text(self, circle):
         if circle.part is not None:
             # Arc
-            angle = circle.part[0] * math.pi / 180.0
+            angle = numpy.deg2rad(circle.part[0])
             start = (circle.position[0] + math.cos(angle) * circle.radius,
                      circle.position[1] + math.sin(angle) * circle.radius)
             rotation = abs(circle.part[1] - circle.part[0])

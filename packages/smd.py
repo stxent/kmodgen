@@ -22,12 +22,6 @@ class Chip(generic.GenericModelFilter):
 
 
 class MELF:
-    EDGE_COUNT = 24
-
-    BODY_RESOLUTION    = 3
-    CONTACT_RESOLUTION = 2
-    LINE_RESOLUTION    = 1
-
     def __init__(self):
         pass
 
@@ -135,7 +129,7 @@ class MELF:
 
         return [left_contact, right_contact]
 
-    def generate(self, materials, _, descriptor):
+    def generate(self, materials, resolutions, _, descriptor):
         length = primitives.hmils(descriptor['body']['length'] + descriptor['pins']['length'] * 2.0)
         body_curvature = primitives.hmils(descriptor['body']['radius'] / 5.0)
         body_radius = primitives.hmils(descriptor['body']['radius'])
@@ -161,12 +155,13 @@ class MELF:
             body_radius=body_radius,
             band_length=band_length,
             band_offset=band_offset,
-            line_resolution=MELF.LINE_RESOLUTION
+            line_resolution=resolutions['line']
         )
         if len(band_curves) > 0:
             band_slices = []
             for entry in band_curves:
-                band_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
+                band_slices.append(curves.rotate(curve=entry, axis=axis,
+                                                 edges=resolutions['circle']))
             band_meshes = []
             for entry in band_slices:
                 band_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
@@ -176,8 +171,8 @@ class MELF:
             for mesh in band_meshes:
                 joined_mesh.append(mesh)
             joined_mesh.optimize()
-            if 'Band' in materials:
-                joined_mesh.appearance().material = materials['Band']
+            if 'MELF.Band' in materials:
+                joined_mesh.appearance().material = materials['MELF.Band']
             meshes.append(joined_mesh)
 
         # Glass body
@@ -187,12 +182,12 @@ class MELF:
             contact_length=contact_length,
             band_length=band_length,
             band_offset=band_offset,
-            edge_resolution=MELF.BODY_RESOLUTION,
-            line_resolution=MELF.LINE_RESOLUTION
+            edge_resolution=resolutions['body'],
+            line_resolution=resolutions['line']
         )
         body_slices = []
         for entry in body_curves:
-            body_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
+            body_slices.append(curves.rotate(curve=entry, axis=axis, edges=resolutions['circle']))
         body_meshes = []
         for entry in body_slices:
             body_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
@@ -202,8 +197,8 @@ class MELF:
         for mesh in body_meshes:
             joined_mesh.append(mesh)
         joined_mesh.optimize()
-        if 'Glass' in materials:
-            joined_mesh.appearance().material = materials['Glass']
+        if 'MELF.Glass' in materials:
+            joined_mesh.appearance().material = materials['MELF.Glass']
         meshes.append(joined_mesh)
 
         # Contacts
@@ -214,11 +209,13 @@ class MELF:
             contact_curvature=contact_curvature,
             contact_length=contact_length,
             contact_radius=contact_radius,
-            edge_resolution=MELF.CONTACT_RESOLUTION,
-            line_resolution=MELF.LINE_RESOLUTION)
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
+        )
         contact_slices = []
         for entry in contact_curves:
-            contact_slices.append(curves.rotate(curve=entry, axis=axis, edges=MELF.EDGE_COUNT))
+            contact_slices.append(curves.rotate(curve=entry, axis=axis,
+                                                edges=resolutions['circle']))
         contact_meshes = []
         for entry in contact_slices:
             contact_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
@@ -228,8 +225,8 @@ class MELF:
         for mesh in contact_meshes:
             joined_mesh.append(mesh)
         joined_mesh.optimize()
-        if 'Contact' in materials:
-            joined_mesh.appearance().material = materials['Contact']
+        if 'MELF.Lead' in materials:
+            joined_mesh.appearance().material = materials['MELF.Lead']
         meshes.append(joined_mesh)
 
         for mesh in meshes:
@@ -245,10 +242,6 @@ class SOT:
 
     MARK_MARGIN = primitives.hmils(0.4)
     MARK_RADIUS = primitives.hmils(0.2)
-
-    CHAMFER_RESOLUTION = 1
-    EDGE_RESOLUTION    = 3
-    LINE_RESOLUTION    = 1
 
 
     class PinDesc:
@@ -281,7 +274,6 @@ class SOT:
         def make_pattern(cls, slope, descriptor):
             if slope is None or descriptor is None:
                 raise Exception()
-
             return cls(None, slope, descriptor)
 
 
@@ -289,7 +281,7 @@ class SOT:
         pass
 
     @staticmethod
-    def generate_body(materials, descriptor):
+    def generate_body(materials, resolutions, descriptor):
         try:
             band_offset = primitives.hmils(descriptor['band']['offset'])
         except KeyError:
@@ -301,12 +293,12 @@ class SOT:
             flat_pin = False
 
         try:
-            mark_radius = SOT.MARK_RADIUS if primitives.hmils(descriptor['mark']['dot']) else None
+            dot_radius = SOT.MARK_RADIUS if primitives.hmils(descriptor['mark']['dot']) else None
         except KeyError:
-            mark_radius = None
+            dot_radius = None
 
         body_size = primitives.hmils(descriptor['body']['size'])
-        mark_offset = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
+        dot_offset = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
 
         body_offset_z = body_size[2] / 2.0
         if not flat_pin:
@@ -315,46 +307,46 @@ class SOT:
         body_mesh = primitives.make_box(
             size=body_size,
             chamfer=SOT.BODY_CHAMFER,
-            edge_resolution=SOT.EDGE_RESOLUTION,
-            line_resolution=SOT.LINE_RESOLUTION,
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line'],
             band_size=SOT.BAND_WIDTH,
             band_offset=band_offset,
-            mark_radius=mark_radius,
-            mark_offset=mark_offset,
-            mark_resolution=SOT.EDGE_RESOLUTION * 8
+            mark_radius=dot_radius,
+            mark_offset=dot_offset,
+            mark_resolution=resolutions['circle']
         )
-        if mark_radius is not None:
-            mark_mesh = geometry.Circle(mark_radius, SOT.EDGE_RESOLUTION * 8)
-            mark_mesh.translate(numpy.array([*mark_offset, body_offset_z + body_size[2] / 2.0]))
+        if dot_radius is not None:
+            dot_mesh = geometry.Circle(dot_radius, resolutions['circle'])
+            dot_mesh.translate(numpy.array([*dot_offset, body_offset_z + body_size[2] / 2.0]))
         else:
-            mark_mesh = None
+            dot_mesh = None
 
         meshes = []
 
-        if 'Body' in materials:
-            body_mesh.appearance().material = materials['Body']
+        if 'SOT.Plastic' in materials:
+            body_mesh.appearance().material = materials['SOT.Plastic']
         body_mesh.translate(numpy.array([0.0, 0.0, body_offset_z]))
         body_mesh.rename('Body')
         meshes.append(body_mesh)
 
-        if mark_mesh is not None:
-            if 'Mark' in materials:
-                mark_mesh.appearance().material = materials['Mark']
-            mark_mesh.rename('Mark')
-            meshes.append(mark_mesh)
+        if dot_mesh is not None:
+            if 'SOT.Dot' in materials:
+                dot_mesh.appearance().material = materials['SOT.Dot']
+            dot_mesh.rename('Dot')
+            meshes.append(dot_mesh)
 
         return meshes
 
     @staticmethod
-    def generate_pins(materials, descriptor):
+    def generate_pins(materials, resolutions, descriptor):
         try:
             flat_pin = descriptor['pins']['flat']
         except KeyError:
             flat_pin = False
         try:
-            pin_slope = descriptor['pins']['slope'] * math.pi / 180.0
+            pin_slope = numpy.deg2rad(descriptor['pins']['slope'])
         except KeyError:
-            pin_slope = math.pi * (10.0 / 180.0)
+            pin_slope = numpy.deg2rad(10.0)
 
         try:
             band_offset = primitives.hmils(descriptor['band']['offset'])
@@ -399,14 +391,14 @@ class SOT:
                 pin_length=group.length,
                 pin_slope=pin_slope,
                 end_slope=body_slope,
-                chamfer_resolution=SOT.CHAMFER_RESOLUTION,
-                edge_resolution=SOT.EDGE_RESOLUTION,
-                line_resolution=SOT.LINE_RESOLUTION,
+                chamfer_resolution=resolutions['chamfer'],
+                edge_resolution=resolutions['edge'],
+                line_resolution=resolutions['line'],
                 flat=flat_pin
             )
 
-            if 'Pin' in materials:
-                mesh.appearance().material = materials['Pin']
+            if 'SOT.Lead' in materials:
+                mesh.appearance().material = materials['SOT.Lead']
 
             pin_group_meshes[hash(group)] = mesh
 
@@ -415,7 +407,8 @@ class SOT:
             size=body_size[0:2] + band_width_proj * 2.0,
             pitch=primitives.hmils(descriptor['pins']['pitch']),
             patterns=pin_group_meshes,
-            entries=pin_entries)
+            entries=pin_entries
+        )
 
     @staticmethod
     def generate_pin_rows(count, size, pitch, patterns, entries):
@@ -449,8 +442,9 @@ class SOT:
 
         return meshes
 
-    def generate(self, materials, _, descriptor):
-        return SOT.generate_body(materials, descriptor) + SOT.generate_pins(materials, descriptor)
+    def generate(self, materials, resolutions, _, descriptor):
+        return SOT.generate_body(materials, resolutions, descriptor) \
+            + SOT.generate_pins(materials, resolutions, descriptor)
 
 
 types = [

@@ -190,7 +190,7 @@ class RadialCapacitor:
 
     @staticmethod
     def build_capacitor_curve(radius, height, curvature, band_offset, cap_radius, cap_depth,
-                              chamfer, edge_details=3, band_details=4):
+                              chamfer, edge_details, band_details):
 
         if cap_radius is not None and cap_depth is not None and chamfer is None:
             raise Exception()
@@ -277,7 +277,7 @@ class RadialCapacitor:
         return curve
 
     @staticmethod
-    def build_pin_curve(radius, height, curvature, edge_details=2):
+    def build_pin_curve(radius, height, curvature, edge_details):
         weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
@@ -355,18 +355,19 @@ class RadialCapacitor:
 
     @staticmethod
     def mat(materials, name):
-        if name in materials:
-            return materials[name]
+        if f'RadialCapacitor.{name}' in materials:
+            return materials[f'RadialCapacitor.{name}']
 
         result = model.Material()
         result.color.ident = name
         return result
 
-    def generate(self, materials, _, descriptor):
+    def generate(self, materials, resolutions, _, descriptor):
         title = RadialCapacitor.demangle(descriptor['title'])
 
-        body_details = descriptor['body']['details'] if 'details' in descriptor['body'] else 3
-        body_edges = descriptor['body']['edges'] if 'edges' in descriptor['body'] else 24
+        body_details = resolutions['body']
+        body_edges = resolutions['circle']
+        pin_edges = resolutions['wire']
         cap_sections = descriptor['caps']['sections'] if 'sections' in descriptor['caps'] else 1
 
         meshes = []
@@ -379,7 +380,8 @@ class RadialCapacitor:
             primitives.hmils(descriptor['caps']['depth']),
             primitives.hmils(descriptor['caps']['chamfer']),
             body_details,
-            body_details + 1)
+            body_details + 1
+        )
 
         body_mesh = RadialCapacitor.build_capacitor_body(
             body_curve,
@@ -392,17 +394,20 @@ class RadialCapacitor:
             primitives.hmils(descriptor['caps']['diameter']
                              + descriptor['body']['curvature']) / 2.0,
             primitives.hmils(descriptor['body']['curvature']),
-            primitives.hmils(descriptor['body']['curvature']) / 2.0)
+            primitives.hmils(descriptor['body']['curvature']) / 2.0
+        )
         meshes.extend(body_mesh)
 
         pin_curve = RadialCapacitor.build_pin_curve(
             primitives.hmils(descriptor['pins']['diameter']) / 2.0,
             primitives.hmils(descriptor['pins']['height']),
-            primitives.hmils(descriptor['pins']['curvature']))
+            primitives.hmils(descriptor['pins']['curvature']),
+            resolutions['edge']
+        )
 
-        pin_mesh = RadialCapacitor.build_capacitor_pin(pin_curve, descriptor['pins']['edges'])
-        pin_mesh.appearance().material = self.mat(materials, 'Pin')
+        pin_mesh = RadialCapacitor.build_capacitor_pin(pin_curve, pin_edges)
         pin_mesh.ident = title + 'Pin'
+        pin_mesh.appearance().material = self.mat(materials, 'Lead')
 
         spacing = primitives.hmils(descriptor['pins']['spacing']) / 2.0
         pos_pin = model.Mesh(parent=pin_mesh, name=pin_mesh.ident + 'Pos')
