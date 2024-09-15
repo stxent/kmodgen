@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # qfp.py
@@ -50,7 +50,8 @@ class QFP(exporter.Footprint):
         silkscreen.append(exporter.Label(self.title, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal and vertical offsets to first pins on each side
-        first_pin_offset = (numpy.asfarray(self.count) - 3.0) * self.pitch / 2.0 + self.side_pitch
+        first_pin_offset = numpy.asarray(self.count, dtype=numpy.float32) - 3.0
+        first_pin_offset = first_pin_offset * self.pitch / 2.0 + self.side_pitch
 
         # Body outline
         outline_margin = (self.margin - self.gap) * 2.0 - self.thickness

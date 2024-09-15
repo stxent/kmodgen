@@ -23,30 +23,13 @@ from wrlconv import x3d_import
 from packages import *
 
 def load_materials(settings, entries):
-    def decode(desc, title):
-        material = model.Material()
-        material.color.ident = title.capitalize()
-        if 'shininess' in desc:
-            material.color.shininess = float(desc['shininess'])
-        if 'transparency' in desc:
-            material.color.transparency = float(desc['transparency'])
-        if 'diffuse' in desc:
-            material.color.diffuse = numpy.array(desc['diffuse'])
-        if 'specular' in desc:
-            material.color.specular = numpy.array(desc['specular'])
-        if 'emissive' in desc:
-            material.color.emissive = numpy.array(desc['emissive'])
-        if 'ambient' in desc:
-            material.color.ambient = numpy.array(desc['ambient'])
-        return material
-
     materials = {}
 
     # First pass to load complete descriptions
     for key in settings['materials']:
         entry = settings['materials'][key]
         if not isinstance(entry, str):
-            materials.update({key: decode(entry, key)})
+            materials.update({key: model.Material(entry, key.capitalize())})
     # Second pass to process aliases
     for key in settings['materials']:
         entry = settings['materials'][key]
@@ -57,7 +40,7 @@ def load_materials(settings, entries):
     for key in entries:
         entry = entries[key]
         if not isinstance(entry, str):
-            materials.update({key: decode(entry, key)})
+            materials.update({key: model.Material(entry, key.capitalize())})
     # Second pass to process aliases
     for key in entries:
         entry = entries[key]

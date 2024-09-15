@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # qfn.py
@@ -61,7 +61,7 @@ class QFN(exporter.Footprint):
         silkscreen.append(exporter.Label(self.title, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal and vertical offsets to first pins on each side
-        first_pin_offset = (numpy.asfarray(self.count) - 1.0) * self.pitch / 2.0
+        first_pin_offset = (numpy.asarray(self.count, dtype=numpy.float32) - 1.0) * self.pitch / 2.0
 
         # Body outline
         top_corner_from_body = self.body_size[0:2] / 2.0

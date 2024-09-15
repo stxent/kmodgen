@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # conncetors.py
@@ -18,10 +18,12 @@ class FFC(exporter.Footprint):
         try:
             self.body_size = numpy.array([
                 descriptor['body']['width'],
-                descriptor['body']['height']])
+                descriptor['body']['height']
+            ])
             self.body_offset = numpy.array([
                 0.0,
-                descriptor['pads']['offset']])
+                descriptor['pads']['offset']
+            ])
         except KeyError:
             self.body_size = None
             self.body_offset = None
@@ -29,17 +31,20 @@ class FFC(exporter.Footprint):
         try:
             self.mount_pad_size = numpy.array([
                 descriptor['pads']['mountWidth'],
-                descriptor['pads']['mountHeight']])
+                descriptor['pads']['mountHeight']
+            ])
             self.mount_pad_spacing = numpy.array([
                 descriptor['mount']['horizontalSpacing'],
-                descriptor['mount']['verticalSpacing']])
+                descriptor['mount']['verticalSpacing']
+            ])
         except KeyError:
             self.mount_pad_size = None
             self.mount_pad_spacing = None
 
         self.signal_pad_size = numpy.array([
             descriptor['pads']['width'],
-            descriptor['pads']['height']])
+            descriptor['pads']['height']
+        ])
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
 
@@ -491,4 +496,5 @@ types = [
     EastRisingHB,
     EastRisingHT,
     Molex52271,
-    Molex53261]
+    Molex53261
+]

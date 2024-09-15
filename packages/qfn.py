@@ -361,7 +361,7 @@ class QFN:
                       edge_resolution=3, line_resolution=1, mark_resolution=24):
         chamfer_width = chamfer / math.sqrt(2.0)
         resolution = count * 2 + 3
-        first_pin_offset = (numpy.asfarray(count) - 1.0) * pin_pitch / 2.0
+        first_pin_offset = (numpy.asarray(count, dtype=numpy.float32) - 1.0) * pin_pitch / 2.0
 
         plane_size = size - 2.0 * chamfer_width
         band = numpy.array([

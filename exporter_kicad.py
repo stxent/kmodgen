@@ -7,10 +7,12 @@
 
 import datetime
 import math
+import numpy
 import re
 import time
 
 import exporter
+
 
 class Converter:
     def __init__(self, model_path, library_path=None, library_name=None, model_type='wrl'):

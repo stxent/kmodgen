@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # headers.py
@@ -32,10 +32,12 @@ class PinHeader(exporter.Footprint):
         except KeyError:
             self.pad_offset = 0.0
 
-        self.body_center = numpy.asfarray(self.count - 1) * [1, -1] * (self.pitch / 2.0)
+        self.body_center = numpy.asarray(self.count - 1, dtype=numpy.float32)
+        self.body_center = self.body_center * [1.0, -1.0] * (self.pitch / 2.0)
         self.pad_size = numpy.array([
             descriptor['pads']['diameter'],
-            descriptor['pads']['diameter']])
+            descriptor['pads']['diameter']
+        ])
         self.pad_drill = descriptor['pads']['drill']
 
     def generate(self):

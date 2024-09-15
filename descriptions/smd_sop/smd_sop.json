@@ -75,6 +75,13 @@
       "pins": {"shape": [0.425, 0.275], "length": 1.4, "count": 28, "pitch": 1.27},
       "source": "NXP specifications for reflow soldering"
     }, {
+      "package": {"type": "SOP", "subtype": "SSOP", "spec": "thick"},
+      "title": "SSOP-16_6.2x5.3mm_P0.65mm",
+      "body": {"size": [6.2, 5.3, 1.86]},
+      "pads": {"size": [0.42, 1.6], "margin": 0.0},
+      "pins": {"shape": [0.315, 0.145], "length": 1.24, "count": 16, "pitch": 0.65},
+      "source": "Maxim specifications"
+    }, {
       "package": {"type": "SOP", "subtype": "TSSOP", "spec": "thick"},
       "title": "TSSOP-8_4.4x3.0mm_P0.65mm",
       "body": {"size": [3.0, 4.4, 0.875]},
@@ -124,6 +131,13 @@
       "pads": {"size": [0.3, 1.6], "margin": -0.2},
       "pins": {"shape": [0.245, 0.15], "length": 1.0, "count": 20, "pitch": 0.65},
       "source": "TI specifications"
+    }, {
+      "package": {"type": "SOP", "subtype": "TSOP", "spec": "thick"},
+      "title": "TSOP-54_10.2x22.2mm_P0.8mm",
+      "body": {"size": [22.2, 10.2, 1.2]},
+      "pads": {"size": [0.5, 1.2], "margin": 0.0},
+      "pins": {"shape": [0.35, 0.165], "length": 0.84, "count": 54, "pitch": 0.8},
+      "source": "Infineon specifications"
     }
   ]
 }

@@ -1,7 +1,7 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.12)
 project(kmodgen NONE)
 
 # Build options
@@ -9,6 +9,11 @@ set(DESC_DIR "${PROJECT_SOURCE_DIR}/descriptions" CACHE STRING "Path to the desc
 set(SPEC_FILE "" CACHE STRING "Path to a custom silkscreen specification file.")
 option(USE_PRETTY "Use S-Expression format for footprints." ON)
 option(USE_X3D "Use X3D format for package models." ON)
+
+find_package(Python3 COMPONENTS Interpreter)
+if(NOT Python3_FOUND)
+    message(FATAL_ERROR "Python3 not found")
+endif()
 
 # Build flags for footprint and model generators
 set(OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib)
@@ -34,7 +39,7 @@ endif()
 
 # List available footprint types
 execute_process(
-        COMMAND ${PROJECT_SOURCE_DIR}/list_parts.py -f
+        COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/list_parts.py -f
         RESULT_VARIABLE FOOTPRINT_LIST_RESULT
         OUTPUT_VARIABLE FOOTPRINT_LIST
 )
@@ -45,7 +50,7 @@ string(REGEX REPLACE "\n" ";" FOOTPRINT_LIST "${FOOTPRINT_LIST}")
 
 # List available model types
 execute_process(
-        COMMAND ${PROJECT_SOURCE_DIR}/list_parts.py -m
+        COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/list_parts.py -m
         RESULT_VARIABLE MODEL_LIST_RESULT
         OUTPUT_VARIABLE MODEL_LIST
 )
@@ -74,7 +79,7 @@ foreach(DESC_PATH ${DESC_LIST})
     get_filename_component(DESC_NAME ${DESC_FILE} NAME_WE)
 
     execute_process(
-            COMMAND ${PROJECT_SOURCE_DIR}/list_parts.py ${DESC_PATH}
+            COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/list_parts.py ${DESC_PATH}
             RESULT_VARIABLE PART_LIST_RESULT
             OUTPUT_VARIABLE PART_LIST
     )
@@ -101,7 +106,7 @@ foreach(DESC_PATH ${DESC_LIST})
             set_source_files_properties(${FP_PATH} PROPERTIES GENERATED true)
             add_custom_command(
                     OUTPUT ${FP_PATH}
-                    COMMAND ${PROJECT_SOURCE_DIR}/fp.py ${FLAGS_FP} ${DESC_PATH} -l ${DESC_LIB} -f ${PART_NAME}
+                    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/fp.py ${FLAGS_FP} ${DESC_PATH} -l ${DESC_LIB} -f ${PART_NAME}
                     DEPENDS ${DESC_PATH}
             )
             list(APPEND FP_LIST ${FP_PATH})
@@ -137,7 +142,7 @@ foreach(DESC_PATH ${DESC_LIST})
             set_source_files_properties(${MOD_PATH} PROPERTIES GENERATED true)
             add_custom_command(
                     OUTPUT ${MOD_PATH}
-                    COMMAND ${PROJECT_SOURCE_DIR}/mod.py ${FLAGS_MOD} ${DESC_PATH} -l ${DESC_LIB} -f ${PART_NAME}
+                    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/mod.py ${FLAGS_MOD} ${DESC_PATH} -l ${DESC_LIB} -f ${PART_NAME}
                     DEPENDS ${DESC_PATH}
             )
         endif()
@@ -158,7 +163,7 @@ if(NOT USE_PRETTY)
             set_source_files_properties(${FP_LIB_PATH} PROPERTIES GENERATED true)
             add_custom_command(
                     OUTPUT ${FP_LIB_PATH}
-                    COMMAND ${PROJECT_SOURCE_DIR}/archive_parts.py -l ${FP_LIB_PATH} ${${LIB_NAME}_SOURCES}
+                    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/archive_parts.py -l ${FP_LIB_PATH} ${${LIB_NAME}_SOURCES}
                     DEPENDS ${${LIB_NAME}_SOURCES}
             )
             add_custom_target(${LIB_NAME}_fp ALL SOURCES ${FP_LIB_PATH})

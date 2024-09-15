@@ -114,7 +114,7 @@ class QFP:
 
     @staticmethod
     def calc_mark_offset(count, pitch):
-        first_pin_offset = (numpy.asfarray(count) - 1.0) * pitch / 2.0
+        first_pin_offset = (numpy.asarray(count, dtype=numpy.float32) - 1.0) * pitch / 2.0
         return -first_pin_offset + pitch / 2.0
 
 
