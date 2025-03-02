@@ -3,7 +3,10 @@
     "ChipCapacitor.Ceramic": "BrownCeramic",
     "ChipCapacitor.Lead": "Lead",
     "ChipInductor.Ceramic": "BlackCeramic",
-    "ChipInductor.Lead": "Lead"
+    "ChipInductor.Lead": "Lead",
+    "ChipResistor.Glass": "BlackGlass",
+    "ChipResistor.Lead": "Lead",
+    "ChipResistor.Substrate": "WhiteCeramic"
   },
   "templates": [
     "smd_led.x3d",
@@ -449,66 +452,66 @@
       "mark": {"bar": true, "dot": true, "wrap": true},
       "source": "Foryard specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thin"},
+      "package": {"type": "ChipResistor", "spec": "thin"},
       "title": "R0402",
-      "body": {"size": [1.0, 0.5]},
-      "pins": {},
+      "body": {"size": [1.0, 0.5, 0.35]},
+      "pins": {"width": 0.25},
       "pads": {"pitch": 0.5, "size": [0.5, 0.6]},
       "mark": {"vertical": true, "wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thin"},
+      "package": {"type": "ChipResistor", "spec": "thin"},
       "title": "R0603",
-      "body": {"size": [1.6, 0.8]},
-      "pins": {},
+      "body": {"size": [1.6, 0.8, 0.45]},
+      "pins": {"width": 0.3},
       "pads": {"pitch": 0.9, "size": [0.6, 0.9]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thin"},
+      "package": {"type": "ChipResistor", "spec": "thin"},
       "title": "R0805",
-      "body": {"size": [2.0, 1.2]},
-      "pins": {},
+      "body": {"size": [2.0, 1.2, 0.45]},
+      "pins": {"width": 0.3},
       "pads": {"pitch": 1.2, "size": [0.7, 1.4]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "ChipResistor", "spec": "thick"},
       "title": "R1206",
-      "body": {"size": [3.2, 1.6]},
-      "pins": {},
+      "body": {"size": [3.2, 1.6, 0.55]},
+      "pins": {"width": 0.45},
       "pads": {"pitch": 2.0, "size": [0.9, 1.8]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "ChipResistor", "spec": "thick"},
       "title": "R1210",
-      "body": {"size": [3.2, 2.5]},
-      "pins": {},
+      "body": {"size": [3.2, 2.5, 0.55]},
+      "pins": {"width": 0.45},
       "pads": {"pitch": 2.0, "size": [0.9, 2.7]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "ChipResistor", "spec": "thick"},
       "title": "R1218",
-      "body": {"size": [3.0, 4.5]},
-      "pins": {},
+      "body": {"size": [3.0, 4.5, 0.55]},
+      "pins": {"width": 0.45},
       "pads": {"pitch": 2.0, "size": [0.9, 4.8]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "ChipResistor", "spec": "thick"},
       "title": "R2010",
-      "body": {"size": [5.0, 2.5]},
-      "pins": {},
+      "body": {"size": [5.0, 2.5, 0.6]},
+      "pins": {"width": 0.6},
       "pads": {"pitch": 3.8, "size": [0.9, 2.7]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "ChipResistor", "spec": "thick"},
       "title": "R2512",
-      "body": {"size": [6.4, 3.2]},
-      "pins": {},
+      "body": {"size": [6.4, 3.2, 0.6]},
+      "pins": {"width": 0.6},
       "pads": {"pitch": 4.8, "size": [1.35, 3.3]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"

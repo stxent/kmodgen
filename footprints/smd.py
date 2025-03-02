@@ -482,6 +482,10 @@ class ChipInductor(Chip):
     pass
 
 
+class ChipResistor(Chip):
+    pass
+
+
 types = [
     Chip,
     ChipArray,
@@ -491,5 +495,6 @@ types = [
     CDRH,
     ChipCapacitor,
     ChipFerrite,
-    ChipInductor
+    ChipInductor,
+    ChipResistor
 ]
