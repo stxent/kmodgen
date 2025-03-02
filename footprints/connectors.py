@@ -469,6 +469,83 @@ class USB:
         return self.impl.generate()
 
 
+class XT(exporter.Footprint):
+    class MountHole(exporter.AbstractPad):
+        def __init__(self, number, position, diameter):
+            super().__init__(number, (diameter, diameter), position, diameter,
+                             exporter.AbstractPad.STYLE_CIRCLE, exporter.AbstractPad.FAMILY_NPTH,
+                             exporter.AbstractPad.LAYERS_NONE, exporter.AbstractPad.LAYERS_NONE)
+
+
+    def __init__(self, spec, descriptor):
+        super().__init__(name=descriptor['title'],
+                         description=XT.describe(descriptor), spec=spec)
+
+        self.body_size = numpy.array(descriptor['body']['size'])
+        self.body_offset_from_pin = numpy.array(descriptor['body']['offset'])
+
+        self.pin_count = descriptor['pins']['count']
+        self.pin_pitch = descriptor['pins']['pitch']
+        self.pad_size = numpy.array([
+            descriptor['pads']['diameter'],
+            descriptor['pads']['diameter']
+        ])
+        self.pad_hole = descriptor['pins']['drill']
+        self.pad_offset = (self.pin_count - 1) * self.pin_pitch / 2.0
+
+        self.mount_diameter = descriptor['mount']['drill']
+        self.mount_pitch = descriptor['mount']['pitch']
+        self.mount_offset_from_pin = descriptor['mount']['offset']
+        self.mount_circle_width = descriptor['mount']['width']
+
+    def generate(self):
+        silkscreen, pads = [], []
+        silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
+
+        # Mounting holes
+        mount_holes = [
+            numpy.array([self.mount_pitch / 2.0, self.mount_offset_from_pin]),
+            numpy.array([-self.mount_pitch / 2.0, self.mount_offset_from_pin])
+        ]
+        pads.append(XT.MountHole('', mount_holes[0], self.mount_diameter))
+        pads.append(XT.MountHole('', mount_holes[1], self.mount_diameter))
+
+        # Signal pads
+        for i in range(0, self.pin_count):
+            offset = self.pad_offset - self.pin_pitch * i
+            style = exporter.AbstractPad.STYLE_RECT if i == 0 else exporter.AbstractPad.STYLE_CIRCLE
+            pads.append(exporter.HolePad(i + 1, self.pad_size, (offset, 0.0), self.pad_hole, style))
+
+        # Body outline
+        body_offset = numpy.array([0.0, self.body_size[1] / 2.0 + self.body_offset_from_pin])
+        top_corner = self.body_size[0:2] / 2.0
+
+        polyline = []
+        polyline.append(top_corner * numpy.array([-1.0, +1.0]) + body_offset)
+        polyline.append(top_corner * numpy.array([+1.0, +1.0]) + body_offset)
+        polyline.append(numpy.array([top_corner[0], mount_holes[0][1] + self.mount_diameter]))
+        polyline.append(mount_holes[0] + numpy.array([self.mount_diameter, self.mount_diameter]))
+        polyline.append(mount_holes[0] + numpy.array([self.mount_diameter, -self.mount_diameter]))
+        polyline.append(numpy.array([top_corner[0], mount_holes[0][1] - self.mount_diameter]))
+        polyline.append(top_corner * numpy.array([+1.0, -1.0]) + body_offset)
+        polyline.append(top_corner * numpy.array([-1.0, -1.0]) + body_offset)
+        polyline.append(numpy.array([-top_corner[0], mount_holes[1][1] - self.mount_diameter]))
+        polyline.append(mount_holes[1] + numpy.array([-self.mount_diameter, -self.mount_diameter]))
+        polyline.append(mount_holes[1] + numpy.array([-self.mount_diameter, self.mount_diameter]))
+        polyline.append(numpy.array([-top_corner[0], mount_holes[1][1] + self.mount_diameter]))
+        polyline.append(top_corner * numpy.array([-1.0, +1.0]) + body_offset)
+
+        for i in range(0, len(polyline) - 1):
+            line = exporter.Line(polyline[i], polyline[i + 1], self.thickness)
+            silkscreen.append(line)
+
+        return silkscreen + pads
+
+    @staticmethod
+    def describe(descriptor):
+        return descriptor['description'] if 'description' in descriptor else ''
+
+
 # Aliases
 
 class EastRisingHB(FFC):
@@ -493,6 +570,7 @@ types = [
     MemoryCard,
     SMA,
     USB,
+    XT,
     EastRisingHB,
     EastRisingHT,
     Molex52271,

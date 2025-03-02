@@ -1,0 +1,13 @@
+{
+  "parts": [
+    {
+      "package": {"type": "ESP32", "spec": "thick"},
+      "title": "ESP32-WROOM-32E",
+      "body": {"size": [18.0, 25.5]},
+      "cutout": {"height": 6.19},
+      "heatsink": {"size": [3.7, 3.7], "offset": [-1.5, 2.45]},
+      "pins": {"hor_count": 10, "ver_count": 14, "pitch": 1.27},
+      "pads": {"hor_offset": [8.75, -5.26], "ver_offset": 12.5, "size": [0.9, 1.5]}
+    }
+  ]
+}
