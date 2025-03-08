@@ -6,12 +6,13 @@
     "ChipInductor.Lead": "Lead",
     "ChipResistor.Glass": "BlackGlass",
     "ChipResistor.Lead": "Lead",
-    "ChipResistor.Substrate": "WhiteCeramic"
+    "ChipResistor.Substrate": "WhiteCeramic",
+    "ChipShunt.Alloy": "Bronze",
+    "ChipShunt.Lead": "Lead"
   },
   "templates": [
     "smd_led.x3d",
-    "smd_tantalum.x3d",
-    "smd.x3d"
+    "smd_tantalum.x3d"
   ],
   "parts": [
     {
@@ -515,6 +516,14 @@
       "pads": {"pitch": 4.8, "size": [1.35, 3.3]},
       "mark": {"wrap": true},
       "source": "Yageo specifications for reflow soldering"
+    }, {
+      "package": {"type": "ChipShunt", "spec": "thick"},
+      "title": "R2512-MA",
+      "body": {"size": [6.5, 3.25, 0.66], "clearance": 0.35, "thickness": 0.31},
+      "pins": {"width": 0.9},
+      "pads": {"pitch": 3.8, "size": [1.8, 3.4]},
+      "mark": {"wrap": true},
+      "source": "Stackpole Electronics specifications for metal element shunt resistors"
     }, {
       "package": {"type": "ChipArray", "spec": "thin"},
       "title": "R0603X4",

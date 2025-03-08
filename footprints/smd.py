@@ -486,6 +486,10 @@ class ChipResistor(Chip):
     pass
 
 
+class ChipShunt(Chip):
+    pass
+
+
 types = [
     Chip,
     ChipArray,
@@ -496,5 +500,6 @@ types = [
     ChipCapacitor,
     ChipFerrite,
     ChipInductor,
-    ChipResistor
+    ChipResistor,
+    ChipShunt
 ]

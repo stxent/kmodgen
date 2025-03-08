@@ -647,24 +647,199 @@ class ChipResistor:
         return meshes
 
 
+class ChipShunt(ChipResistor):
+    DEFAULT_CHAMFER = primitives.hmils(0.1)
+
+    def __init__(self):
+        self.material = 'ChipShunt'
+
+    @staticmethod
+    def make_resistor_element_curve(length, thickness, clearance, lead_length, line_resolution):
+        parts = []
+
+        slope = numpy.deg2rad(30.0)
+        slope_length = clearance / math.sin(slope)
+
+        x_offset = length / 2.0 - (lead_length + slope_length + thickness)
+        z_offset = thickness / 2.0 + clearance
+
+        parts.append(curves.Line(
+            (-x_offset, 0.0, z_offset),
+            ( x_offset, 0.0, z_offset),
+            line_resolution
+        ))
+        return parts
+
+    @staticmethod
+    def make_resistor_contact_curve(length, thickness, clearance, lead_length, chamfer,
+                                    slope_resolution, edge_resolution, line_resolution):
+        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        parts = []
+
+        x_offset, z_offset = length / 2.0, thickness / 2.0
+        slope = numpy.deg2rad(30.0)
+        slope_length = clearance / math.sin(slope)
+
+        parts.append(curves.Line(
+            (-x_offset, 0.0, z_offset),
+            (-x_offset + chamfer, 0.0, z_offset),
+            edge_resolution
+        ))
+
+        parts.append(curves.Line(
+            (-x_offset + chamfer, 0.0, z_offset),
+            (-x_offset + lead_length, 0.0, z_offset),
+            line_resolution
+        ))
+
+        parts.append(curves.Bezier(
+            (-x_offset + lead_length, 0.0, z_offset),
+            (thickness * weight, 0.0, 0.0),
+            (-x_offset + lead_length + slope_length, 0.0, z_offset + clearance),
+            (-thickness * weight, 0.0, 0.0),
+            slope_resolution
+        ))
+
+        parts.append(curves.Line(
+            (-x_offset + lead_length + slope_length, 0.0, z_offset + clearance),
+            (-x_offset + lead_length + slope_length + thickness, 0.0, z_offset + clearance),
+            line_resolution
+        ))
+
+        return parts
+
+    @staticmethod
+    def make_resistor_contact(length, width, thickness, clearance, lead_length, chamfer,
+                              slope_resolution, edge_resolution, line_resolution):
+        roundness = chamfer / math.sqrt(2.0)
+
+        pin_path = ChipShunt.make_resistor_contact_curve(length, thickness, clearance,
+            lead_length, chamfer, slope_resolution, edge_resolution, line_resolution)
+
+        points = []
+        [points.extend(element.tessellate()) for element in pin_path]
+        path_points = curves.optimize(points)
+
+        pin_shape_size = [thickness, width]
+        pin_shape = primitives.make_rounded_rect(pin_shape_size, roundness, edge_resolution)
+
+        points = []
+        [points.extend(element.tessellate()) for element in pin_shape]
+        shape_transform = model.Transform(matrix=model.rpy_to_matrix((0.0, 0.0, math.pi)))
+        shape_points = [shape_transform.apply(point) for point in points]
+
+        def mesh_scaling_func(number):
+            chamfer_step = None
+            slope_step = None
+
+            if number < edge_resolution:
+                chamfer_step = number
+
+            if chamfer_step is not None:
+                t_seg = math.sin((math.pi / 2.0) * (chamfer_step / (edge_resolution - 1)))
+                t_offset = chamfer * (1.0 - t_seg)
+
+                t_scale = numpy.array([
+                    (pin_shape_size[0] - t_offset) / pin_shape_size[0],
+                    (pin_shape_size[1] - t_offset * 2.0) / pin_shape_size[1]
+                ])
+                return numpy.array([*t_scale, 1.0])
+
+            return numpy.ones(3)
+
+        pin_slices = curves.loft(path_points, shape_points, scaling=mesh_scaling_func)
+        pin_mesh = primitives.build_loft_mesh(pin_slices, True, False)
+
+        return pin_mesh
+
+    @staticmethod
+    def make_resistor_element(length, width, thickness, clearance, lead_length, chamfer,
+                              edge_resolution, line_resolution):
+        roundness = chamfer / math.sqrt(2.0)
+
+        pin_path = ChipShunt.make_resistor_element_curve(length, thickness, clearance,
+            lead_length, line_resolution)
+
+        points = []
+        [points.extend(element.tessellate()) for element in pin_path]
+        path_points = curves.optimize(points)
+
+        pin_shape_size = [thickness, width]
+        pin_shape = primitives.make_rounded_rect(pin_shape_size, roundness, edge_resolution)
+
+        points = []
+        [points.extend(element.tessellate()) for element in pin_shape]
+        shape_transform = model.Transform(matrix=model.rpy_to_matrix((0.0, 0.0, math.pi)))
+        shape_points = [shape_transform.apply(point) for point in points]
+
+        pin_slices = curves.loft(path_points, shape_points)
+        pin_mesh = primitives.build_loft_mesh(pin_slices, False, False)
+
+        return pin_mesh
+
+    def generate(self, materials, resolutions, _, descriptor):
+        body_size = primitives.hmils(numpy.array(descriptor['body']['size']))
+        clearance=primitives.hmils(descriptor['body']['clearance'])
+        thickness=primitives.hmils(descriptor['body']['thickness'])
+        pin_width = primitives.hmils(descriptor['pins']['width'])
+        chamfer_from_size = body_size[2] * 0.05
+
+        meshes = []
+
+        mesh_contact0 = ChipShunt.make_resistor_contact(
+            length=body_size[0],
+            width=body_size[1],
+            thickness=thickness,
+            clearance=clearance,
+            lead_length=pin_width,
+            chamfer=chamfer_from_size,
+            slope_resolution=resolutions['body'],
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
+        )
+        if f'{self.material}.Lead' in materials:
+            mesh_contact0.appearance().material = materials[f'{self.material}.Lead']
+        mesh_contact1 = copy.deepcopy(mesh_contact0)
+        mesh_contact1.rotate((0.0, 0.0, 1.0), math.pi)
+        meshes.append(mesh_contact0)
+        meshes.append(mesh_contact1)
+
+        mesh_body = ChipShunt.make_resistor_element(
+            length=body_size[0],
+            width=body_size[1],
+            thickness=thickness,
+            clearance=clearance,
+            lead_length=pin_width,
+            chamfer=chamfer_from_size,
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
+        )
+        if f'{self.material}.Alloy' in materials:
+            mesh_body.appearance().material = materials[f'{self.material}.Alloy']
+        meshes.append(mesh_body)
+
+        return meshes
+
+
 class ChipCapacitor(ChipBase):
     def __init__(self):
-        super().__init__('Capacitor')
+        super().__init__('ChipCapacitor')
 
 
 class ChipFerrite(ChipBase):
     def __init__(self):
-        super().__init__('Ferrite')
+        super().__init__('ChipInductor')
 
 
-class ChipInductor(ChipBase): # XXX
+class ChipInductor(ChipBase):
     def __init__(self):
-        super().__init__('Ferrite')
+        super().__init__('ChipInductor')
 
 
 types = [
     ChipCapacitor,
     ChipFerrite,
     ChipInductor,
-    ChipResistor
+    ChipResistor,
+    ChipShunt
 ]
