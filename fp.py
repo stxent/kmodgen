@@ -54,7 +54,10 @@ class Generator:
             lib_dir_path = os.path.join(self.library_path, self.library_name + dir_extension)
             make_file_path = lambda entry: os.path.join(lib_dir_path, entry.name + file_extension)
             if not os.path.exists(lib_dir_path):
-                os.makedirs(lib_dir_path)
+                try:
+                    os.makedirs(lib_dir_path)
+                except FileExistsError:
+                    pass
 
         for footprint in footprints:
             footprint_data = self.converter.generate(footprint)
