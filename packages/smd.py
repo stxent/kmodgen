@@ -248,7 +248,7 @@ class SOT:
         def __init__(self, pattern, slope=None, descriptor=None):
             if pattern is None and descriptor is None:
                 # Not enough information
-                raise Exception()
+                raise ValueError()
 
             if pattern is not None:
                 self.length = pattern.length
@@ -273,7 +273,7 @@ class SOT:
         @classmethod
         def make_pattern(cls, slope, descriptor):
             if slope is None or descriptor is None:
-                raise Exception()
+                raise ValueError()
             return cls(None, slope, descriptor)
 
 

@@ -11,15 +11,8 @@ import json
 import os
 import re
 import sys
-import numpy
 
-from wrlconv import model
-from wrlconv import vrml_export
-from wrlconv import vrml_export_kicad
-from wrlconv import vrml_import
-from wrlconv import x3d_export
-from wrlconv import x3d_import
-
+from wrlconv import model, vrml_export, vrml_export_kicad, vrml_import, x3d_export, x3d_import
 from packages import *
 
 def load_materials(settings, entries):
@@ -154,7 +147,7 @@ def write_models(models, library, output, is_vrml, is_debug=False):
     for group in models:
         export_func(group[0], os.path.join(library_path, group[1] + extension))
         if is_debug:
-            print('Model {:s}:{:s} was exported'.format(group[1], extension))
+            print(f'Model {group[1]}:{extension} was exported')
 
 def main(options):
     config = json.load(open(options.config, 'rb'))

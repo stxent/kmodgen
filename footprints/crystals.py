@@ -28,20 +28,22 @@ class CrystalSMD(exporter.Footprint):
         axis_offsets = self.pitch / 2.0
 
         if len(self.mapping) == 2:
-            pads.append(exporter.SmdPad(self.mapping[0], self.pad_size, (-axis_offsets[0], 0.0)))
-            pads.append(exporter.SmdPad(self.mapping[1], self.pad_size, (axis_offsets[0], 0.0)))
+            pads.append(exporter.SmdPad(self.mapping[0], self.pad_size,
+                                        numpy.array([-axis_offsets[0], 0.0])))
+            pads.append(exporter.SmdPad(self.mapping[1], self.pad_size,
+                                        numpy.array([axis_offsets[0], 0.0])))
         elif len(self.mapping) == 4:
             pads.append(exporter.SmdPad(self.mapping[0], self.pad_size,
-                (-axis_offsets[0], axis_offsets[1])))
+                                        numpy.array([-axis_offsets[0], axis_offsets[1]])))
             pads.append(exporter.SmdPad(self.mapping[1], self.pad_size,
-                (axis_offsets[0], axis_offsets[1])))
+                                        numpy.array([axis_offsets[0], axis_offsets[1]])))
             pads.append(exporter.SmdPad(self.mapping[2], self.pad_size,
-                (axis_offsets[0], -axis_offsets[1])))
+                                        numpy.array([axis_offsets[0], -axis_offsets[1]])))
             pads.append(exporter.SmdPad(self.mapping[3], self.pad_size,
-                (-axis_offsets[0], -axis_offsets[1])))
+                                        numpy.array([-axis_offsets[0], -axis_offsets[1]])))
         else:
             # Unsupported pin configuration
-            raise Exception()
+            raise ValueError()
 
         # First pin mark
         dot_mark_position = numpy.array([
@@ -88,20 +90,20 @@ class CrystalTH(exporter.Footprint):
         first_pin_offset = -float(self.count - 1) * self.pitch / 2.0
         for i in range(0, self.count):
             x_offset = first_pin_offset + self.pitch * i
-            objects.append(exporter.HolePad(i + 1, self.pad_size, (x_offset, 0.0),
+            objects.append(exporter.HolePad(str(i + 1), self.pad_size, (x_offset, 0.0),
                 self.inner_diameter))
 
         # Body outline
         arc_radius = self.body_size[1] / 2.0
         arc_offset = self.body_size[0] / 2.0 - arc_radius
-        objects.append(exporter.Circle((-arc_offset, 0.0), arc_radius, self.thickness,
-            (90.0, -90.0)))
-        objects.append(exporter.Circle((arc_offset, 0.0), arc_radius, self.thickness,
-            (-90.0, 90.0)))
-        objects.append(exporter.Line((-arc_offset, arc_radius), (arc_offset, arc_radius),
-            self.thickness))
-        objects.append(exporter.Line((-arc_offset, -arc_radius), (arc_offset, -arc_radius),
-            self.thickness))
+        objects.append(exporter.Circle(numpy.array([-arc_offset, 0.0]), arc_radius.item(),
+                                       self.thickness, (90.0, -90.0)))
+        objects.append(exporter.Circle(numpy.array([arc_offset, 0.0]), arc_radius.item(),
+                                       self.thickness, (-90.0, 90.0)))
+        objects.append(exporter.Line(numpy.array([-arc_offset, arc_radius]),
+                                     numpy.array([arc_offset, arc_radius]), self.thickness))
+        objects.append(exporter.Line(numpy.array([-arc_offset, -arc_radius]),
+                                     numpy.array([arc_offset, -arc_radius]), self.thickness))
 
         return objects
 

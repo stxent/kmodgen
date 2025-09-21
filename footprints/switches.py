@@ -24,18 +24,19 @@ class Button(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # Pads
-        pads.append(exporter.SmdPad(1, self.pad_size, self.pitch / 2.0 * [-1, +1]))
-        pads.append(exporter.SmdPad(2, self.pad_size, self.pitch / 2.0 * [+1, +1]))
-        pads.append(exporter.SmdPad(3, self.pad_size, self.pitch / 2.0 * [+1, -1]))
-        pads.append(exporter.SmdPad(4, self.pad_size, self.pitch / 2.0 * [-1, -1]))
+        pads.append(exporter.SmdPad('1', self.pad_size, self.pitch / 2.0 * [-1, +1]))
+        pads.append(exporter.SmdPad('2', self.pad_size, self.pitch / 2.0 * [+1, +1]))
+        pads.append(exporter.SmdPad('3', self.pad_size, self.pitch / 2.0 * [+1, -1]))
+        pads.append(exporter.SmdPad('4', self.pad_size, self.pitch / 2.0 * [-1, -1]))
 
         if self.shielding:
-            pads.append(exporter.SmdPad(5, self.pad_size, self.pitch / 2.0 * [1, 0]))
+            pads.append(exporter.SmdPad('5', self.pad_size, self.pitch / 2.0 * [1, 0]))
 
         # Body outline
         bounding_box = numpy.array([
             0.0,
-            self.pitch[1] + self.pad_size[1] + self.gap * 2.0 + self.thickness])
+            self.pitch[1] + self.pad_size[1] + self.gap * 2.0 + self.thickness
+        ])
         outline_size = numpy.maximum(self.body_size, bounding_box)
         outline = exporter.Rect(outline_size / 2.0, -outline_size / 2.0, self.thickness)
 
@@ -44,7 +45,8 @@ class Button(exporter.Footprint):
             silkscreen.extend(process_func(line))
 
         # Central circle
-        silkscreen.append(exporter.Circle((0.0, 0.0), min(self.body_size) / 4.0, self.thickness))
+        circle_radius = min(self.body_size) / 4.0
+        silkscreen.append(exporter.Circle((0.0, 0.0), circle_radius.item(), self.thickness))
 
         return silkscreen + pads
 
@@ -78,8 +80,10 @@ class DIP(exporter.Footprint):
         for i in range(0, columns):
             x_offset = i * self.pitch[0] - first_pin_offset
             y_offset = self.pitch[1] / 2.0
-            pads.append(exporter.SmdPad(i + 1, self.pad_size, (x_offset, y_offset)))
-            pads.append(exporter.SmdPad(self.count - i, self.pad_size, (x_offset, -y_offset)))
+            pads.append(exporter.SmdPad(str(i + 1), self.pad_size,
+                                        numpy.array([x_offset, y_offset])))
+            pads.append(exporter.SmdPad(str(self.count - i), self.pad_size,
+                                        numpy.array([x_offset, -y_offset])))
 
         objects.extend(pads)
         return objects

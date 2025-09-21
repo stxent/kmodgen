@@ -51,8 +51,7 @@ class PinHeader(exporter.Footprint):
         outline_size = numpy.maximum(self.body_size,
                                      self.body_size + self.pad_size - outline_margin)
         objects.append(exporter.Rect(outline_size / 2.0 + self.body_center,
-            -outline_size / 2.0 + self.body_center,
-            self.thickness))
+                                     -outline_size / 2.0 + self.body_center, self.thickness))
 
         return objects
 
@@ -69,8 +68,8 @@ class PinHeader(exporter.Footprint):
 
                 offset = numpy.array([float(x_offset), -float(y_offset)]) * self.pitch
                 offset += numpy.array([0.0, self.pad_offset])
-                objects.append(exporter.HolePad(number, self.pad_size, offset, self.pad_drill,
-                    style))
+                objects.append(exporter.HolePad(str(number), self.pad_size, offset, self.pad_drill,
+                                                style))
 
         return objects
 
@@ -99,10 +98,16 @@ class AngularPinHeader(PinHeader):
         line_offset_y = numpy.maximum(self.pitch / 2.0,
                                       self.gap + (self.pad_size[1] + self.thickness) / 2.0)
 
-        objects.append(exporter.Rect(outline_size / 2.0 + self.body_center - edge_margin,
-            -outline_size / 2.0 + self.body_center, self.thickness))
-        objects.append(exporter.Line((line_offset_x + self.body_center[0], line_offset_y),
-            (-line_offset_x + self.body_center[0], line_offset_y), self.thickness))
+        objects.append(exporter.Rect(
+            outline_size / 2.0 + self.body_center - edge_margin,
+            -outline_size / 2.0 + self.body_center,
+            self.thickness
+        ))
+        objects.append(exporter.Line(
+            numpy.array([line_offset_x + self.body_center[0], line_offset_y]),
+            numpy.array([-line_offset_x + self.body_center[0], line_offset_y]),
+            self.thickness
+        ))
 
         return objects
 

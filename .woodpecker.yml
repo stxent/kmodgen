@@ -19,7 +19,7 @@ steps:
     pull: true
     commands:
       - cd project
-      - pytest
+      - pytest -v
 
   build:
     image: ${DOCKER_PREFIX}/python-kicad
@@ -27,9 +27,25 @@ steps:
     commands:
       - cd project
       - mkdir -p output
-      - cmake . -B build_default -DUSE_PRETTY=ON -DUSE_X3D=OFF -DCMAKE_INSTALL_PREFIX=output
+      - cmake . -B build_default -DCMAKE_INSTALL_PREFIX=output
       - make -C build_default -j `nproc`
       - make -C build_default install
+
+  build_test_v1:
+    image: ${DOCKER_PREFIX}/python-kicad
+    pull: true
+    commands:
+      - cd project
+      - cmake . -B build_test_v1 -DUSE_SEXPRESSION_OLD=ON -DUSE_X3D=ON
+      - make -C build_test_v1 -j `nproc`
+
+  build_test_v2:
+    image: ${DOCKER_PREFIX}/python-kicad
+    pull: true
+    commands:
+      - cd project
+      - cmake . -B build_test_v2 -DUSE_SEXPRESSION=OFF
+      - make -C build_test_v2 -j `nproc`
 
   deploy:
     image: ${DOCKER_PREFIX}/network-utils

@@ -69,7 +69,7 @@ class FFC(exporter.Footprint):
         # Signal pads
         for i in range(0, self.count):
             x_offset = (total_pads_width / 2.0 - i * self.pitch) * self.inversion
-            pads.append(exporter.SmdPad(i + 1, self.signal_pad_size, (x_offset, 0.0)))
+            pads.append(exporter.SmdPad(str(i + 1), self.signal_pad_size, (x_offset, 0.0)))
 
         # Mounting pads
         if self.mount_pad_size is not None:
@@ -120,10 +120,10 @@ class IpxFootprint(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # Pads
-        pads.append(exporter.SmdPad(1, self.core_size, self.core_offset))
-        pads.append(exporter.SmdPad(2, self.side_size,
+        pads.append(exporter.SmdPad('1', self.core_size, self.core_offset))
+        pads.append(exporter.SmdPad('2', self.side_size,
             self.side_offset * numpy.array([+1.0, +1.0])))
-        pads.append(exporter.SmdPad(2, self.side_size,
+        pads.append(exporter.SmdPad('2', self.side_size,
             self.side_offset * numpy.array([+1.0, -1.0])))
 
         # Body outline
@@ -198,7 +198,8 @@ class MemoryCard(exporter.Footprint):
         for i in range(0, self.signal_pad_count):
             x_offset = self.signal_pad_offset[0] + self.signal_pad_pitch * i
             y_offset = self.signal_pad_offset[1]
-            pads.append(exporter.SmdPad(i + 1, self.signal_pad_size, (x_offset, y_offset)))
+            pads.append(exporter.SmdPad(str(i + 1), self.signal_pad_size,
+                                        numpy.array([x_offset, y_offset])))
 
         # Body outline
         top_corner = self.body_size / 2.0
@@ -235,7 +236,7 @@ class AngularSmaFootprint(exporter.Footprint):
     @staticmethod
     def make_poly_line(points, thickness, layer):
         if len(points) < 2:
-            raise Exception()
+            raise ValueError()
         lines = []
         for seg in range(0, len(points) - 1):
             lines.append(exporter.Line(points[seg], points[seg + 1], thickness, layer))
@@ -246,15 +247,15 @@ class AngularSmaFootprint(exporter.Footprint):
         objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # Pads
-        objects.append(AngularSmaFootprint.SidePad(1, self.inner_size, (0.0, 0.0),
+        objects.append(AngularSmaFootprint.SidePad('1', self.inner_size, (0.0, 0.0),
             exporter.AbstractPad.LAYERS_FRONT))
-        objects.append(AngularSmaFootprint.SidePad(2, self.outer_size, (self.space, 0.0),
+        objects.append(AngularSmaFootprint.SidePad('2', self.outer_size, (self.space, 0.0),
             exporter.AbstractPad.LAYERS_FRONT))
-        objects.append(AngularSmaFootprint.SidePad(2, self.outer_size, (-self.space, 0.0),
+        objects.append(AngularSmaFootprint.SidePad('2', self.outer_size, (-self.space, 0.0),
             exporter.AbstractPad.LAYERS_FRONT))
-        objects.append(AngularSmaFootprint.SidePad(2, self.outer_size, (self.space, 0.0),
+        objects.append(AngularSmaFootprint.SidePad('2', self.outer_size, (self.space, 0.0),
             exporter.AbstractPad.LAYERS_BACK))
-        objects.append(AngularSmaFootprint.SidePad(2, self.outer_size, (-self.space, 0.0),
+        objects.append(AngularSmaFootprint.SidePad('2', self.outer_size, (-self.space, 0.0),
             exporter.AbstractPad.LAYERS_BACK))
 
         # Body outline
@@ -263,10 +264,11 @@ class AngularSmaFootprint(exporter.Footprint):
         y_top_outline = -(self.inner_size[1] + self.thickness) / 2.0 - self.gap
 
         outline_points = [
-            (x_outline, y_bottom_outline),
-            (x_outline, y_top_outline),
-            (-x_outline, y_top_outline),
-            (-x_outline, y_bottom_outline)]
+            numpy.array([x_outline, y_bottom_outline]),
+            numpy.array([x_outline, y_top_outline]),
+            numpy.array([-x_outline, y_top_outline]),
+            numpy.array([-x_outline, y_bottom_outline])
+        ]
         objects.extend(AngularSmaFootprint.make_poly_line(outline_points, self.thickness,
             exporter.Layer.SILK_FRONT))
         objects.extend(AngularSmaFootprint.make_poly_line(outline_points, self.thickness,
@@ -285,7 +287,7 @@ class SMA:
             self.impl = AngularSmaFootprint(spec=spec, descriptor=descriptor, space=2.65,
                                             inner_size=(1.5, 4.6), outer_size=(2.0, 4.6))
         else:
-            raise Exception() # TODO Add more variants
+            raise ValueError() # TODO Add more variants
 
         self.name = self.impl.name
         self.description = self.impl.description
@@ -332,7 +334,7 @@ class MiniUSB(exporter.Footprint):
         # Pads
         for i in range(0, 5):
             y_offset = float(i - 2) * self.pad_pitch
-            pads.append(exporter.SmdPad(i + 1, self.pad_size, (self.pad_offset, y_offset)))
+            pads.append(exporter.SmdPad(str(i + 1), self.pad_size, (self.pad_offset, y_offset)))
 
         pads.append(exporter.SmdPad('', self.mount_pad_size,
             (self.back_mount_pad, self.mount_pad_offset)))
@@ -459,7 +461,7 @@ class USB:
         elif descriptor['body']['size'] == 'mini' and descriptor['body']['type'] == 'b':
             self.impl = MiniUSB(spec, descriptor)
         else:
-            raise Exception() # TODO Add more variants
+            raise ValueError() # TODO Add more variants
 
         self.name = self.impl.name
         self.description = self.impl.description
@@ -514,7 +516,7 @@ class XT(exporter.Footprint):
         for i in range(0, self.pin_count):
             offset = self.pad_offset - self.pin_pitch * i
             style = exporter.AbstractPad.STYLE_RECT if i == 0 else exporter.AbstractPad.STYLE_CIRCLE
-            pads.append(exporter.HolePad(i + 1, self.pad_size, (offset, 0.0), self.pad_hole, style))
+            pads.append(exporter.HolePad(str(i + 1), self.pad_size, (offset, 0.0), self.pad_hole, style))
 
         # Body outline
         body_offset = numpy.array([0.0, self.body_size[1] / 2.0 + self.body_offset_from_pin])

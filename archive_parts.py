@@ -17,11 +17,13 @@ def main():
 
     parts = []
     for filename in options.files:
-        parts.append(open(filename, 'rb').read().decode('utf-8'))
+        with open(filename, 'rb') as file:
+            parts.append(file.read().decode('utf-8'))
     library_data = exporter_kicad.Converter.archive(parts)
 
     if options.library is not None:
-        open(options.library, 'wb').write(library_data.encode('utf-8'))
+        with open(options.library, 'wb') as file:
+            file.write(library_data.encode('utf-8'))
     else:
         print(library_data)
 

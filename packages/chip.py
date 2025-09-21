@@ -37,7 +37,7 @@ class ChipBase:
             edge_resolution=edge_resolution, line_resolution=line_resolution)
         leads.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
         body = primitives.make_chip_body(size=ceramic_size, chamfer=case_chamfer,
-            edge_resolution=edge_resolution, line_resolution=line_resolution)
+            edge_resolution=edge_resolution)
         body.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
 
         return [body, leads]

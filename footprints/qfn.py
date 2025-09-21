@@ -90,28 +90,31 @@ class QFN(exporter.Footprint):
         pad = lambda x: self.pad(False)
         for i in range(0, self.count[0]):
             x_offset = i * self.pitch - first_pin_offset[0]
-            pads.append(exporter.SmdPad(1 + i, pad(i), (x_offset, y_offset)))
-            pads.append(exporter.SmdPad(1 + i + self.count[0] + self.count[1], pad(i),
-                (-x_offset, -y_offset)))
+            pads.append(exporter.SmdPad(str(1 + i), pad(i),
+                                        numpy.array([x_offset, y_offset])))
+            pads.append(exporter.SmdPad(str(1 + i + self.count[0] + self.count[1]), pad(i),
+                                        numpy.array([-x_offset, -y_offset])))
 
         # Vertical pads
         x_offset = self.body_size[0] / 2.0 + self.margin
         pad = lambda x: self.pad(True)
         for j in range(0, self.count[1]):
             y_offset = j * self.pitch - first_pin_offset[1]
-            pads.append(exporter.SmdPad(1 + j + self.count[0], pad(j), (x_offset, -y_offset)))
-            pads.append(exporter.SmdPad(1 + j + 2 * self.count[0] + self.count[1], pad(j),
-                (-x_offset, y_offset)))
+            pads.append(exporter.SmdPad(str(1 + j + self.count[0]), pad(j),
+                                        numpy.array([x_offset, -y_offset])))
+            pads.append(exporter.SmdPad(str(1 + j + 2 * self.count[0] + self.count[1]), pad(j),
+                                        numpy.array([-x_offset, y_offset])))
 
         # Central pad
         if self.heatsink_size is not None:
-            pads.append(exporter.SmdPad(sum(self.count) * 2 + 1, self.heatsink_size, (0.0, 0.0)))
+            pads.append(exporter.SmdPad(str(sum(self.count) * 2 + 1), self.heatsink_size,
+                                        (0.0, 0.0)))
 
         process_func = lambda x: exporter.collide_line(x, pads, self.thickness, self.gap)
         for line in silkscreen_raw:
             silkscreen.extend(process_func(line))
 
-        pads.sort(key=lambda x: x.number)
+        pads.sort(key=lambda x: int(x.text))
         return silkscreen + pads
 
     @staticmethod

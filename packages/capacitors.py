@@ -20,7 +20,7 @@ class RadialCapacitor:
     @staticmethod
     def build_bumped_cap(slices, beginning, sections, section_width, cap_radius, body_radius):
         if sections < 2:
-            raise Exception()
+            raise ValueError()
 
         if beginning:
             vertices = [slices[i][0] for i in range(0, len(slices))]
@@ -193,7 +193,7 @@ class RadialCapacitor:
                               chamfer, edge_details, band_details):
 
         if cap_radius is not None and cap_depth is not None and chamfer is None:
-            raise Exception()
+            raise ValueError()
 
         weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []

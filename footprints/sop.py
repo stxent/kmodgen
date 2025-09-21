@@ -72,24 +72,26 @@ class SOP(exporter.Footprint):
         # Inner first pin mark
         tri_mark_offset = 1.0
         tri_mark_points = [
-            (-top_corner[0], top_corner[1] - tri_mark_offset),
-            (-top_corner[0], top_corner[1]),
-            (-top_corner[0] + tri_mark_offset, top_corner[1])]
+            numpy.array([-top_corner[0], top_corner[1] - tri_mark_offset]),
+            numpy.array([-top_corner[0], top_corner[1]]),
+            numpy.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
+        ]
         silkscreen.append(exporter.Poly(tri_mark_points, self.thickness, exporter.Layer.SILK_FRONT))
 
         # Horizontal pads
         y_offset = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
         for i in range(0, self.rows):
             x_offset = self.spacing(i, self.rows) - first_pin_offset
-            pads.append(exporter.SmdPad(i + 1, self.pad(i, self.rows), (x_offset, y_offset)))
-            pads.append(exporter.SmdPad(i + 1 + self.rows, self.pad(i, self.rows),
-                (-x_offset, -y_offset)))
+            pads.append(exporter.SmdPad(str(i + 1), self.pad(i, self.rows),
+                                        numpy.array([x_offset, y_offset])))
+            pads.append(exporter.SmdPad(str(i + 1 + self.rows), self.pad(i, self.rows),
+                                        numpy.array([-x_offset, -y_offset])))
 
         # Central pad
         if self.heatsink_size is not None:
-            pads.append(exporter.SmdPad(self.rows * 2 + 1, self.heatsink_size, (0.0, 0.0)))
+            pads.append(exporter.SmdPad(str(self.rows * 2 + 1), self.heatsink_size, (0.0, 0.0)))
 
-        pads.sort(key=lambda x: x.number)
+        pads.sort(key=lambda x: int(x.text))
         return silkscreen + pads
 
     @staticmethod

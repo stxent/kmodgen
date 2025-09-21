@@ -55,13 +55,13 @@ def projection(a, b): # pylint: disable=invalid-name
 
 def round1f(value):
     if int(value * 10) == int(value) * 10:
-        return '{:d}'.format(int(value))
-    return '{:.1f}'.format(value)
+        return f'{int(value):d}'
+    return f'{value:.1f}'
 
 def round2f(value):
     if int(value * 100) == int(value * 10) * 10:
-        return '{:.1f}'.format(value)
-    return '{:.2f}'.format(value)
+        return f'{value:.1f}'
+    return f'{value:.2f}'
 
 def reorder_points(edge, origin):
     return [edge[1], edge[0]] if edge[1] == origin else edge
@@ -511,13 +511,13 @@ def append_hollow_cap(mesh, outer, inner, normal):
         ])
         o_index += 1
 
-    for i in range(0, len(inner)):
-        mesh.geo_vertices.append(inner[i])
+    for vertex in inner.values():
+        mesh.geo_vertices.append(vertex)
     mesh.geo_polygons.extend(polygons)
 
 def append_solid_cap(mesh, vertices, origin=None, normal=None):
     if origin is None and normal is None:
-        raise Exception()
+        raise ValueError()
 
     mean = numpy.zeros(3)
     for vertex in vertices.values():
@@ -539,9 +539,9 @@ def append_solid_cap(mesh, vertices, origin=None, normal=None):
 
 def make_body_cap(corners, radius, offset, edges, resolution=(1, 1)):
     if edges % 4 != 0:
-        raise Exception()
+        raise ValueError()
     if len(corners) != 4:
-        raise Exception()
+        raise ValueError()
 
     mesh = model.Mesh()
     mean = sum(corners) / len(corners)
@@ -728,11 +728,11 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
 
         if len(face_details) == 3:
             if face_details[0] != face_details[1] or face_details[1] != face_details[2]:
-                raise Exception()
+                raise ValueError()
             face_resolution = face_details[0]
         else:
             if face_details[0] != face_details[2] or face_details[1] != face_details[3]:
-                raise Exception()
+                raise ValueError()
             face_resolution = (face_details[0], face_details[1])
 
         meshes.append(functor(face_vertices, face_resolution))
@@ -857,7 +857,7 @@ def make_box(size, chamfer, edge_resolution, line_resolution, band_size=None, ba
                              line_resolution=default_resolution)
     return body
 
-def make_chip_body(size, chamfer, edge_resolution, line_resolution):
+def make_chip_body(size, chamfer, edge_resolution):
     x_half = size[0] / 2.0
     y, z = size[1], size[2] # pylint: disable=invalid-name
 
@@ -1008,7 +1008,7 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
                      band_offset=0.0, mark_radius=None, mark_offset=numpy.zeros(2),
                      mark_resolution=24):
     if band_size is None:
-        raise Exception() # TODO
+        raise ValueError() # TODO
 
     # pylint: disable=invalid-name
     x, y, z = numpy.array(size) / 2.0
@@ -1120,7 +1120,7 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
 def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_resolution,
                     band_size=None, band_offset=0.0):
     if band_size is None:
-        raise Exception() # TODO
+        raise ValueError() # TODO
 
     x, y, z = numpy.array(size) / 2.0 # pylint: disable=invalid-name
     z_mean = z - slope_height
@@ -1226,8 +1226,8 @@ def make_rounded_rect_half(size, rotate, roundness, segments):
 
     return shape
 
-def make_flat_pin_curve(pin_shape_size, pin_length, pin_offset, chamfer, roundness,
-                        chamfer_resolution=2, line_resolution=1):
+def make_flat_pin_curve(pin_shape_size, pin_length, pin_offset, chamfer, chamfer_resolution=2,
+                        line_resolution=1):
     curve = []
 
     y_pos = [pin_shape_size[1] / 2.0] * 3
@@ -1377,7 +1377,6 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
         length_correction = (pin_height - pin_shape_size[1] / 2.0) * end_slope
         path = make_flat_pin_curve(pin_shape_size=pin_shape_size, pin_length=pin_length,
                                    pin_offset=length_correction, chamfer=chamfer,
-                                   roundness=curve_roundness,
                                    chamfer_resolution=chamfer_resolution,
                                    line_resolution=line_resolution)
     else:

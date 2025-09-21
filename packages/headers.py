@@ -16,7 +16,7 @@ def lookup(mesh_list, mesh_name):
     for entry in mesh_list:
         if re.search(mesh_name, entry.ident, re.S) is not None:
             return entry
-    raise Exception()
+    raise KeyError()
 
 
 class PinHeader:
@@ -64,7 +64,7 @@ class PinHeader:
         pitch254 = math.isclose(descriptor['pins']['pitch'], 2.54, rel_tol=0.001)
 
         if not pitch200 and not pitch254:
-            raise Exception()
+            raise ValueError()
 
         if descriptor['pins']['rows'] == 1:
             if pitch200:
@@ -77,7 +77,7 @@ class PinHeader:
             elif pitch254:
                 object_names = ['PatPLDBody', 'PatPLDEdgeBody', 'PatPLDPin']
         else:
-            raise Exception()
+            raise ValueError()
 
         reference_object = [lookup(templates, name).parent for name in object_names]
 
@@ -105,7 +105,7 @@ class Jumper(PinHeader):
         elif pitch254:
             body = lookup(templates, 'PatPLSJumper').parent
         else:
-            raise Exception()
+            raise ValueError()
 
         return objects + [body]
 
@@ -126,7 +126,7 @@ class AngularPinHeader(PinHeader):
             transform.translate([0.0, -0.557, 0.5])
             transform.rotate([1.0, 0.0, 0.0], math.pi / 2.0)
         else:
-            raise Exception()
+            raise ValueError()
 
         if descriptor['pins']['rows'] == 1:
             if pitch200:
@@ -139,7 +139,7 @@ class AngularPinHeader(PinHeader):
             elif pitch254:
                 object_names = ['PatPLDBody', 'PatPLDEdgeBody', 'PatPLDRPin']
         else:
-            raise Exception()
+            raise ValueError()
 
         reference_object = [lookup(templates, name).parent for name in object_names]
 
@@ -181,9 +181,9 @@ class BoxHeader:
 
     def generate(self, materials, _, templates, descriptor):
         if descriptor['pins']['rows'] != 2:
-            raise Exception()
+            raise ValueError()
         if not math.isclose(descriptor['pins']['pitch'], 2.54, rel_tol=0.001):
-            raise Exception()
+            raise ValueError()
 
         bh_body = lookup(templates, 'PatBHBody').parent
         bh_pin = lookup(templates, 'PatBHPin').parent

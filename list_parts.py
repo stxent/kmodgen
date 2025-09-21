@@ -14,10 +14,10 @@ def list_entries(files):
     for filename in files:
         description = json.loads(open(filename, 'rb').read())
         if 'parts' not in description:
-            raise Exception()
+            raise KeyError()
         for part in description['parts']:
             if 'title' not in part or 'package' not in part or 'type' not in part['package']:
-                raise Exception()
+                raise KeyError()
             print(part['package']['type'] + ' ' + part['title'])
 
 def list_footprints():
@@ -55,9 +55,9 @@ if __name__ == '__main__':
     parsed_options = parse_args()
 
     if parsed_options.models and parsed_options.footprints:
-        raise Exception()
+        raise ValueError()
     if (parsed_options.models or parsed_options.footprints) and len(parsed_options.files) > 0:
-        raise Exception()
+        raise ValueError()
 
     if parsed_options.footprints:
         from footprints import *

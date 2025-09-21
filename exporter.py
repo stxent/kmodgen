@@ -6,10 +6,36 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import functools
+import hashlib
 import math
+import numpy
+
+def make_vector(data, size=None):
+    if data is None:
+        return None
+
+    if isinstance(data, (tuple, list)):
+        if any(not isinstance(axis, float) for axis in data):
+            raise ValueError()
+    elif not isinstance(data, numpy.ndarray):
+        raise TypeError()
+
+    if isinstance(size, tuple):
+        if len(data) not in size:
+            return IndexError()
+    elif size is not None:
+        if len(data) != size:
+            return IndexError()
+
+    if isinstance(data, numpy.ndarray):
+        return tuple(data.tolist())
+    if isinstance(data, list):
+        return tuple(data)
+    return data
 
 
 class Layer:
+    # Default layer numbers
     CU_BACK     = 0
     CU_FRONT    = 15
     ADHES_BACK  = 16
@@ -26,50 +52,173 @@ class Layer:
     ECO2        = 27
     EDGES       = 28
 
+    # Layers unused by old KiCad
+    FAB         = 32
+
+    def __init__(self, mask=0):
+        self.mask = mask
+
+    def __add__(self, other):
+        result = Layer()
+        if isinstance(other, Layer):
+            result.mask = self.mask | other.mask
+        else:
+            result.mask = self.mask | Layer.to_mask(other).mask
+        return result
+
+    def layers(self):
+        layers = [getattr(Layer, attribute) for attribute in dir(Layer) \
+            if not attribute.startswith('__') and isinstance(getattr(Layer, attribute), int)]
+        result = []
+
+        for i in layers:
+            if self.mask & (1 << i):
+                result.append(i)
+        if len(result) == 0:
+            return None
+        if len(result) == 1:
+            return result[0]
+        return tuple(result)
+
+    @staticmethod
+    def to_mask(layer):
+        result = 0
+
+        if isinstance(layer, int):
+            result = 1 << layer
+        else:
+            for i in layer:
+                result |= 1 << i
+
+        return Layer(result)
+
 
 class Circle:
     def __init__(self, position, radius, thickness, part=None, layer=Layer.SILK_FRONT):
-        self.position = position
+        if not isinstance(radius, float):
+            raise TypeError()
+        if not isinstance(thickness, float):
+            raise TypeError()
+        if not isinstance(layer, int):
+            raise TypeError()
+
+        self.position = make_vector(position)
+        self.part = make_vector(part)
+
         self.radius = radius
         self.thickness = thickness
-        self.part = part
-        self.layer = 1 << layer
+        self.layer = Layer.to_mask(layer)
+
+    def __hash__(self):
+        return hash((self.position, self.radius, self.thickness, self.part, self.layer))
 
 
 class Label:
-    def __init__(self, name, position, thickness, font, layer=Layer.SILK_FRONT):
-        self.position = position
-        self.name = name
+    def __init__(self, text, position, thickness, font, layer=Layer.SILK_FRONT):
+        if not isinstance(text, str):
+            raise TypeError()
+        if not isinstance(thickness, float):
+            raise TypeError()
+        if not isinstance(font, float):
+            raise TypeError()
+        if not isinstance(layer, int):
+            raise TypeError()
+
+        self.position = make_vector(position)
+
+        self.text = text
         self.font = font
         self.thickness = thickness
-        self.layer = 1 << layer
+        self.layer = Layer.to_mask(layer)
+
+    def __hash__(self):
+        return hash((
+            self.position,
+            int(hashlib.md5(self.text.encode()).hexdigest(), 16),
+            self.font,
+            self.thickness,
+            self.layer
+        ))
 
 
 class String:
-    def __init__(self, value, position, thickness, font, layer=Layer.SILK_FRONT):
-        self.position = position
-        self.value = value
+    def __init__(self, text, position, thickness, font, layer=Layer.SILK_FRONT,
+                 name='', hidden=False):
+        if not isinstance(text, str):
+            raise TypeError()
+        if not isinstance(thickness, float):
+            raise TypeError()
+        if not isinstance(font, float):
+            raise TypeError()
+        if not isinstance(layer, int):
+            raise TypeError()
+        if not isinstance(name, str):
+            raise TypeError()
+        if not isinstance(hidden, bool):
+            raise TypeError()
+
+        position_converted = make_vector(position)
+        self.position = (position_converted[0], position_converted[1], 0.0)
+
+        self.text = text
         self.font = font
         self.thickness = thickness
-        self.layer = 1 << layer
+        self.layer = Layer.to_mask(layer)
+        self.name = name
+        self.hidden = hidden
+
+    def __hash__(self):
+        return hash((
+            self.position,
+            int(hashlib.md5(self.text.encode()).hexdigest(), 16),
+            self.font,
+            self.thickness,
+            self.layer,
+            int(hashlib.md5(self.name.encode()).hexdigest(), 16),
+            self.hidden
+        ))
 
 
 class Line:
     def __init__(self, start, end, thickness, layer=Layer.SILK_FRONT):
-        self.start = start
-        self.end = end
+        if not isinstance(thickness, float):
+            raise TypeError()
+        if not isinstance(layer, int):
+            raise TypeError()
+
+        self.start = make_vector(start)
+        self.end = make_vector(end)
+
         self.thickness = thickness
-        self.layer = 1 << layer
+        self.layer = Layer.to_mask(layer)
+
+    def __hash__(self):
+        return hash((self.start, self.end, self.thickness, self.layer))
 
 
 class Rect:
     def __init__(self, top, bottom, thickness, layer=Layer.SILK_FRONT):
-        self.lines = [
-                Line((top[0], bottom[1]), (bottom[0], bottom[1]), thickness, layer),
-                Line((top[0], top[1]), (top[0], bottom[1]), thickness, layer),
-                Line((top[0], top[1]), (bottom[0], top[1]), thickness, layer),
-                Line((bottom[0], top[1]), (bottom[0], bottom[1]), thickness, layer)
-        ]
+        if not isinstance(thickness, float):
+            raise TypeError()
+        if not isinstance(layer, int):
+            raise TypeError()
+
+        top_converted = make_vector(top)
+        bot_converted = make_vector(bottom)
+
+        self.lines = (
+            Line((top_converted[0], bot_converted[1]), (bot_converted[0], bot_converted[1]),
+                 thickness, layer),
+            Line((top_converted[0], top_converted[1]), (top_converted[0], bot_converted[1]),
+                 thickness, layer),
+            Line((top_converted[0], top_converted[1]), (bot_converted[0], top_converted[1]),
+                 thickness, layer),
+            Line((bot_converted[0], top_converted[1]), (bot_converted[0], bot_converted[1]),
+                 thickness, layer)
+        )
+
+    def __hash__(self):
+        return hash(self.lines)
 
 
 class AbstractPad:
@@ -77,37 +226,63 @@ class AbstractPad:
     LAYERS_NONE, LAYERS_FRONT, LAYERS_BACK, LAYERS_BOTH = range(0, 4)
     STYLE_CIRCLE, STYLE_RECT, STYLE_OVAL, STYLE_TRAPEZOID = range(0, 4)
 
-    def __init__(self, number, size, position, diameter, style, family, copper, paste):
-        self.number = number
-        self.size = size
-        self.position = position
-        self.diameter = diameter
+    def __init__(self, text, size, position, diameter, style, family, copper, paste):
+        if not isinstance(text, str):
+            raise TypeError()
+        if not isinstance(style, int):
+            raise TypeError()
+        if not isinstance(family, int):
+            raise TypeError()
+        if not isinstance(copper, int):
+            raise TypeError()
+        if not isinstance(paste, int):
+            raise TypeError()
+
+        self.size = make_vector(size)
+        self.position = make_vector(position)
+        self.diameter = diameter if isinstance(diameter, float) else make_vector(diameter)
+
+        self.text = text
         self.style = style
         self.family = family
 
-        self.copper = 0
-        self.mask = 0
+        self.copper = Layer()
+        self.mask = Layer()
+        self.paste = Layer()
+
         if self.family == AbstractPad.FAMILY_SMD:
             if copper == AbstractPad.LAYERS_FRONT:
-                self.copper |= 1 << Layer.CU_FRONT
-                self.mask |= 1 << Layer.MASK_FRONT
+                self.copper += Layer.CU_FRONT
+                self.mask += Layer.MASK_FRONT
             elif copper == AbstractPad.LAYERS_BACK:
-                self.copper |= 1 << Layer.CU_BACK
-                self.mask |= 1 << Layer.MASK_BACK
+                self.copper += Layer.CU_BACK
+                self.mask += Layer.MASK_BACK
             else:
-                raise Exception() # Configuration unsupported
+                raise ValueError() # Configuration unsupported
         else:
             if copper == AbstractPad.LAYERS_BOTH:
-                self.copper |= 1 << Layer.CU_BACK | 1 << Layer.CU_FRONT
+                self.copper += (Layer.CU_BACK, Layer.CU_FRONT)
             elif copper != AbstractPad.LAYERS_NONE:
-                raise Exception() # Configuration unsupported
-            self.mask |= (1 << Layer.MASK_FRONT) | (1 << Layer.MASK_BACK)
+                raise ValueError() # Configuration unsupported
+            self.mask += (Layer.MASK_FRONT, Layer.MASK_BACK)
 
-        self.paste = 0
         if paste in (AbstractPad.LAYERS_BOTH, AbstractPad.LAYERS_FRONT):
-            self.paste |= 1 << Layer.PASTE_FRONT
+            self.paste += Layer.PASTE_FRONT
         if paste in (AbstractPad.LAYERS_BOTH, AbstractPad.LAYERS_BACK):
-            self.paste |= 1 << Layer.PASTE_BACK
+            self.paste += Layer.PASTE_BACK
+
+    def __hash__(self):
+        return hash((
+            int(hashlib.md5(self.text.encode()).hexdigest(), 16),
+            self.size,
+            self.position,
+            self.diameter,
+            self.style,
+            self.family,
+            self.copper,
+            self.mask,
+            self.paste
+        ))
 
 
 class HolePad(AbstractPad):
@@ -124,17 +299,30 @@ class SmdPad(AbstractPad):
 
 class Cutout:
     def __init__(self, size, position):
-        self.size = size
-        self.position = position
+        self.size = make_vector(size)
+        self.position = make_vector(position)
+
+    def __hash__(self):
+        return hash((self.size, self.position))
 
 
 class Poly:
     LAYER_COPPER, LAYER_SILK = range(0, 2)
 
     def __init__(self, vertices, thickness, layer):
-        self.vertices = vertices
+        if not isinstance(vertices, (tuple, list)):
+            raise TypeError()
+        if not isinstance(thickness, float):
+            raise TypeError()
+        if not isinstance(layer, int):
+            raise TypeError()
+
+        self.vertices = [make_vector(vertex) for vertex in vertices]
         self.thickness = thickness
-        self.layer = 1 << layer
+        self.layer = Layer.to_mask(layer)
+
+    def __hash__(self):
+        return hash((*self.vertices, self.thickness, self.layer))
 
 
 class Footprint:

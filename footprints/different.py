@@ -40,8 +40,8 @@ class ESP32(exporter.Footprint):
 
         # Antenna cutout area
         silkscreen.append(exporter.Line(
-            (-self.body_size[0] / 2.0, -self.body_size[1] / 2.0 + self.cutout_height),
-            (self.body_size[0] / 2.0, -self.body_size[1] / 2.0 + self.cutout_height),
+            numpy.array([-self.body_size[0] / 2.0, -self.body_size[1] / 2.0 + self.cutout_height]),
+            numpy.array([self.body_size[0] / 2.0, -self.body_size[1] / 2.0 + self.cutout_height]),
             self.thickness
         ))
 
@@ -51,21 +51,22 @@ class ESP32(exporter.Footprint):
             y_offset_left = self.pad_hor_offset[1] + i * self.pad_pitch
             y_offset_right = self.pad_hor_offset[1] + (self.pad_ver_count - i - 1) * self.pad_pitch
             size = numpy.array([self.pad_size[1], self.pad_size[0]])
-            pads.append(exporter.SmdPad(i + 1, size, (-x_offset, y_offset_left)))
-            pads.append(exporter.SmdPad(self.pad_ver_count + self.pad_hor_count + i + 1,
-                size, (x_offset, y_offset_right)))
+            pads.append(exporter.SmdPad(str(i + 1), size,
+                                        numpy.array([-x_offset, y_offset_left])))
+            pads.append(exporter.SmdPad(str(self.pad_ver_count + self.pad_hor_count + i + 1), size,
+                                        numpy.array([x_offset, y_offset_right])))
 
         # Signal pads, horizontal row
         for i in range(0, self.pad_hor_count):
             x_offset = -(self.pad_hor_count - 1) * self.pad_pitch / 2.0 + i * self.pad_pitch
             y_offset = self.pad_ver_offset
             size = self.pad_size
-            pads.append(exporter.SmdPad(self.pad_ver_count + i + 1, size,
-                (x_offset, y_offset)))
+            pads.append(exporter.SmdPad(str(self.pad_ver_count + i + 1), size,
+                                        numpy.array([x_offset, y_offset])))
 
         # Heatsink
-        pads.append(exporter.SmdPad(self.pad_hor_count + self.pad_ver_count * 2 + 1,
-            self.power_pad_size, self.power_pad_offset))
+        pads.append(exporter.SmdPad(str(self.pad_hor_count + self.pad_ver_count * 2 + 1),
+                                    self.power_pad_size, self.power_pad_offset))
 
         # Body outline
         outline = exporter.Rect(self.body_size / 2.0, self.body_size / -2.0, self.thickness)
@@ -74,7 +75,7 @@ class ESP32(exporter.Footprint):
         for line in outline.lines:
             silkscreen.extend(process_func(line))
 
-        pads.sort(key=lambda x: x.number)
+        pads.sort(key=lambda x: int(x.text))
         return silkscreen + pads
 
     @staticmethod

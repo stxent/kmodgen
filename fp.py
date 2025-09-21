@@ -14,13 +14,19 @@ import sys
 
 import exporter_kicad
 import exporter_kicad_pretty
+import exporter_kicad_pretty_v2
 
 from footprints import *
 
 
 class Generator:
-    def __init__(self, library_name=None, library_path=None, use_legacy=False, use_vrml=False):
-        self.legacy = use_legacy
+    FORMAT_LEGACY             = 0
+    FORMAT_SEXPRESSION_LEGACY = 1
+    FORMAT_SEXPRESSION        = 2
+
+    def __init__(self, library_name=None, library_path=None, output_format=FORMAT_SEXPRESSION,
+                 use_vrml=True):
+        self.format = output_format
         self.types = Generator.load()
 
         self.library_path = library_path
@@ -29,10 +35,12 @@ class Generator:
         model_path = self.library_name
         model_type = 'wrl' if use_vrml else 'x3d'
 
-        if self.legacy:
-            self.converter = exporter_kicad.Converter(model_path, model_type)
-        else:
+        if self.format == Generator.FORMAT_SEXPRESSION:
+            self.converter = exporter_kicad_pretty_v2.Converter(model_path, model_type)
+        elif self.format == Generator.FORMAT_SEXPRESSION_LEGACY:
             self.converter = exporter_kicad_pretty.Converter(model_path, model_type)
+        else:
+            self.converter = exporter_kicad.Converter(model_path, model_type)
 
     def load_footprints(self, specs, parts, pattern):
         footprints = []
@@ -48,8 +56,8 @@ class Generator:
         footprints = self.load_footprints(specs, parts, pattern)
 
         if self.library_path is not None:
-            dir_extension = '.obj' if self.legacy else '.pretty'
-            file_extension = '.mod.obj' if self.legacy else '.kicad_mod'
+            dir_extension = '.obj' if self.format == Generator.FORMAT_LEGACY else '.pretty'
+            file_extension = '.mod.obj' if self.format == Generator.FORMAT_LEGACY else '.kicad_mod'
 
             lib_dir_path = os.path.join(self.library_path, self.library_name + dir_extension)
             make_file_path = lambda entry: os.path.join(lib_dir_path, entry.name + file_extension)
@@ -63,10 +71,10 @@ class Generator:
             footprint_data = self.converter.generate(footprint)
 
             if self.library_path is not None:
-                open(make_file_path(footprint), 'wb').write(footprint_data.encode('utf-8'))
+                with open(make_file_path(footprint), 'wb') as file:
+                    file.write(footprint_data.encode('utf-8'))
                 if verbose:
-                    print('Footprint {:s}:{:s} was exported'.format(
-                        self.library_name, footprint.name))
+                    print(f'Footprint {self.library_name}:{footprint.name} was exported')
             else:
                 print(footprint_data)
 
@@ -96,6 +104,8 @@ def main():
                         default=None)
     parser.add_argument('--legacy', dest='legacy', help='use legacy footprint format',
                         default=False, action='store_true')
+    parser.add_argument('--legacy-pretty', dest='legacy_pretty', help='use old s-expression format',
+                        default=False, action='store_true')
     parser.add_argument('--specs', dest='specs', help='override silkscreen specifications',
                         default=None)
     parser.add_argument('--vrml', dest='vrml', help='use VRML model format',
@@ -103,11 +113,20 @@ def main():
     parser.add_argument(dest='files', nargs='*')
     options = parser.parse_args()
 
+    if options.legacy:
+        if options.legacy_pretty:
+            raise ValueError()
+        output_format = Generator.FORMAT_LEGACY
+    elif options.legacy_pretty:
+        output_format = Generator.FORMAT_SEXPRESSION_LEGACY
+    else:
+        output_format = Generator.FORMAT_SEXPRESSION
+
     for filename in options.files:
         desc = json.load(open(filename, 'rb'))
         specs = desc['specs'] if 'specs' in desc else json.load(open(options.config, 'rb'))['specs']
         pattern = re.compile(options.pattern, re.S)
-        generator = Generator(options.library, options.output, options.legacy, options.vrml)
+        generator = Generator(options.library, options.output, output_format, options.vrml)
         generator.generate(specs, desc['parts'], pattern, options.debug)
 
 if __name__ == '__main__':

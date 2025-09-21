@@ -40,6 +40,6 @@ Build all footprints and models from descriptions directory, output format is S-
 ```sh
 mkdir build
 cd build
-cmake .. -DUSE_PRETTY=ON -DUSE_X3D=ON -DCMAKE_INSTALL_PREFIX=~/kicad
+cmake .. -DUSE_SEXPRESSION=ON -DCMAKE_INSTALL_PREFIX=~/kicad
 make install
 ```

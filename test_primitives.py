@@ -8,12 +8,8 @@
 import math
 import numpy
 
+from wrlconv import curves, geometry, helpers, model, x3d_export
 import primitives
-from wrlconv import curves
-from wrlconv import geometry
-from wrlconv import helpers
-from wrlconv import model
-from wrlconv import x3d_export
 
 def compare_models(source_file, destination_data):
     with open('tests/' + source_file, 'rb') as source:
@@ -60,14 +56,13 @@ class TestChips:
         body = primitives.make_chip_body(
             size=ceramic_size,
             chamfer=case_chamfer,
-            edge_resolution=edge_resolution,
-            line_resolution=line_resolution
+            edge_resolution=edge_resolution
         )
         body.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
 
         meshes = [body, leads]
         serialized = serialize_models(meshes, path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_chip_caps(path, name, edge_resolution, line_resolution):
@@ -126,7 +121,7 @@ class TestChips:
         )
         meshes = [cap_xp, cap_xn, cap_yp, cap_yn, cap_zp, cap_zn]
         serialized = serialize_models(meshes, path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_chip_caps(self, tmp_path):
         TestChips.make_chip_caps(tmp_path, TestChips.FILE_CHIP_CAPS, (2, 3, 4), (1, 2, 3))
@@ -144,47 +139,47 @@ class TestHelpers:
             value = primitives.calc_bezier_weight((1.0, 0.0, 0.0), None, None)
         except TypeError:
             value = None
-        assert value == None
+        assert value is None
 
         try:
             value = primitives.calc_bezier_weight(None, (1.0, 0.0, 0.0), None)
         except TypeError:
             value = None
-        assert value == None
+        assert value is None
 
         value = primitives.calc_bezier_weight((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), None)
-        assert math.isclose(value, 0.5522847498307933) == True
+        assert math.isclose(value, 0.5522847498307933) is True
 
         value = primitives.calc_bezier_weight(None, None, 1.5707963267948966)
-        assert math.isclose(value, 0.5522847498307933) == True
+        assert math.isclose(value, 0.5522847498307933) is True
 
     def test_hmils(self):
         value = primitives.hmils(2.54)
-        assert math.isclose(value, 1.0) == True
+        assert math.isclose(value, 1.0) is True
 
         value = primitives.hmils(numpy.array([0.254, 1.27]))
-        assert math.isclose(value[0], 0.1) == True
-        assert math.isclose(value[1], 0.5) == True
+        assert math.isclose(value[0], 0.1) is True
+        assert math.isclose(value[1], 0.5) is True
 
     def test_median_point(self):
         try:
             value = primitives.calc_median_point([])
         except ValueError:
             value = None
-        assert value == None
+        assert value is None
 
         value = primitives.calc_median_point([(1.0, 0.0, 0.0)])
-        assert numpy.isclose(value, (1.0, 0.0, 0.0)).all() == True
+        assert numpy.isclose(value, (1.0, 0.0, 0.0)).all().item() is True
 
         value = primitives.calc_median_point([(1.0, 1.0, 1.0), (-1.0, -1.0, -1.0)])
-        assert numpy.isclose(value, (0.0, 0.0, 0.0)).all() == True
+        assert numpy.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
 
     def test_reverse_projection(self):
         try:
             value = primitives.reverse_projection((1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
         except ValueError:
             value = None
-        assert value == None
+        assert value is None
 
     def test_round1f(self):
         value = primitives.round1f(1.0)
@@ -236,7 +231,7 @@ class TestPins:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_flat_pin(path, name, chamfer_resolution, edge_resolution, line_resolution):
@@ -255,7 +250,7 @@ class TestPins:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_bent_pin_hp(self, tmp_path):
         TestPins.make_bent_pin(tmp_path, TestPins.FILE_BENT_PIN_HP, 3, 3, 3)
@@ -328,7 +323,7 @@ class TestPrimitives:
         mesh = primitives.make_body_cap(corners, 0.5, offset, 24)
 
         serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_loft_mesh(self, tmp_path):
         name = TestPrimitives.FILE_LOFT_MESH
@@ -353,7 +348,7 @@ class TestPrimitives:
         mesh = primitives.build_loft_mesh(slices, True, True)
 
         serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_solid_cap(self, tmp_path):
         name = TestPrimitives.FILE_SOLID_CAP
@@ -374,7 +369,7 @@ class TestPrimitives:
         primitives.append_solid_cap(mesh, vertices, origin=numpy.array([0.0, 0.0, -1.0]))
 
         serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_rect_half(self, tmp_path):
         name = TestPrimitives.FILE_RECT_HALF
@@ -404,7 +399,7 @@ class TestPrimitives:
         meshes[1].translate((0.0, -0.5, 0.0))
 
         serialized = serialize_models(meshes, tmp_path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_rotation_mesh(self, tmp_path):
         name = TestPrimitives.FILE_ROTATION_MESH
@@ -427,7 +422,7 @@ class TestPrimitives:
         )
 
         serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
 
 class TestBox:
@@ -457,7 +452,7 @@ class TestBox:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_box(path, name, edge_resolution, line_resolution):
@@ -471,7 +466,7 @@ class TestBox:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_box_mark(path, name, edge_resolution, line_resolution, mark_resolution):
@@ -493,7 +488,7 @@ class TestBox:
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_banded_box(path, name, edge_resolution, line_resolution):
@@ -509,7 +504,7 @@ class TestBox:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_banded_box_mark(path, name, edge_resolution, line_resolution, mark_resolution):
@@ -533,7 +528,7 @@ class TestBox:
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_nonuniform_box(self, tmp_path):
         name = TestBox.FILE_NONUNIFORM_BOX
@@ -547,7 +542,7 @@ class TestBox:
         )
 
         serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_barrel_box_hp(self, tmp_path):
         TestBox.make_barrel_box(tmp_path, TestBox.FILE_BARREL_BOX_HP, 3, 3)
@@ -601,7 +596,7 @@ class TestRoundedBox:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     @staticmethod
     def make_rounded_box_mark(path, name, edge_resolution, line_resolution, mark_resolution):
@@ -626,7 +621,7 @@ class TestRoundedBox:
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_rounded_box_hp(self, tmp_path):
         TestRoundedBox.make_rounded_box(tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_HP, 3, 3)
@@ -663,7 +658,7 @@ class TestSlopedBox:
         )
 
         serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) == True
+        assert compare_models(name, serialized) is True
 
     def test_make_sloped_box_hp(self, tmp_path):
         TestSlopedBox.make_sloped_box(tmp_path, TestSlopedBox.FILE_SLOPED_BOX_HP, 3, 3)
