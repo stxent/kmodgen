@@ -139,7 +139,7 @@ class QFN:
         heatsink_vertices = geometry.make_bezier_quad_outline(heatsink_corners)
         body_vertices = mesh.find_vertices([region])
         primitives.append_hollow_cap(mesh, body_vertices, heatsink_vertices,
-                                    numpy.array([0.0, 0.0, -1.0]))
+                                     numpy.array([0.0, 0.0, -1.0]))
 
     @staticmethod
     def make_mark_hole(mesh, body_size, mark_radius, mark_offset, chamfer, resolution):

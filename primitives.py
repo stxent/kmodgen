@@ -550,8 +550,8 @@ def make_body_cap(corners, radius, offset, edges, resolution=(1, 1)):
     outer_vertices = geometry.make_bezier_quad_outline(corners, resolution)
     inner_vertices = geometry.make_circle_outline(circle_offset, radius, edges)
 
-    for i in range(0, len(outer_vertices)):
-        mesh.geo_vertices.append(outer_vertices[i])
+    for vertex in outer_vertices.values():
+        mesh.geo_vertices.append(vertex)
     append_hollow_cap(mesh, outer_vertices, inner_vertices, numpy.array([0.0, 0.0, 1.0]))
     return mesh
 
@@ -698,7 +698,7 @@ def round_model_edges(vertices, edges, faces, chamfer, sharpness, edge_resolutio
     for entry in faces:
         try:
             indices, count = entry[0], len(entry[0])
-            functor = lambda points, _: entry[1](points)
+            functor = lambda points, _, face=entry: face[1](points)
         except TypeError:
             indices, count = entry, len(entry)
             if count == 4:
