@@ -27,7 +27,7 @@ class RadialCapacitor(exporter.Footprint):
         objects.append(exporter.String('+', (mark_offset_x, 0.0), self.thickness, self.font))
 
         circle_radius = self.body_diameter / 2.0 + self.thickness / 2.0
-        objects.append(exporter.Circle((0.0, 0.0), circle_radius, self.thickness, (0.0, 360.0)))
+        objects.append(exporter.Circle((0.0, 0.0), circle_radius, self.thickness, False))
 
         pin_offset_x = self.spacing / 2.0
         objects.append(exporter.HolePad('A', self.pad_size, (-pin_offset_x, 0.0), self.pad_drill,

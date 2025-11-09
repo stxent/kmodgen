@@ -48,8 +48,10 @@ class CrystalSMD(exporter.Footprint):
         # First pin mark
         dot_mark_position = numpy.array([
             -(axis_offsets[0] + self.pad_size[0] / 2.0 + self.gap + self.thickness),
-            axis_offsets[1]])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+            axis_offsets[1]
+        ])
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Body outline
         outline = exporter.Rect(self.body_size / 2.0, -self.body_size / 2.0, self.thickness)
@@ -97,9 +99,9 @@ class CrystalTH(exporter.Footprint):
         arc_radius = self.body_size[1] / 2.0
         arc_offset = self.body_size[0] / 2.0 - arc_radius
         objects.append(exporter.Circle(numpy.array([-arc_offset, 0.0]), arc_radius.item(),
-                                       self.thickness, (90.0, -90.0)))
+                                       self.thickness, False, (90.0, -90.0)))
         objects.append(exporter.Circle(numpy.array([arc_offset, 0.0]), arc_radius.item(),
-                                       self.thickness, (-90.0, 90.0)))
+                                       self.thickness, False, (-90.0, 90.0)))
         objects.append(exporter.Line(numpy.array([-arc_offset, arc_radius]),
                                      numpy.array([arc_offset, arc_radius]), self.thickness))
         objects.append(exporter.Line(numpy.array([-arc_offset, -arc_radius]),

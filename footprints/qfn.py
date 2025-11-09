@@ -67,7 +67,8 @@ class QFN(exporter.Footprint):
         top_corner_from_body = self.body_size[0:2] / 2.0
         top_corner_from_pins = numpy.array([
             first_pin_offset[0] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap,
-            first_pin_offset[1] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap])
+            first_pin_offset[1] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap
+        ])
         top_corner = numpy.maximum(top_corner_from_body, top_corner_from_pins)
         silkscreen_raw.extend(exporter.Rect(top_corner, -top_corner, self.thickness).lines)
 
@@ -83,7 +84,8 @@ class QFN(exporter.Footprint):
             dot_mark_x_offset = -max(dot_offset_from_pin, dot_offset_from_body)
             dot_mark_y_offset = top_corner[1] + self.gap + self.thickness * 1.5
             dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Horizontal pads
         y_offset = self.body_size[1] / 2.0 + self.margin

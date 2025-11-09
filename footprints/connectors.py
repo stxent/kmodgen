@@ -64,7 +64,8 @@ class FFC(exporter.Footprint):
             (total_pads_width / 2.0) * self.inversion,
             -(self.signal_pad_size[1] / 2.0 + self.gap + self.thickness)
         ])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Signal pads
         for i in range(0, self.count):
@@ -181,9 +182,10 @@ class MemoryCard(exporter.Footprint):
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # First pin mark
-        dot_mark_position = self.signal_pad_offset - numpy.array([0.0, self.signal_pad_size[1] / 2.0
-            + self.gap + self.thickness])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+        dot_mark_position = self.signal_pad_offset \
+            - numpy.array([0.0, self.signal_pad_size[1] / 2.0 + self.gap + self.thickness])
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Mounting pads
         for i in range(0, len(self.mount_pad_sizes)):
@@ -328,8 +330,10 @@ class MiniUSB(exporter.Footprint):
         # First pin mark
         dot_mark_position = numpy.array([
             self.pad_offset + self.pad_size[0] / 2.0 + self.gap + self.thickness,
-            -2.0 * self.pad_pitch])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+            -2.0 * self.pad_pitch
+        ])
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Pads
         for i in range(0, 5):

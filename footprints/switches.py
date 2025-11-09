@@ -46,7 +46,7 @@ class Button(exporter.Footprint):
 
         # Central circle
         circle_radius = min(self.body_size) / 4.0
-        silkscreen.append(exporter.Circle((0.0, 0.0), circle_radius.item(), self.thickness))
+        silkscreen.append(exporter.Circle((0.0, 0.0), circle_radius.item(), self.thickness, False))
 
         return silkscreen + pads
 

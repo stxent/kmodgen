@@ -15,8 +15,8 @@ import exporter
 # Default precision for :g format is 6
 class Converter:
     GENERATOR = 'kmodgen'
-    GENERATOR_VERSION = '3.1'
-    VERSION = '20250101'
+    GENERATOR_VERSION = '9.0'
+    VERSION = '20241229'
     UUID_PREFIX = ''
     UUID_SEQUENCE = 0
 
@@ -119,6 +119,7 @@ class Converter:
             beg_angle = numpy.deg2rad(circle.part[0])
             mid_angle = numpy.deg2rad(circle.part[0] + rotation / 2.0)
             end_angle = numpy.deg2rad(circle.part[1])
+
             beg = (circle.position[0] + math.cos(beg_angle) * circle.radius,
                    circle.position[1] + math.sin(beg_angle) * circle.radius)
             mid = (circle.position[0] + math.cos(mid_angle) * circle.radius,
@@ -127,9 +128,9 @@ class Converter:
                    circle.position[1] + math.sin(end_angle) * circle.radius)
 
             out = '\t(fp_arc\n'
-            out += f'\t\t(start {round(beg[0], 6):g} {round(beg[1]):g})\n'
-            out += f'\t\t(mid {round(mid[0]):g} {round(mid[1]):g})\n'
-            out += f'\t\t(end {round(end[0]):g} {round(end[1]):g})\n'
+            out += f'\t\t(start {round(beg[0], 6):g} {round(beg[1], 6):g})\n'
+            out += f'\t\t(mid {round(mid[0], 6):g} {round(mid[1], 6):g})\n'
+            out += f'\t\t(end {round(end[0], 6):g} {round(end[1], 6):g})\n'
         else:
             # Circle
             out = '\t(fp_circle\n'
@@ -141,8 +142,8 @@ class Converter:
         out += '\t\t\t(type solid)\n' # TODO Non-solid line types
         out += '\t\t)\n'
 
-        if circle.part is None:
-            out += '\t\t(fill no)\n' # TODO Circle fill
+        if circle.closed:
+            out += f'\t\t(fill {'yes' if circle.fill else 'no'})\n'
 
         out += f'\t\t(layer {Converter.layers_to_text(circle.layer)})\n'
         out += f'\t\t(uuid "{Converter.make_uuid()}")\n'
@@ -150,7 +151,7 @@ class Converter:
         return out
 
     @staticmethod
-    def label_to_text(label, description):
+    def label_to_text(label):
         if label is None:
             return ''
 
@@ -161,8 +162,8 @@ class Converter:
             label.font, exporter.Layer.FAB, 'Value', False))
         out += Converter.string_to_text(exporter.String('', label.position, label.thickness,
             label.font, exporter.Layer.FAB, 'Datasheet', True))
-        out += Converter.string_to_text(exporter.String('' if description is None else description,
-            label.position, label.thickness, label.font, exporter.Layer.FAB, 'Description', True))
+        out += Converter.string_to_text(exporter.String('', label.position, label.thickness,
+            label.font, exporter.Layer.FAB, 'Description', True))
         return out
 
     @staticmethod
@@ -226,10 +227,23 @@ class Converter:
 
     @staticmethod
     def poly_to_text(poly):
-        out = '  (fp_poly (pts'
-        for vertex in poly.vertices:
-            out += f' (xy {vertex[0]:g} {vertex[1]:g})'
-        out += f') (layer {Converter.layers_to_text(poly.layer)}) (width {poly.thickness:g}))\n'
+        out = '\t(fp_poly\n'
+        out += '\t\t(pts\n'
+
+        out += '\t\t\t'
+        out += ' '.join([f'(xy {vertex[0]:g} {vertex[1]:g})' for vertex in poly.vertices])
+        out += '\n'
+        out += '\t\t)\n'
+
+        out += '\t\t(stroke\n'
+        out += f'\t\t\t(width {poly.thickness:g})\n'
+        out += '\t\t\t(type solid)\n' # TODO Non-solid line types
+        out += '\t\t)\n'
+
+        out += f'\t\t(fill {'yes' if poly.fill else 'no'})\n'
+        out += f'\t\t(layer {Converter.layers_to_text(poly.layer)})\n'
+        out += f'\t\t(uuid "{Converter.make_uuid()}")\n'
+        out += '\t)\n'
         return out
 
     def footprint_to_text(self, footprint):
@@ -243,9 +257,11 @@ class Converter:
         out += f'\t(generator "{Converter.GENERATOR}")\n'
         out += f'\t(generator_version "{Converter.GENERATOR_VERSION}")\n'
         out += f'\t(layer {Converter.layers_to_text(footprint_layer)})\n'
+        if footprint.description is not None:
+            out += f'\t(descr "{footprint.description}")\n'
 
         for obj in filter(lambda x: isinstance(x, exporter.Label), objects):
-            out += Converter.label_to_text(obj, footprint.description)
+            out += Converter.label_to_text(obj)
 
         out += f'\t(attr {self.get_module_type_str(objects)})\n'
 
@@ -253,10 +269,10 @@ class Converter:
             out += Converter.string_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Line), objects):
             out += Converter.line_to_text(obj)
-        for obj in filter(lambda x: isinstance(x, exporter.Circle), objects):
-            out += Converter.circle_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Rect), objects):
             out += Converter.rect_to_text(obj)
+        for obj in filter(lambda x: isinstance(x, exporter.Circle), objects):
+            out += Converter.circle_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.Poly), objects):
             out += Converter.poly_to_text(obj)
         for obj in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):

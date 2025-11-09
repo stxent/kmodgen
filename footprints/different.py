@@ -36,7 +36,8 @@ class ESP32(exporter.Footprint):
             -(self.pad_hor_offset[0] + self.pad_size[1] / 2.0 + self.gap + self.thickness),
             self.pad_hor_offset[1]
         ])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Antenna cutout area
         silkscreen.append(exporter.Line(

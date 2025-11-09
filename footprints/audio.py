@@ -24,7 +24,7 @@ class Microphone(exporter.Footprint):
         objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         circle_radius = self.body_diameter / 2.0 + self.thickness / 2.0
-        objects.append(exporter.Circle((0.0, 0.0), circle_radius, self.thickness, (0.0, 360.0)))
+        objects.append(exporter.Circle((0.0, 0.0), circle_radius, self.thickness, False))
 
         pin_offset_x, pin_offset_y = self.offset, self.spacing / 2.0
         objects.append(exporter.HolePad('1', self.pad_size, (pin_offset_x, pin_offset_y),

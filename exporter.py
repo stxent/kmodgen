@@ -94,7 +94,7 @@ class Layer:
 
 
 class Circle:
-    def __init__(self, position, radius, thickness, part=None, layer=Layer.SILK_FRONT):
+    def __init__(self, position, radius, thickness, fill, part=None, layer=Layer.SILK_FRONT):
         if not isinstance(radius, float):
             raise TypeError()
         if not isinstance(thickness, float):
@@ -104,6 +104,8 @@ class Circle:
 
         self.position = make_vector(position)
         self.part = make_vector(part)
+        self.closed = self.part is None
+        self.fill = fill if self.closed else False
 
         self.radius = radius
         self.thickness = thickness
@@ -309,7 +311,7 @@ class Cutout:
 class Poly:
     LAYER_COPPER, LAYER_SILK = range(0, 2)
 
-    def __init__(self, vertices, thickness, layer):
+    def __init__(self, vertices, thickness, fill, layer):
         if not isinstance(vertices, (tuple, list)):
             raise TypeError()
         if not isinstance(thickness, float):
@@ -320,6 +322,7 @@ class Poly:
         self.vertices = [make_vector(vertex) for vertex in vertices]
         self.thickness = thickness
         self.layer = Layer.to_mask(layer)
+        self.fill = fill
 
     def __hash__(self):
         return hash((*self.vertices, self.thickness, self.layer))

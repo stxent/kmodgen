@@ -62,8 +62,10 @@ class QFP(exporter.Footprint):
         # Outer first pin mark
         dot_mark_position = numpy.array([
             -(first_pin_offset[0] + self.side_pad_size[0] / 2.0 + self.gap + self.thickness),
-            (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin])
-        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0, self.thickness))
+            (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
+        ])
+        silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
+                                          self.thickness, True))
 
         # Inner first pin mark
         tri_mark_offset = 1.0
@@ -72,7 +74,8 @@ class QFP(exporter.Footprint):
             numpy.array([-top_corner[0], top_corner[1]]),
             numpy.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
         ]
-        silkscreen.append(exporter.Poly(tri_mark_points, self.thickness, exporter.Layer.SILK_FRONT))
+        silkscreen.append(exporter.Poly(tri_mark_points, self.thickness, True,
+                                        exporter.Layer.SILK_FRONT))
 
         # Horizontal pads
         y_offset = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin

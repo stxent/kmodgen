@@ -85,7 +85,7 @@ class Chip(exporter.Footprint):
         if self.mark_dot and self.verification:
             dot_mark_offset = center + self.pad_size[0] / 2.0 + self.gap + self.thickness
             objects.append(exporter.Circle(numpy.array([-dot_mark_offset, 0.0]),
-                                           self.thickness / 2.0, self.thickness))
+                                           self.thickness / 2.0, self.thickness, True))
 
         if self.mark_bar:
             horiz_polar = horiz - self.thickness # Outer border without polarization
@@ -97,7 +97,7 @@ class Chip(exporter.Footprint):
             ]
             objects.append(exporter.Line(points[0], points[1], self.thickness))
             objects.append(exporter.Line(points[2], points[3], self.thickness))
-            objects.append(exporter.Poly(points, self.thickness, exporter.Layer.SILK_FRONT))
+            objects.append(exporter.Poly(points, self.thickness, True, exporter.Layer.SILK_FRONT))
 
         if self.mark_arrow:
             if self.centered_arrow:
@@ -112,7 +112,8 @@ class Chip(exporter.Footprint):
             objects.append(exporter.Line(points[2], points[0], self.thickness))
             if self.filled_arrow:
                 objects.append(exporter.Line(points[0], points[1], self.thickness))
-                objects.append(exporter.Poly(points, self.thickness, exporter.Layer.SILK_FRONT))
+                objects.append(exporter.Poly(points, self.thickness, True,
+                                             exporter.Layer.SILK_FRONT))
 
         objects.extend(pads)
         return objects
@@ -430,7 +431,8 @@ class SOT(exporter.Footprint):
         columns = self.count // 2
         position = numpy.array([
             self.pitch * (number % columns - (columns - 1) / 2.0),
-            self.body_size[1] / 2.0])
+            self.body_size[1] / 2.0
+        ])
         return position * self.calc_pad_side(number)
 
     def calc_pad_side(self, number):
@@ -452,7 +454,7 @@ class SOT(exporter.Footprint):
             dot_mark_offset = first_pad.position[0] \
                 - (first_pad.size[0] / 2.0 + self.gap + self.thickness)
             silkscreen.append(exporter.Circle(numpy.array([dot_mark_offset, first_pad.position[1]]),
-                                              self.thickness / 2.0, self.thickness))
+                                              self.thickness / 2.0, self.thickness, True))
 
         # Inner polarity mark
         if self.mark_tri:
@@ -463,7 +465,8 @@ class SOT(exporter.Footprint):
                 numpy.array([-top_corner[0], top_corner[1]]),
                 numpy.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
             ]
-            silkscreen.append(exporter.Poly(points, self.thickness, exporter.Layer.SILK_FRONT))
+            silkscreen.append(exporter.Poly(points, self.thickness, True,
+                                            exporter.Layer.SILK_FRONT))
 
         for entry in self.pads:
             pads.append(exporter.SmdPad(entry.name, entry.size, entry.position))
