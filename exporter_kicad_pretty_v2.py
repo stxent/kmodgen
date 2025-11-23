@@ -103,8 +103,8 @@ class Converter:
     def get_module_type_str(objects):
         family = exporter.AbstractPad.FAMILY_SMD
         for pad in filter(lambda x: isinstance(x, exporter.AbstractPad), objects):
-            if pad.family != exporter.AbstractPad.FAMILY_SMD:
-                family = exporter.AbstractPad.FAMILY_TH
+            if pad.family == exporter.AbstractPad.FAMILY_TH:
+                family = pad.family
                 break
 
         if family == exporter.AbstractPad.FAMILY_TH:
@@ -157,13 +157,13 @@ class Converter:
 
         out = ''
         out += Converter.string_to_text(exporter.String('REF', label.position, label.thickness,
-            label.font, label.layer.layers(), 'Reference', False))
+            label.font, 'Reference', label.layer.layers(), False))
         out += Converter.string_to_text(exporter.String(label.text, label.position, label.thickness,
-            label.font, exporter.Layer.FAB, 'Value', False))
+            label.font, 'Value', exporter.Layer.FAB, False))
         out += Converter.string_to_text(exporter.String('', label.position, label.thickness,
-            label.font, exporter.Layer.FAB, 'Datasheet', True))
+            label.font, 'Datasheet', exporter.Layer.FAB, True))
         out += Converter.string_to_text(exporter.String('', label.position, label.thickness,
-            label.font, exporter.Layer.FAB, 'Description', True))
+            label.font, 'Description', exporter.Layer.FAB, True))
         return out
 
     @staticmethod

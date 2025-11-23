@@ -92,6 +92,9 @@ class Layer:
 
         return Layer(result)
 
+    def __hash__(self):
+        return hash(self.mask)
+
 
 class Circle:
     def __init__(self, position, radius, thickness, fill, part=None, layer=Layer.SILK_FRONT):
@@ -144,8 +147,8 @@ class Label:
 
 
 class String:
-    def __init__(self, text, position, thickness, font, layer=Layer.SILK_FRONT,
-                 name='', hidden=False):
+    def __init__(self, text, position, thickness, font, name, layer=Layer.SILK_FRONT,
+                 hidden=False):
         if not isinstance(text, str):
             raise TypeError()
         if not isinstance(thickness, float):

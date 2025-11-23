@@ -24,7 +24,7 @@ class RadialCapacitor(exporter.Footprint):
         objects.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         mark_offset_x = -self.body_diameter / 2.0 - self.thickness - self.gap - self.font / 2.0
-        objects.append(exporter.String('+', (mark_offset_x, 0.0), self.thickness, self.font))
+        objects.append(exporter.String('+', (mark_offset_x, 0.0), self.thickness, self.font, 'PolarityMarking'))
 
         circle_radius = self.body_diameter / 2.0 + self.thickness / 2.0
         objects.append(exporter.Circle((0.0, 0.0), circle_radius, self.thickness, False))
