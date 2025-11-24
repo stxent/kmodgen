@@ -16,6 +16,7 @@ import primitives
 class QFN:
     BODY_CHAMFER = primitives.hmils(0.05)
     MARK_RADIUS  = primitives.hmils(0.5)
+    SIGMA        = 0.001
 
     def __init__(self, material='QFN'):
         self.material = material
@@ -50,24 +51,24 @@ class QFN:
             y_pos = size[1] / 2.0
 
             detach_regions.append((
-                (x_pos - pin_width / 2.0,              0.0, -size[2]),
-                (x_pos + pin_width / 2.0,  y_pos + band[1],      0.0)
+                (x_pos - pin_width / 2.0 - QFN.SIGMA,              0.0, -size[2]),
+                (x_pos + pin_width / 2.0 + QFN.SIGMA,  y_pos + band[1],      0.0)
             ))
             detach_regions.append((
-                (x_pos - pin_width / 2.0, -y_pos - band[1], -size[2]),
-                (x_pos + pin_width / 2.0,              0.0,      0.0)
+                (x_pos - pin_width / 2.0 - QFN.SIGMA, -y_pos - band[1], -size[2]),
+                (x_pos + pin_width / 2.0 + QFN.SIGMA,              0.0,      0.0)
             ))
         for i in range(0, count[1]):
             x_pos = size[0] / 2.0
             y_pos = i * pin_pitch - first_pin_offset[1]
 
             detach_regions.append((
-                (             0.0, y_pos - pin_width / 2.0, -size[2]),
-                ( x_pos + band[0], y_pos + pin_width / 2.0,      0.0)
+                (             0.0, y_pos - pin_width / 2.0 - QFN.SIGMA, -size[2]),
+                ( x_pos + band[0], y_pos + pin_width / 2.0 + QFN.SIGMA,      0.0)
             ))
             detach_regions.append((
-                (-x_pos - band[0], y_pos - pin_width / 2.0, -size[2]),
-                (             0.0, y_pos + pin_width / 2.0,      0.0)
+                (-x_pos - band[0], y_pos - pin_width / 2.0 - QFN.SIGMA, -size[2]),
+                (             0.0, y_pos + pin_width / 2.0 + QFN.SIGMA,      0.0)
             ))
         return mesh.detach_faces(detach_regions)
 
@@ -192,10 +193,7 @@ class QFN:
 
         # Horizontal side vertices
         x_vertex_offset = plane_size[0] / 2.0 - band[0] * 2.0
-        # x_plane_border = size[0] / 2.0
-        # x_pin_border = first_pin_offset[0] + pin_width / 2.0
         x_pin_border = plane_size[0] / 2.0 - chamfer
-        # x_pin_delta = (x_plane_border + x_pin_border) / 2.0 - x_vertex_offset
         x_pin_delta = x_pin_border - x_vertex_offset
 
         regions.append((
@@ -257,10 +255,7 @@ class QFN:
 
         # Vertical side vertices
         y_vertex_offset = plane_size[1] / 2.0 - band[1] * 2.0
-        # y_plane_border = size[1] / 2.0
-        # y_pin_border = first_pin_offset[1] + pin_width / 2.0
         y_pin_border = plane_size[1] / 2.0 - chamfer
-        # y_pin_delta = (y_plane_border + y_pin_border) / 2.0 - y_vertex_offset
         y_pin_delta = y_pin_border - y_vertex_offset
 
         regions.append((
@@ -301,25 +296,26 @@ class QFN:
     @staticmethod
     def mold_inner_pin_offsets(mesh, size, band, pin_width, pin_height, pin_length, chamfer,
                                first_pin_offset):
+        first_pin_ext_edge = first_pin_offset + pin_width / 2.0
         median_region = ((-size[0], -size[1], -band[2]), (size[0], size[1], band[2]), 1)
         median_transform = model.Transform()
         median_transform.translate(numpy.array([0.0, 0.0, -size[2] / 2.0 + pin_height]))
         inner_regions = [
             (
-                (-first_pin_offset[0] - pin_width / 2.0, -size[1] / 2.0 + band[1],       -size[2]),
-                ( first_pin_offset[0] + pin_width / 2.0, -size[1] / 2.0 + band[1] * 3.0,      0.0),
+                (-first_pin_ext_edge[0] - QFN.SIGMA, -size[1] / 2.0 + band[1],       -size[2]),
+                ( first_pin_ext_edge[0] + QFN.SIGMA, -size[1] / 2.0 + band[1] * 3.0,      0.0),
                 2
             ), (
-                (-first_pin_offset[0] - pin_width / 2.0,  size[1] / 2.0 - band[1],       -size[2]),
-                ( first_pin_offset[0] + pin_width / 2.0,  size[1] / 2.0 - band[1] * 3.0,      0.0),
+                (-first_pin_ext_edge[0] - QFN.SIGMA,  size[1] / 2.0 - band[1],       -size[2]),
+                ( first_pin_ext_edge[0] + QFN.SIGMA,  size[1] / 2.0 - band[1] * 3.0,      0.0),
                 3
             ), (
-                (-size[0] / 2.0 + band[0],       -first_pin_offset[1] - pin_width / 2.0, -size[2]),
-                (-size[0] / 2.0 + band[0] * 3.0,  first_pin_offset[1] + pin_width / 2.0,      0.0),
+                (-size[0] / 2.0 + band[0],       -first_pin_ext_edge[1] - QFN.SIGMA, -size[2]),
+                (-size[0] / 2.0 + band[0] * 3.0,  first_pin_ext_edge[1] + QFN.SIGMA,      0.0),
                 4
             ), (
-                ( size[0] / 2.0 - band[0],       -first_pin_offset[1] - pin_width / 2.0, -size[2]),
-                ( size[0] / 2.0 - band[0] * 3.0,  first_pin_offset[1] + pin_width / 2.0,      0.0),
+                ( size[0] / 2.0 - band[0],       -first_pin_ext_edge[1] - QFN.SIGMA, -size[2]),
+                ( size[0] / 2.0 - band[0] * 3.0,  first_pin_ext_edge[1] + QFN.SIGMA,      0.0),
                 5
             )
         ]
@@ -438,7 +434,7 @@ class QFN:
         try:
             pin_height = primitives.hmils(descriptor['pins']['height'])
         except KeyError:
-            pin_height = 0.1 # XXX
+            pin_height = min(pin_width / 2.0, body_size[2] / 4.0)
 
         try:
             heatsink_size = primitives.hmils(descriptor['heatsink']['size'])

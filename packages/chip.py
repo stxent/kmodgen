@@ -611,6 +611,7 @@ class ChipResistor:
         mesh_contact0.translate((-body_size[0] / 2.0, 0.0, 0.0))
         mesh_contact1.rotate((0.0, 0.0, 1.0), math.pi)
         mesh_contact1.translate((body_size[0] / 2.0, 0.0, 0.0))
+        mesh_contact1.rename()
         meshes.append(mesh_contact0)
         meshes.append(mesh_contact1)
 
@@ -801,6 +802,7 @@ class ChipShunt(ChipResistor):
             mesh_contact0.appearance().material = materials[f'{self.material}.Lead']
         mesh_contact1 = copy.deepcopy(mesh_contact0)
         mesh_contact1.rotate((0.0, 0.0, 1.0), math.pi)
+        mesh_contact1.rename()
         meshes.append(mesh_contact0)
         meshes.append(mesh_contact1)
 

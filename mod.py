@@ -15,6 +15,11 @@ import sys
 from wrlconv import model, vrml_export, vrml_export_kicad, vrml_import, x3d_export, x3d_import
 from packages import *
 
+def capitalize(name):
+    if not name:
+        return name
+    return name[0].upper() + name[1:]
+
 def load_materials(settings, entries):
     materials = {}
 
@@ -22,7 +27,7 @@ def load_materials(settings, entries):
     for key in settings['materials']:
         entry = settings['materials'][key]
         if not isinstance(entry, str):
-            materials.update({key: model.Material(entry, key.capitalize())})
+            materials.update({key: model.Material(entry, capitalize(key))})
     # Second pass to process aliases
     for key in settings['materials']:
         entry = settings['materials'][key]
@@ -33,7 +38,7 @@ def load_materials(settings, entries):
     for key in entries:
         entry = entries[key]
         if not isinstance(entry, str):
-            materials.update({key: model.Material(entry, key.capitalize())})
+            materials.update({key: model.Material(entry, capitalize(key))})
     # Second pass to process aliases
     for key in entries:
         entry = entries[key]
@@ -140,7 +145,10 @@ def write_models(models, library, output, is_vrml, is_debug=False):
     else:
         library_path = output
     if not os.path.exists(library_path):
-        os.makedirs(library_path)
+        try:
+            os.makedirs(library_path)
+        except FileExistsError:
+            pass
 
     extension = '.wrl' if is_vrml else '.x3d'
     export_func = vrml_export_kicad.store if is_vrml else x3d_export.store
