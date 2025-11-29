@@ -16,7 +16,7 @@ import primitives
 class QFN:
     BODY_CHAMFER = primitives.hmils(0.05)
     MARK_RADIUS  = primitives.hmils(0.5)
-    SIGMA        = 0.001
+    EPSILON      = 0.001
 
     def __init__(self, material='QFN'):
         self.material = material
@@ -51,24 +51,24 @@ class QFN:
             y_pos = size[1] / 2.0
 
             detach_regions.append((
-                (x_pos - pin_width / 2.0 - QFN.SIGMA,              0.0, -size[2]),
-                (x_pos + pin_width / 2.0 + QFN.SIGMA,  y_pos + band[1],      0.0)
+                (x_pos - pin_width / 2.0 - QFN.EPSILON,              0.0, -size[2]),
+                (x_pos + pin_width / 2.0 + QFN.EPSILON,  y_pos + band[1],      0.0)
             ))
             detach_regions.append((
-                (x_pos - pin_width / 2.0 - QFN.SIGMA, -y_pos - band[1], -size[2]),
-                (x_pos + pin_width / 2.0 + QFN.SIGMA,              0.0,      0.0)
+                (x_pos - pin_width / 2.0 - QFN.EPSILON, -y_pos - band[1], -size[2]),
+                (x_pos + pin_width / 2.0 + QFN.EPSILON,              0.0,      0.0)
             ))
         for i in range(0, count[1]):
             x_pos = size[0] / 2.0
             y_pos = i * pin_pitch - first_pin_offset[1]
 
             detach_regions.append((
-                (             0.0, y_pos - pin_width / 2.0 - QFN.SIGMA, -size[2]),
-                ( x_pos + band[0], y_pos + pin_width / 2.0 + QFN.SIGMA,      0.0)
+                (             0.0, y_pos - pin_width / 2.0 - QFN.EPSILON, -size[2]),
+                ( x_pos + band[0], y_pos + pin_width / 2.0 + QFN.EPSILON,      0.0)
             ))
             detach_regions.append((
-                (-x_pos - band[0], y_pos - pin_width / 2.0 - QFN.SIGMA, -size[2]),
-                (             0.0, y_pos + pin_width / 2.0 + QFN.SIGMA,      0.0)
+                (-x_pos - band[0], y_pos - pin_width / 2.0 - QFN.EPSILON, -size[2]),
+                (             0.0, y_pos + pin_width / 2.0 + QFN.EPSILON,      0.0)
             ))
         return mesh.detach_faces(detach_regions)
 
@@ -302,20 +302,20 @@ class QFN:
         median_transform.translate(numpy.array([0.0, 0.0, -size[2] / 2.0 + pin_height]))
         inner_regions = [
             (
-                (-first_pin_ext_edge[0] - QFN.SIGMA, -size[1] / 2.0 + band[1],       -size[2]),
-                ( first_pin_ext_edge[0] + QFN.SIGMA, -size[1] / 2.0 + band[1] * 3.0,      0.0),
+                (-first_pin_ext_edge[0] - QFN.EPSILON, -size[1] / 2.0 + band[1],       -size[2]),
+                ( first_pin_ext_edge[0] + QFN.EPSILON, -size[1] / 2.0 + band[1] * 3.0,      0.0),
                 2
             ), (
-                (-first_pin_ext_edge[0] - QFN.SIGMA,  size[1] / 2.0 - band[1],       -size[2]),
-                ( first_pin_ext_edge[0] + QFN.SIGMA,  size[1] / 2.0 - band[1] * 3.0,      0.0),
+                (-first_pin_ext_edge[0] - QFN.EPSILON,  size[1] / 2.0 - band[1],       -size[2]),
+                ( first_pin_ext_edge[0] + QFN.EPSILON,  size[1] / 2.0 - band[1] * 3.0,      0.0),
                 3
             ), (
-                (-size[0] / 2.0 + band[0],       -first_pin_ext_edge[1] - QFN.SIGMA, -size[2]),
-                (-size[0] / 2.0 + band[0] * 3.0,  first_pin_ext_edge[1] + QFN.SIGMA,      0.0),
+                (-size[0] / 2.0 + band[0],       -first_pin_ext_edge[1] - QFN.EPSILON, -size[2]),
+                (-size[0] / 2.0 + band[0] * 3.0,  first_pin_ext_edge[1] + QFN.EPSILON,      0.0),
                 4
             ), (
-                ( size[0] / 2.0 - band[0],       -first_pin_ext_edge[1] - QFN.SIGMA, -size[2]),
-                ( size[0] / 2.0 - band[0] * 3.0,  first_pin_ext_edge[1] + QFN.SIGMA,      0.0),
+                ( size[0] / 2.0 - band[0],       -first_pin_ext_edge[1] - QFN.EPSILON, -size[2]),
+                ( size[0] / 2.0 - band[0] * 3.0,  first_pin_ext_edge[1] + QFN.EPSILON,      0.0),
                 5
             )
         ]

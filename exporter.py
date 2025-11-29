@@ -10,6 +10,8 @@ import hashlib
 import math
 import numpy
 
+from wrlconv import curves
+
 def make_vector(data, size=None):
     if data is None:
         return None
@@ -346,50 +348,6 @@ class Footprint:
 def collide_line(line, pads, thickness, gap):
     min_width = thickness
 
-    def point_in_rect(rect, point):
-        epsilon = 1e-6
-        in_range = lambda x, start, end: start - epsilon <= x <= end + epsilon
-        if not in_range(point[0], rect[0][0], rect[1][0]):
-            return False
-        if not in_range(point[1], rect[0][1], rect[1][1]):
-            return False
-        return True
-
-    def get_cross_point(line1, line2):
-        epsilon = 1e-6
-        det = line1[0] * line2[1] - line1[1] * line2[0]
-
-        if abs(det) <= epsilon:
-            return None
-
-        delta_x = -line1[2] * line2[1] + line1[1] * line2[2]
-        delta_y = -line1[0] * line2[2] + line1[2] * line2[0]
-        return (delta_x / det, delta_y / det)
-
-    def get_line_func(start, end):
-        # Returns (A, B, C)
-        delta_x, delta_y = end[0] - start[0], end[1] - start[1]
-
-        if delta_x == 0.0:
-            return (1.0, 0.0, -start[0])
-        if delta_y == 0.0:
-            return (0.0, 1.0, -start[1])
-        return (delta_y, -delta_x, delta_x * start[1] - delta_y * start[0])
-
-    def get_cross_segment(line, segment, box):
-        start, end = segment[0], segment[1]
-
-        cross_point = get_cross_point(line, get_line_func(start, end))
-        if cross_point is None:
-            return None
-
-        rect = ((min(start[0], end[0]), min(start[1], end[1])),
-                (max(start[0], end[0]), max(start[1], end[1])))
-        if not point_in_rect(rect, cross_point) or not point_in_rect(box, cross_point):
-            return None
-
-        return cross_point
-
     def get_pad_segments(pad):
         segments = []
         pos, offset = pad.position, (pad.size[0] / 2.0, pad.size[1] / 2.0)
@@ -425,7 +383,7 @@ def collide_line(line, pads, thickness, gap):
                 (pad.position[0] + pad.size[0] / 2.0, pad.position[1] + pad.size[1] / 2.0))
 
     def check_point_collisions(point, pads):
-        collisions = [point_in_rect(pad_rect_func(pad), point) for pad in pads]
+        collisions = [curves.is_point_in_rect(pad_rect_func(pad), point) for pad in pads]
         return functools.reduce(lambda x, y: x or y, collisions)
 
     def collision_func(chunk, pad):
@@ -439,10 +397,7 @@ def collide_line(line, pads, thickness, gap):
         return [line]
 
     # Create common line function Ax + By + C = 0
-    line_box = ((min(line.start[0], line.end[0]), min(line.start[1], line.end[1])),
-        (max(line.start[0], line.end[0]), max(line.start[1], line.end[1])))
-    line_func = get_line_func(line.start, line.end)
-    seg_func = lambda x: get_cross_segment(line_func, x, line_box)
+    seg_func = lambda x: curves.intersect_lines((line.start, line.end), x)
 
     # Subdivide all pads into segments
     segments = []
