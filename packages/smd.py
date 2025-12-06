@@ -40,7 +40,7 @@ class MELF:
     @staticmethod
     def build_body_curves(length, body_curvature, body_radius, contact_length, band_length,
                           band_offset, edge_resolution, line_resolution):
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         left_part, right_part = [], []
 
         # Left rounded edge
@@ -87,7 +87,7 @@ class MELF:
                              contact_length, contact_radius, edge_resolution, line_resolution):
         rotation = model.Transform(matrix=model.make_rotation_matrix(numpy.array([0.0, 0.0, 1.0]),
             math.pi))
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         left_contact = []
 
         # Left contact

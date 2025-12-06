@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.12)
 project(kmodgen NONE)
 
 # Build options
+set(CONFIG_FILE "" CACHE STRING "Path to a silkscreen configuration file.")
 set(DESC_DIR "${PROJECT_SOURCE_DIR}/descriptions" CACHE STRING "Path to the description directory.")
-set(SPEC_FILE "" CACHE STRING "Path to a custom silkscreen specification file.")
 option(USE_SEXPRESSION "Use S-Expression format for footprints." ON)
 option(USE_SEXPRESSION_OLD "Use old S-Expression format for footprints." OFF)
 option(USE_X3D "Use X3D format for package models." OFF)
@@ -17,7 +17,10 @@ if(NOT Python3_FOUND)
 endif()
 
 # Build flags for footprint and model generators
-set(OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib)
+set(CONFIG_BASE "${PROJECT_SOURCE_DIR}/config.json")
+set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/lib")
+set(DEPENDS_FP ${CONFIG_BASE})
+set(DEPENDS_MOD ${CONFIG_BASE})
 set(FLAGS_FP "")
 set(FLAGS_MOD -o ${OUTPUT_DIR})
 
@@ -25,8 +28,10 @@ if(NOT USE_SEXPRESSION AND USE_SEXPRESSION_OLD)
     message(FATAL_ERROR "Incorrect configuration")
 endif()
 
-if(NOT ${SPEC_FILE} STREQUAL "")
-    set(FLAGS_FP ${FLAGS_FP} -s ${SPEC_FILE})
+if(NOT ${CONFIG_FILE} STREQUAL "")
+    set(FLAGS_FP ${FLAGS_FP} -c ${CONFIG_FILE})
+    set(DEPENDS_FP ${DEPENDS_FP} ${CONFIG_FILE})
+    set(DEPENDS_MOD ${DEPENDS_MOD} ${CONFIG_FILE})
 endif()
 
 if(USE_SEXPRESSION AND USE_SEXPRESSION_OLD)
@@ -118,7 +123,7 @@ foreach(DESC_PATH ${DESC_LIST})
             add_custom_command(
                     OUTPUT ${FP_PATH}
                     COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/fp.py ${FLAGS_FP} ${DESC_PATH} -l ${DESC_LIB} -f ${PART_NAME}
-                    DEPENDS ${DESC_PATH}
+                    DEPENDS ${DESC_PATH} ${DEPENDS_FP}
             )
             list(APPEND FP_LIST ${FP_PATH})
         endif()
@@ -154,7 +159,7 @@ foreach(DESC_PATH ${DESC_LIST})
             add_custom_command(
                     OUTPUT ${MOD_PATH}
                     COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/mod.py ${FLAGS_MOD} ${DESC_PATH} -l ${DESC_LIB} -f ${PART_NAME}
-                    DEPENDS ${DESC_PATH}
+                    DEPENDS ${DESC_PATH} ${DEPENDS_MOD}
             )
         endif()
     endforeach()
@@ -175,7 +180,7 @@ if(NOT USE_SEXPRESSION)
             add_custom_command(
                     OUTPUT ${FP_LIB_PATH}
                     COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/archive_parts.py -l ${FP_LIB_PATH} ${${LIB_NAME}_SOURCES}
-                    DEPENDS ${${LIB_NAME}_SOURCES}
+                    DEPENDS ${${LIB_NAME}_SOURCES} ${DEPENDS_FP}
             )
             add_custom_target(${LIB_NAME}_fp ALL SOURCES ${FP_LIB_PATH})
             message(STATUS "Library ${LIB_NAME}: added footprints")

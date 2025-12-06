@@ -12,25 +12,6 @@ from wrlconv import curves
 from wrlconv import geometry
 from wrlconv import model
 
-def calc_bezier_weight(a=None, b=None, angle=None): # pylint: disable=invalid-name
-    if angle is None:
-        if a is None or b is None:
-            # User must provide vectors a and b when angle argument is not used
-            raise TypeError()
-        angle = model.angle(a, b)
-
-    return (4.0 / 3.0) * math.tan(angle / 4.0)
-
-def calc_median_point(vertices):
-    if len(vertices) == 0:
-        raise ValueError()
-
-    max_pos = min_pos = vertices[0]
-    for vertex in vertices:
-        max_pos = numpy.maximum(max_pos, vertex)
-        min_pos = numpy.minimum(min_pos, vertex)
-    return (max_pos + min_pos) / 2.0
-
 def hmils(values):
     # Convert millimeters to hundreds of mils
     try:
@@ -147,7 +128,7 @@ class JointEdge:
         else:
             self.normals[self.m_num] = model.normalize(m_vec) * length
             self.normals[self.n_num] = model.normalize(n_vec) * length
-        self.roundness = calc_bezier_weight(m_norm, n_norm)
+        self.roundness = curves.calc_bezier_weight(m_norm, n_norm)
 
         # pylint: disable=invalid-name
         self.m = self.normals[self.m_num]
@@ -379,9 +360,9 @@ class QuadJoint:
                 )
             )
 
-        roundness0 = calc_bezier_weight(angle=abs(angles[0]))
+        roundness0 = curves.calc_bezier_weight(angle=abs(angles[0]))
         self.diag0.set_roundness(roundness0)
-        roundness1 = calc_bezier_weight(angle=abs(angles[1]))
+        roundness1 = curves.calc_bezier_weight(angle=abs(angles[1]))
         self.diag1.set_roundness(roundness1)
 
         if self.flat0:
@@ -1179,7 +1160,7 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
 def make_rounded_rect(size, roundness, segments):
     # pylint: disable=invalid-name
     dx, dy = size[0] / 2.0, size[1] / 2.0
-    r, rb = roundness, roundness * calc_bezier_weight(angle=math.pi / 2.0)
+    r, rb = roundness, roundness * curves.calc_bezier_weight(angle=math.pi / 2.0)
     # pylint: enable=invalid-name
 
     shape = []
@@ -1201,7 +1182,7 @@ def make_rounded_rect(size, roundness, segments):
 def make_rounded_rect_half(size, rotate, roundness, segments):
     # pylint: disable=invalid-name
     dx, dy = size[0], size[1]
-    r, rb = roundness, roundness * calc_bezier_weight(angle=math.pi / 2.0)
+    r, rb = roundness, roundness * curves.calc_bezier_weight(angle=math.pi / 2.0)
     # pylint: enable=invalid-name
 
     shape = []
@@ -1325,7 +1306,7 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
 
     if fill_start:
         v_center_index = len(mesh.geo_vertices)
-        mesh.geo_vertices.append(calc_median_point(slices[0]))
+        mesh.geo_vertices.append(model.calc_median_point(slices[0]))
 
         for i in range(0, number - 1):
             mesh.geo_polygons.append([i, i + 1, v_center_index])
@@ -1345,7 +1326,7 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
     if fill_end:
         v_center_index = len(mesh.geo_vertices)
         v_start_index = (len(slices) - 1) * number
-        mesh.geo_vertices.append(calc_median_point(slices[-1]))
+        mesh.geo_vertices.append(model.calc_median_point(slices[-1]))
 
         for i in range(v_start_index, v_start_index + number - 1):
             mesh.geo_polygons.append([i + 1, i, v_center_index])
@@ -1358,7 +1339,7 @@ def build_loft_mesh(slices, fill_start=True, fill_end=True):
 def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
                   chamfer_resolution, edge_resolution, line_resolution, flat=False):
     chamfer = min(pin_shape_size) / 10.0
-    curve_roundness = calc_bezier_weight(angle=math.pi / 2.0 + pin_slope)
+    curve_roundness = curves.calc_bezier_weight(angle=math.pi / 2.0 + pin_slope)
 
     if flat:
         shape_correction = pin_shape_size[1] * math.cos(math.atan(end_slope))

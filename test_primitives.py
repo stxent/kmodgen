@@ -136,21 +136,21 @@ class TestChips:
 class TestHelpers:
     def test_bezier_weight(self):
         try:
-            value = primitives.calc_bezier_weight((1.0, 0.0, 0.0), None, None)
+            value = curves.calc_bezier_weight((1.0, 0.0, 0.0), None, None)
         except TypeError:
             value = None
         assert value is None
 
         try:
-            value = primitives.calc_bezier_weight(None, (1.0, 0.0, 0.0), None)
+            value = curves.calc_bezier_weight(None, (1.0, 0.0, 0.0), None)
         except TypeError:
             value = None
         assert value is None
 
-        value = primitives.calc_bezier_weight((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), None)
+        value = curves.calc_bezier_weight((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), None)
         assert math.isclose(value, 0.5522847498307933) is True
 
-        value = primitives.calc_bezier_weight(None, None, 1.5707963267948966)
+        value = curves.calc_bezier_weight(None, None, 1.5707963267948966)
         assert math.isclose(value, 0.5522847498307933) is True
 
     def test_hmils(self):
@@ -162,16 +162,13 @@ class TestHelpers:
         assert math.isclose(value[1], 0.5) is True
 
     def test_median_point(self):
-        try:
-            value = primitives.calc_median_point([])
-        except ValueError:
-            value = None
-        assert value is None
+        value = model.calc_median_point([])
+        assert numpy.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
 
-        value = primitives.calc_median_point([(1.0, 0.0, 0.0)])
+        value = model.calc_median_point([(1.0, 0.0, 0.0)])
         assert numpy.isclose(value, (1.0, 0.0, 0.0)).all().item() is True
 
-        value = primitives.calc_median_point([(1.0, 1.0, 1.0), (-1.0, -1.0, -1.0)])
+        value = model.calc_median_point([(1.0, 1.0, 1.0), (-1.0, -1.0, -1.0)])
         assert numpy.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
 
     def test_reverse_projection(self):
@@ -275,7 +272,7 @@ class TestPrimitives:
     @staticmethod
     def make_barrel_curve(radius, height, edge_resolution):
         curvature = radius / 5.0
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
         curve.append(curves.Line(

@@ -437,7 +437,7 @@ class ChipResistor:
     def make_resistor_contact_curve(lead_thickness, lead_length, lead_height, lead_bridge_length,
                                     chamfer, bridge_resolution, slope_resolution, edge_resolution,
                                     line_resolution):
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         parts = []
 
         bot_offset, top_offset = lead_thickness, lead_height - lead_thickness
@@ -674,7 +674,7 @@ class ChipShunt(ChipResistor):
     @staticmethod
     def make_resistor_contact_curve(length, thickness, clearance, lead_length, chamfer,
                                     slope_resolution, edge_resolution, line_resolution):
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         parts = []
 
         x_offset, z_offset = length / 2.0, thickness / 2.0

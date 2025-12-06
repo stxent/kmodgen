@@ -195,7 +195,7 @@ class RadialCapacitor:
         if cap_radius is not None and cap_depth is not None and chamfer is None:
             raise ValueError()
 
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
         # Bottom cap
@@ -278,7 +278,7 @@ class RadialCapacitor:
 
     @staticmethod
     def build_pin_curve(radius, height, curvature, edge_details):
-        weight = primitives.calc_bezier_weight(angle=math.pi / 2.0)
+        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
         curve.append(curves.Bezier(

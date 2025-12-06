@@ -93,7 +93,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-c', dest='config', help='path to a configuration file',
-                        default=config_path)
+                        default=None)
     parser.add_argument('-d', dest='debug', help='show debug information',
                         default=False, action='store_true')
     parser.add_argument('-f', dest='pattern', help='filter parts by name',
@@ -122,12 +122,21 @@ def main():
     else:
         output_format = Generator.FORMAT_SEXPRESSION
 
+    specs_default = None
+    if options.config is not None:
+        config = json.load(open(options.config, 'rb'))
+        if 'specs' in config:
+            specs_default = config['specs']
+    if specs_default is None:
+        config = json.load(open(config_path, 'rb'))
+        specs_default = config['specs']
+
     for filename in options.files:
         desc = json.load(open(filename, 'rb'))
-        specs = desc['specs'] if 'specs' in desc else json.load(open(options.config, 'rb'))['specs']
+        spec = desc['specs'] if 'specs' in desc else specs_default
         pattern = re.compile(options.pattern, re.S)
         generator = Generator(options.library, options.output, output_format, options.vrml)
-        generator.generate(specs, desc['parts'], pattern, options.debug)
+        generator.generate(spec, desc['parts'], pattern, options.debug)
 
 if __name__ == '__main__':
     main()
