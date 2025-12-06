@@ -5,7 +5,8 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import numpy
+import numpy as np
+
 import exporter
 import primitives
 
@@ -15,21 +16,21 @@ class SOP(exporter.Footprint):
         super().__init__(name=descriptor['title'], description=SOP.describe(descriptor), spec=spec)
 
         try:
-            self.heatsink_size = numpy.array(descriptor['heatsink']['size'])
+            self.heatsink_size = np.array(descriptor['heatsink']['size'])
         except KeyError:
             self.heatsink_size = None
 
         try:
-            self.pad_size = numpy.array(descriptor['pads']['regularPadSize'])
+            self.pad_size = np.array(descriptor['pads']['regularPadSize'])
         except KeyError:
-            self.pad_size = numpy.array(descriptor['pads']['size'])
+            self.pad_size = np.array(descriptor['pads']['size'])
 
         try:
-            self.side_pad_size = numpy.array(descriptor['pads']['sidePadSize'])
+            self.side_pad_size = np.array(descriptor['pads']['sidePadSize'])
         except KeyError:
             self.side_pad_size = self.pad_size
 
-        self.body_size = numpy.array(descriptor['body']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
         self.rows = descriptor['pins']['count'] // 2
         self.margin = descriptor['pads']['margin']
         self.pitch = descriptor['pins']['pitch']
@@ -58,13 +59,13 @@ class SOP(exporter.Footprint):
         first_pin_offset = float(self.rows - 3) * self.pitch / 2.0 + self.side_pitch
 
         # Body outline
-        outline_margin = numpy.array([0.0, (self.margin - self.gap) * 2.0 - self.thickness, 0.0])
-        outline_size = numpy.minimum(self.body_size, self.body_size + outline_margin)
+        outline_margin = np.array([0.0, (self.margin - self.gap) * 2.0 - self.thickness, 0.0])
+        outline_size = np.minimum(self.body_size, self.body_size + outline_margin)
         top_corner = outline_size / 2.0
         silkscreen.append(exporter.Rect(top_corner, -top_corner, self.thickness))
 
         # Outer first pin mark
-        dot_mark_position = numpy.array([
+        dot_mark_position = np.array([
             -(first_pin_offset + self.side_pad_size[0] / 2.0 + self.gap + self.thickness),
             (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
         ])
@@ -74,9 +75,9 @@ class SOP(exporter.Footprint):
         # Inner first pin mark
         tri_mark_offset = 1.0
         tri_mark_points = [
-            numpy.array([-top_corner[0], top_corner[1] - tri_mark_offset]),
-            numpy.array([-top_corner[0], top_corner[1]]),
-            numpy.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
+            np.array([-top_corner[0], top_corner[1] - tri_mark_offset]),
+            np.array([-top_corner[0], top_corner[1]]),
+            np.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
         ]
         silkscreen.append(exporter.Poly(tri_mark_points, self.thickness, True,
                                         exporter.Layer.SILK_FRONT))
@@ -86,9 +87,9 @@ class SOP(exporter.Footprint):
         for i in range(0, self.rows):
             x_offset = self.spacing(i, self.rows) - first_pin_offset
             pads.append(exporter.SmdPad(str(i + 1), self.pad(i, self.rows),
-                                        numpy.array([x_offset, y_offset])))
+                                        np.array([x_offset, y_offset])))
             pads.append(exporter.SmdPad(str(i + 1 + self.rows), self.pad(i, self.rows),
-                                        numpy.array([-x_offset, -y_offset])))
+                                        np.array([-x_offset, -y_offset])))
 
         # Central pad
         if self.heatsink_size is not None:

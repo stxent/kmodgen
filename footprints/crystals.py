@@ -5,7 +5,8 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import numpy
+import numpy as np
+
 import exporter
 import primitives
 
@@ -15,9 +16,9 @@ class CrystalSMD(exporter.Footprint):
         super().__init__(name=descriptor['title'],
                          description=CrystalSMD.describe(descriptor), spec=spec)
 
-        self.body_size = numpy.array(descriptor['body']['size'])
-        self.pad_size = numpy.array(descriptor['pads']['size'])
-        self.pitch = numpy.array(descriptor['pins']['pitch'])
+        self.body_size = np.array(descriptor['body']['size'])
+        self.pad_size = np.array(descriptor['pads']['size'])
+        self.pitch = np.array(descriptor['pins']['pitch'])
         self.mapping = descriptor['pins']['names']
 
     def generate(self):
@@ -29,24 +30,24 @@ class CrystalSMD(exporter.Footprint):
 
         if len(self.mapping) == 2:
             pads.append(exporter.SmdPad(self.mapping[0], self.pad_size,
-                                        numpy.array([-axis_offsets[0], 0.0])))
+                                        np.array([-axis_offsets[0], 0.0])))
             pads.append(exporter.SmdPad(self.mapping[1], self.pad_size,
-                                        numpy.array([axis_offsets[0], 0.0])))
+                                        np.array([axis_offsets[0], 0.0])))
         elif len(self.mapping) == 4:
             pads.append(exporter.SmdPad(self.mapping[0], self.pad_size,
-                                        numpy.array([-axis_offsets[0], axis_offsets[1]])))
+                                        np.array([-axis_offsets[0], axis_offsets[1]])))
             pads.append(exporter.SmdPad(self.mapping[1], self.pad_size,
-                                        numpy.array([axis_offsets[0], axis_offsets[1]])))
+                                        np.array([axis_offsets[0], axis_offsets[1]])))
             pads.append(exporter.SmdPad(self.mapping[2], self.pad_size,
-                                        numpy.array([axis_offsets[0], -axis_offsets[1]])))
+                                        np.array([axis_offsets[0], -axis_offsets[1]])))
             pads.append(exporter.SmdPad(self.mapping[3], self.pad_size,
-                                        numpy.array([-axis_offsets[0], -axis_offsets[1]])))
+                                        np.array([-axis_offsets[0], -axis_offsets[1]])))
         else:
             # Unsupported pin configuration
             raise ValueError()
 
         # First pin mark
-        dot_mark_position = numpy.array([
+        dot_mark_position = np.array([
             -(axis_offsets[0] + self.pad_size[0] / 2.0 + self.gap + self.thickness),
             axis_offsets[1]
         ])
@@ -79,10 +80,10 @@ class CrystalTH(exporter.Footprint):
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
         self.inner_diameter = descriptor['pads']['drill']
-        self.pad_size = numpy.array([
+        self.pad_size = np.array([
             descriptor['pads']['diameter'],
             descriptor['pads']['diameter']])
-        self.body_size = numpy.array(descriptor['body']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
 
     def generate(self):
         objects = []
@@ -98,14 +99,14 @@ class CrystalTH(exporter.Footprint):
         # Body outline
         arc_radius = self.body_size[1] / 2.0
         arc_offset = self.body_size[0] / 2.0 - arc_radius
-        objects.append(exporter.Circle(numpy.array([-arc_offset, 0.0]), arc_radius.item(),
+        objects.append(exporter.Circle(np.array([-arc_offset, 0.0]), arc_radius.item(),
                                        self.thickness, False, (90.0, -90.0)))
-        objects.append(exporter.Circle(numpy.array([arc_offset, 0.0]), arc_radius.item(),
+        objects.append(exporter.Circle(np.array([arc_offset, 0.0]), arc_radius.item(),
                                        self.thickness, False, (-90.0, 90.0)))
-        objects.append(exporter.Line(numpy.array([-arc_offset, arc_radius]),
-                                     numpy.array([arc_offset, arc_radius]), self.thickness))
-        objects.append(exporter.Line(numpy.array([-arc_offset, -arc_radius]),
-                                     numpy.array([arc_offset, -arc_radius]), self.thickness))
+        objects.append(exporter.Line(np.array([-arc_offset, arc_radius]),
+                                     np.array([arc_offset, arc_radius]), self.thickness))
+        objects.append(exporter.Line(np.array([-arc_offset, -arc_radius]),
+                                     np.array([arc_offset, -arc_radius]), self.thickness))
 
         return objects
 

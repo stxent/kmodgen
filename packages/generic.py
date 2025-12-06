@@ -6,7 +6,7 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import re
-import numpy
+import numpy as np
 
 def lookup(mesh_list, mesh_name):
     found = []
@@ -28,10 +28,10 @@ class GenericModelFilter:
         if len(meshes) > 0 and self.alignment != GenericModelFilter.PIVOT_NONE:
             if self.alignment == GenericModelFilter.PIVOT_MEDIAN_CENTER:
                 # Find median point of the group of objects
-                pivot = numpy.zeros(3)
+                pivot = np.zeros(3)
                 for mesh in meshes:
                     pivot += mesh.transform.matrix[:,3][0:3]
-                pivot *= numpy.array([1.0 / len(meshes), 1.0 / len(meshes), 0.0])
+                pivot *= np.array([1.0 / len(meshes), 1.0 / len(meshes), 0.0])
             elif self.alignment == GenericModelFilter.PIVOT_BOUNDING_BOX_CENTER:
                 # Find bounding box center
                 coord_min, coord_max = None, None
@@ -41,10 +41,10 @@ class GenericModelFilter:
                     if coord_min is None:
                         coord_min = coord_max = column
                     else:
-                        coord_min = numpy.minimum(coord_min, column)
-                        coord_max = numpy.maximum(coord_max, column)
+                        coord_min = np.minimum(coord_min, column)
+                        coord_max = np.maximum(coord_max, column)
 
-                pivot = coord_min + (coord_max - coord_min) * numpy.array([0.5, 0.5, 0.0])
+                pivot = coord_min + (coord_max - coord_min) * np.array([0.5, 0.5, 0.0])
 
             # Move all objects in horizontal plane to the center of the scene
             for mesh in meshes:

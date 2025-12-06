@@ -5,7 +5,7 @@
 # Copyright (C) 2016 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import numpy
+import numpy as np
 import exporter
 
 
@@ -13,8 +13,8 @@ class Chip(exporter.Footprint):
     def __init__(self, spec, descriptor):
         super().__init__(name=descriptor['title'], description=Chip.describe(descriptor), spec=spec)
 
-        self.body_size = numpy.array(descriptor['body']['size'])
-        self.pad_size = numpy.array(descriptor['pads']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
+        self.pad_size = np.array(descriptor['pads']['size'])
         self.pitch = descriptor['pads']['pitch']
         self.mapping = descriptor['pads']['names'] if 'names' in descriptor['pads'] else ['1', '2']
 
@@ -58,25 +58,25 @@ class Chip(exporter.Footprint):
                 vert = self.body_size[1] / 2.0
 
         pads = []
-        pads.append(exporter.SmdPad(self.mapping[0], self.pad_size, numpy.array([-center, 0.0])))
-        pads.append(exporter.SmdPad(self.mapping[1], self.pad_size, numpy.array([center, 0.0])))
+        pads.append(exporter.SmdPad(self.mapping[0], self.pad_size, np.array([-center, 0.0])))
+        pads.append(exporter.SmdPad(self.mapping[1], self.pad_size, np.array([center, 0.0])))
 
         if not self.mark_arrow:
             if self.mark_vertical:
-                objects.append(exporter.Line(numpy.array([0.0, vert]),
-                                             numpy.array([0.0, -vert]), self.thickness))
+                objects.append(exporter.Line(np.array([0.0, vert]),
+                                             np.array([0.0, -vert]), self.thickness))
             else:
-                objects.append(exporter.Line(numpy.array([horiz, vert]),
-                                             numpy.array([-horiz, vert]), self.thickness))
-                objects.append(exporter.Line(numpy.array([horiz, -vert]),
-                                             numpy.array([-horiz, -vert]), self.thickness))
+                objects.append(exporter.Line(np.array([horiz, vert]),
+                                             np.array([-horiz, vert]), self.thickness))
+                objects.append(exporter.Line(np.array([horiz, -vert]),
+                                             np.array([-horiz, -vert]), self.thickness))
 
         if not self.mark_arrow and not self.mark_wrap:
             lines = []
-            lines.append(exporter.Line(numpy.array([horiz, vert]),
-                                       numpy.array([horiz, -vert]), self.thickness))
-            lines.append(exporter.Line(numpy.array([-horiz, vert]),
-                                       numpy.array([-horiz, -vert]), self.thickness))
+            lines.append(exporter.Line(np.array([horiz, vert]),
+                                       np.array([horiz, -vert]), self.thickness))
+            lines.append(exporter.Line(np.array([-horiz, vert]),
+                                       np.array([-horiz, -vert]), self.thickness))
 
             process_func = lambda x: exporter.collide_line(x, pads, self.thickness, self.gap)
             for line in lines:
@@ -84,16 +84,16 @@ class Chip(exporter.Footprint):
 
         if self.mark_dot and self.verification:
             dot_mark_offset = center + self.pad_size[0] / 2.0 + self.gap + self.thickness
-            objects.append(exporter.Circle(numpy.array([-dot_mark_offset, 0.0]),
+            objects.append(exporter.Circle(np.array([-dot_mark_offset, 0.0]),
                                            self.thickness / 2.0, self.thickness, True))
 
         if self.mark_bar:
             horiz_polar = horiz - self.thickness # Outer border without polarization
             points = [
-                numpy.array([-horiz, -vert]),
-                numpy.array([-horiz, vert]),
-                numpy.array([-horiz_polar, vert]),
-                numpy.array([-horiz_polar, -vert])
+                np.array([-horiz, -vert]),
+                np.array([-horiz, vert]),
+                np.array([-horiz_polar, vert]),
+                np.array([-horiz_polar, -vert])
             ]
             objects.append(exporter.Line(points[0], points[1], self.thickness))
             objects.append(exporter.Line(points[2], points[3], self.thickness))
@@ -124,8 +124,8 @@ class Chip(exporter.Footprint):
 
         if self.mark_wrap:
             # Scale outline to pad size
-            outline = numpy.array([self.pad_size[0] * 2.0 + self.pitch, self.pad_size[1]])
-            body = numpy.maximum(self.body_size, outline)
+            outline = np.array([self.pad_size[0] * 2.0 + self.pitch, self.pad_size[1]])
+            body = np.maximum(self.body_size, outline)
         else:
             body = self.body_size
 
@@ -170,10 +170,10 @@ class ChipArray(exporter.Footprint):
     def __init__(self, spec, descriptor):
         super().__init__(name=descriptor['title'], description=Chip.describe(descriptor), spec=spec)
 
-        self.body_size = numpy.array(descriptor['body']['size'])
-        self.pad_size = numpy.array(descriptor['pads']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
+        self.pad_size = np.array(descriptor['pads']['size'])
         self.count = descriptor['pins']['count']
-        self.pitch = numpy.array(descriptor['pins']['pitch'])
+        self.pitch = np.array(descriptor['pins']['pitch'])
 
     def generate(self):
         objects = []
@@ -188,9 +188,9 @@ class ChipArray(exporter.Footprint):
             x_offset = i * self.pitch[0] - first_pin_offset
             y_offset = self.pitch[1] / 2.0
             pads.append(exporter.SmdPad(str(i + 1), self.pad_size,
-                                        numpy.array([x_offset, y_offset])))
+                                        np.array([x_offset, y_offset])))
             pads.append(exporter.SmdPad(str(self.count - i), self.pad_size,
-                                        numpy.array([x_offset, -y_offset])))
+                                        np.array([x_offset, -y_offset])))
 
         objects.extend(pads)
         return objects
@@ -221,12 +221,12 @@ class DPAK(exporter.Footprint):
                     self.name = None
 
             try:
-                self.offset = numpy.array(descriptor['offset'])
+                self.offset = np.array(descriptor['offset'])
             except (KeyError, TypeError):
-                self.offset = pattern.offset if pattern is not None else numpy.zeros(2)
+                self.offset = pattern.offset if pattern is not None else np.zeros(2)
 
             try:
-                self.size = numpy.array(descriptor['size'])
+                self.size = np.array(descriptor['size'])
             except (KeyError, TypeError):
                 self.size = pattern.size
 
@@ -248,7 +248,7 @@ class DPAK(exporter.Footprint):
 
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
-        self.body_size = numpy.array(descriptor['body']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
 
         try:
             pad_pattern = DPAK.PadDesc.make_pattern(descriptor['pads']['default'])
@@ -282,8 +282,8 @@ class DPAK(exporter.Footprint):
 
         # XXX
         # https://www.infineon.com/cms/en/product/packages/PG-TO252/PG-TO252-3-11/
-        self.border_size = numpy.array([self.body_size[0], upper_bound - lower_bound])
-        self.border_center = numpy.array([0.0, lower_bound + upper_bound])
+        self.border_size = np.array([self.body_size[0], upper_bound - lower_bound])
+        self.border_center = np.array([0.0, lower_bound + upper_bound])
 
     def calc_pad_position_x(self, number):
         if number >= self.count:
@@ -321,7 +321,7 @@ class DPAK(exporter.Footprint):
 
 class MELF(Chip):
     def __init__(self, spec, descriptor):
-        descriptor['body']['size'] = numpy.array([
+        descriptor['body']['size'] = np.array([
             descriptor['body']['length'],
             descriptor['body']['radius'] * 2.0
         ])
@@ -349,12 +349,12 @@ class SOT(exporter.Footprint):
                     self.name = None
 
             try:
-                self.offset = numpy.array(descriptor['offset'])
+                self.offset = np.array(descriptor['offset'])
             except (KeyError, TypeError):
-                self.offset = pattern.offset if pattern is not None else numpy.zeros(2)
+                self.offset = pattern.offset if pattern is not None else np.zeros(2)
 
             try:
-                self.size = numpy.array(descriptor['size'])
+                self.size = np.array(descriptor['size'])
             except (KeyError, TypeError):
                 self.size = pattern.size
 
@@ -375,7 +375,7 @@ class SOT(exporter.Footprint):
 
         self.count = descriptor['pins']['count']
         self.pitch = descriptor['pins']['pitch']
-        self.body_size = numpy.array(descriptor['body']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
 
         try:
             self.mark_dot = descriptor['mark']['dot']
@@ -424,12 +424,12 @@ class SOT(exporter.Footprint):
         lower_bound = min(self.body_size[1] / 2.0, lower_bound)
         upper_bound = max(-self.body_size[1] / 2.0, upper_bound)
 
-        self.border_size = numpy.array([self.body_size[0], lower_bound - upper_bound])
-        self.border_center = numpy.array([0.0, lower_bound + upper_bound])
+        self.border_size = np.array([self.body_size[0], lower_bound - upper_bound])
+        self.border_center = np.array([0.0, lower_bound + upper_bound])
 
     def calc_pad_position(self, number):
         columns = self.count // 2
-        position = numpy.array([
+        position = np.array([
             self.pitch * (number % columns - (columns - 1) / 2.0),
             self.body_size[1] / 2.0
         ])
@@ -453,7 +453,7 @@ class SOT(exporter.Footprint):
             first_pad = self.pads[0]
             dot_mark_offset = first_pad.position[0] \
                 - (first_pad.size[0] / 2.0 + self.gap + self.thickness)
-            silkscreen.append(exporter.Circle(numpy.array([dot_mark_offset, first_pad.position[1]]),
+            silkscreen.append(exporter.Circle(np.array([dot_mark_offset, first_pad.position[1]]),
                                               self.thickness / 2.0, self.thickness, True))
 
         # Inner polarity mark
@@ -461,9 +461,9 @@ class SOT(exporter.Footprint):
             tri_mark_offset = min(1.0, self.border_size[1] / 2.0)
             top_corner = self.border_size / 2.0 + self.border_center
             points = [
-                numpy.array([-top_corner[0], top_corner[1] - tri_mark_offset]),
-                numpy.array([-top_corner[0], top_corner[1]]),
-                numpy.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
+                np.array([-top_corner[0], top_corner[1] - tri_mark_offset]),
+                np.array([-top_corner[0], top_corner[1]]),
+                np.array([-top_corner[0] + tri_mark_offset, top_corner[1]])
             ]
             silkscreen.append(exporter.Poly(points, self.thickness, True,
                                             exporter.Layer.SILK_FRONT))

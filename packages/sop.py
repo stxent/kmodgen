@@ -6,7 +6,7 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import math
-import numpy
+import numpy as np
 
 from wrlconv import model
 import primitives
@@ -72,7 +72,7 @@ class SOP:
             pin_shape_size=pin_shape,
             pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
             pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
-            pin_slope=numpy.deg2rad(10.0),
+            pin_slope=np.deg2rad(10.0),
             end_slope=body_slope,
             chamfer_resolution=resolutions['chamfer'],
             edge_resolution=resolutions['edge'],

@@ -6,7 +6,7 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import math
-import numpy
+import numpy as np
 
 from wrlconv import curves, geometry, helpers, model, x3d_export
 import primitives
@@ -33,13 +33,13 @@ class TestChips:
     def make_chip(path, name, edge_resolution, line_resolution):
         model.reset_allocator()
 
-        body_size = numpy.array([2.0, 1.0, 0.5])
+        body_size = np.array([2.0, 1.0, 0.5])
         lead_width = 0.5
         body_chamfer = 0.1
         case_chamfer = body_chamfer / (2.0 * math.sqrt(2.0))
 
-        lead_size = numpy.array([lead_width, body_size[1], body_size[2]])
-        ceramic_size = numpy.array([
+        lead_size = np.array([lead_width, body_size[1], body_size[2]])
+        ceramic_size = np.array([
             body_size[0] - 2.0 * lead_width,
             body_size[1] - 2.0 * case_chamfer,
             body_size[2] - 2.0 * case_chamfer])
@@ -52,13 +52,13 @@ class TestChips:
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
-        leads.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
+        leads.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
         body = primitives.make_chip_body(
             size=ceramic_size,
             chamfer=case_chamfer,
             edge_resolution=edge_resolution
         )
-        body.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
+        body.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
 
         meshes = [body, leads]
         serialized = serialize_models(meshes, path, name)
@@ -157,19 +157,19 @@ class TestHelpers:
         value = primitives.hmils(2.54)
         assert math.isclose(value, 1.0) is True
 
-        value = primitives.hmils(numpy.array([0.254, 1.27]))
+        value = primitives.hmils(np.array([0.254, 1.27]))
         assert math.isclose(value[0], 0.1) is True
         assert math.isclose(value[1], 0.5) is True
 
     def test_median_point(self):
         value = model.calc_median_point([])
-        assert numpy.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
+        assert np.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
 
         value = model.calc_median_point([(1.0, 0.0, 0.0)])
-        assert numpy.isclose(value, (1.0, 0.0, 0.0)).all().item() is True
+        assert np.isclose(value, (1.0, 0.0, 0.0)).all().item() is True
 
         value = model.calc_median_point([(1.0, 1.0, 1.0), (-1.0, -1.0, -1.0)])
-        assert numpy.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
+        assert np.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
 
     def test_reverse_projection(self):
         try:
@@ -216,11 +216,11 @@ class TestPins:
         model.reset_allocator()
 
         mesh = primitives.make_pin_mesh(
-            pin_shape_size=numpy.array([0.5, 0.25]),
+            pin_shape_size=np.array([0.5, 0.25]),
             pin_height=2.0,
             pin_length=4.0,
-            pin_slope=numpy.deg2rad(20.0),
-            end_slope=numpy.deg2rad(10.0),
+            pin_slope=np.deg2rad(20.0),
+            end_slope=np.deg2rad(10.0),
             chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
@@ -235,11 +235,11 @@ class TestPins:
         model.reset_allocator()
 
         mesh = primitives.make_pin_mesh(
-            pin_shape_size=numpy.array([0.5, 0.25]),
+            pin_shape_size=np.array([0.5, 0.25]),
             pin_height=2.0,
             pin_length=4.0,
-            pin_slope=numpy.deg2rad(20.0),
-            end_slope=numpy.deg2rad(10.0),
+            pin_slope=np.deg2rad(20.0),
+            end_slope=np.deg2rad(10.0),
             chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
@@ -311,12 +311,12 @@ class TestPrimitives:
         model.reset_allocator()
 
         corners = [
-            numpy.array([ 1.0,  1.0, 0.0]),
-            numpy.array([-1.0,  1.0, 0.0]),
-            numpy.array([-1.0, -1.0, 0.0]),
-            numpy.array([ 1.0, -1.0, 0.0])
+            np.array([ 1.0,  1.0, 0.0]),
+            np.array([-1.0,  1.0, 0.0]),
+            np.array([-1.0, -1.0, 0.0]),
+            np.array([ 1.0, -1.0, 0.0])
         ]
-        offset = numpy.array([0.25, 0.25])
+        offset = np.array([0.25, 0.25])
         mesh = primitives.make_body_cap(corners, 0.5, offset, 24)
 
         serialized = serialize_models([mesh], tmp_path, name)
@@ -327,14 +327,14 @@ class TestPrimitives:
         model.reset_allocator()
 
         path = [
-            curves.Line(numpy.array([0.0, 0.0, -1.0]), numpy.array([0.0, 0.0, 1.0]), 2)
+            curves.Line(np.array([0.0, 0.0, -1.0]), np.array([0.0, 0.0, 1.0]), 2)
         ]
         path_points = []
         for element in path:
             path_points.extend(element.tessellate())
         path_points = curves.optimize(path_points)
 
-        shape_dict = geometry.make_circle_outline(numpy.array([0.0, 0.0, 0.0]), 0.5, 12)
+        shape_dict = geometry.make_circle_outline(np.array([0.0, 0.0, 0.0]), 0.5, 12)
         shape_points = []
         for i in range(0, len(shape_dict)):
             shape_points.append(shape_dict[i])
@@ -352,10 +352,10 @@ class TestPrimitives:
         model.reset_allocator()
 
         corners = [
-            numpy.array([ 1.0,  1.0, 0.0]),
-            numpy.array([-1.0,  1.0, 0.0]),
-            numpy.array([-1.0, -1.0, 0.0]),
-            numpy.array([ 1.0, -1.0, 0.0])
+            np.array([ 1.0,  1.0, 0.0]),
+            np.array([-1.0,  1.0, 0.0]),
+            np.array([-1.0, -1.0, 0.0]),
+            np.array([ 1.0, -1.0, 0.0])
         ]
 
         mesh = model.Mesh()
@@ -363,7 +363,7 @@ class TestPrimitives:
 
         for i in range(0, len(vertices)):
             mesh.geo_vertices.append(vertices[i])
-        primitives.append_solid_cap(mesh, vertices, origin=numpy.array([0.0, 0.0, -1.0]))
+        primitives.append_solid_cap(mesh, vertices, origin=np.array([0.0, 0.0, -1.0]))
 
         serialized = serialize_models([mesh], tmp_path, name)
         assert compare_models(name, serialized) is True
@@ -409,7 +409,7 @@ class TestPrimitives:
         )
         slices = curves.rotate(
             curve=curve,
-            axis=numpy.array([0.0, 0.0, 1.0]),
+            axis=np.array([0.0, 0.0, 1.0]),
             edges=24
         )
         mesh = curves.create_rotation_mesh(
@@ -440,7 +440,7 @@ class TestBox:
         model.reset_allocator()
 
         mesh = primitives.make_box(
-            size=numpy.array([2.0, 2.0, 1.0]),
+            size=np.array([2.0, 2.0, 1.0]),
             chamfer=0.25,
             band_size=0.25,
             band_offset=0.0,
@@ -456,7 +456,7 @@ class TestBox:
         model.reset_allocator()
 
         mesh = primitives.make_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.25,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
@@ -470,18 +470,18 @@ class TestBox:
         model.reset_allocator()
 
         body = primitives.make_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.25,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             mark_radius=0.25,
-            mark_offset=numpy.array([0.25, 0.25]),
+            mark_offset=np.array([0.25, 0.25]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
 
         mark = geometry.Circle(0.25, mark_resolution)
-        mark.translate(numpy.array([0.25, 0.25, 1.0]))
+        mark.translate(np.array([0.25, 0.25, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
@@ -492,7 +492,7 @@ class TestBox:
         model.reset_allocator()
 
         mesh = primitives.make_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.25,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
@@ -508,20 +508,20 @@ class TestBox:
         model.reset_allocator()
 
         body = primitives.make_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.25,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             band_size=0.1,
             band_offset=-0.25,
             mark_radius=0.25,
-            mark_offset=numpy.array([0.25, 0.25]),
+            mark_offset=np.array([0.25, 0.25]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
 
         mark = geometry.Circle(0.25, mark_resolution)
-        mark.translate(numpy.array([0.25, 0.25, 1.0]))
+        mark.translate(np.array([0.25, 0.25, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
@@ -532,7 +532,7 @@ class TestBox:
         model.reset_allocator()
 
         mesh = primitives.make_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.25,
             edge_resolution=3,
             line_resolution=(3, 2, 1)
@@ -583,7 +583,7 @@ class TestRoundedBox:
         model.reset_allocator()
 
         mesh = primitives.make_rounded_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
             chamfer=0.25,
             edge_resolution=edge_resolution,
@@ -600,7 +600,7 @@ class TestRoundedBox:
         model.reset_allocator()
 
         body = primitives.make_rounded_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
             chamfer=0.25,
             edge_resolution=edge_resolution,
@@ -608,13 +608,13 @@ class TestRoundedBox:
             band_size=0.1,
             band_offset=-0.25,
             mark_radius=0.25,
-            mark_offset=numpy.array([0.25, 0.25]),
+            mark_offset=np.array([0.25, 0.25]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
 
         mark = geometry.Circle(0.25, mark_resolution)
-        mark.translate(numpy.array([0.25, 0.25, 1.0]))
+        mark.translate(np.array([0.25, 0.25, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
@@ -644,7 +644,7 @@ class TestSlopedBox:
         model.reset_allocator()
 
         mesh = primitives.make_sloped_box(
-            size=numpy.array([2.0, 2.0, 2.0]),
+            size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.25,
             slope=math.pi / 4.0,
             slope_height=0.5,

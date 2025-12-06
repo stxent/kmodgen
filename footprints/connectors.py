@@ -5,7 +5,8 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import numpy
+import numpy as np
+
 import exporter
 import primitives
 
@@ -16,11 +17,11 @@ class FFC(exporter.Footprint):
                          description=FFC.describe(descriptor), spec=spec)
 
         try:
-            self.body_size = numpy.array([
+            self.body_size = np.array([
                 descriptor['body']['width'],
                 descriptor['body']['height']
             ])
-            self.body_offset = numpy.array([
+            self.body_offset = np.array([
                 0.0,
                 descriptor['pads']['offset']
             ])
@@ -29,11 +30,11 @@ class FFC(exporter.Footprint):
             self.body_offset = None
 
         try:
-            self.mount_pad_size = numpy.array([
+            self.mount_pad_size = np.array([
                 descriptor['pads']['mountWidth'],
                 descriptor['pads']['mountHeight']
             ])
-            self.mount_pad_spacing = numpy.array([
+            self.mount_pad_spacing = np.array([
                 descriptor['mount']['horizontalSpacing'],
                 descriptor['mount']['verticalSpacing']
             ])
@@ -41,7 +42,7 @@ class FFC(exporter.Footprint):
             self.mount_pad_size = None
             self.mount_pad_spacing = None
 
-        self.signal_pad_size = numpy.array([
+        self.signal_pad_size = np.array([
             descriptor['pads']['width'],
             descriptor['pads']['height']
         ])
@@ -60,7 +61,7 @@ class FFC(exporter.Footprint):
         total_pads_width = float(self.count - 1) * self.pitch
 
         # First pin mark
-        dot_mark_position = numpy.array([
+        dot_mark_position = np.array([
             (total_pads_width / 2.0) * self.inversion,
             -(self.signal_pad_size[1] / 2.0 + self.gap + self.thickness)
         ])
@@ -74,11 +75,11 @@ class FFC(exporter.Footprint):
 
         # Mounting pads
         if self.mount_pad_size is not None:
-            mount_pad_offset = numpy.array([total_pads_width / 2.0, 0.0]) + self.mount_pad_spacing
+            mount_pad_offset = np.array([total_pads_width / 2.0, 0.0]) + self.mount_pad_spacing
             pads.append(exporter.SmdPad('', self.mount_pad_size, mount_pad_offset * [+1, 1]))
             pads.append(exporter.SmdPad('', self.mount_pad_size, mount_pad_offset * [-1, 1]))
             cutouts.append(exporter.Cutout(
-                numpy.array([total_pads_width, self.gap * 2.0]) + self.signal_pad_size, (0.0, 0.0)))
+                np.array([total_pads_width, self.gap * 2.0]) + self.signal_pad_size, (0.0, 0.0)))
 
         # Body outline
         if self.body_size is not None and self.body_offset is not None:
@@ -112,9 +113,9 @@ class IpxFootprint(exporter.Footprint):
         super().__init__(name=descriptor['title'],
                          description='Miniature RF connector for high-frequency signals', spec=spec)
 
-        self.core_offset, self.core_size = numpy.array(core_offset), numpy.array(core_size)
-        self.side_offset, self.side_size = numpy.array(side_offset), numpy.array(side_size)
-        self.body_size = numpy.array([descriptor['body']['width'], descriptor['body']['height']])
+        self.core_offset, self.core_size = np.array(core_offset), np.array(core_size)
+        self.side_offset, self.side_size = np.array(side_offset), np.array(side_size)
+        self.body_size = np.array([descriptor['body']['width'], descriptor['body']['height']])
 
     def generate(self):
         silkscreen, pads = [], []
@@ -123,14 +124,14 @@ class IpxFootprint(exporter.Footprint):
         # Pads
         pads.append(exporter.SmdPad('1', self.core_size, self.core_offset))
         pads.append(exporter.SmdPad('2', self.side_size,
-            self.side_offset * numpy.array([+1.0, +1.0])))
+            self.side_offset * np.array([+1.0, +1.0])))
         pads.append(exporter.SmdPad('2', self.side_size,
-            self.side_offset * numpy.array([+1.0, -1.0])))
+            self.side_offset * np.array([+1.0, -1.0])))
 
         # Body outline
         outline_delta_x = (self.body_size[0] - self.side_size[0] - self.thickness) / 2.0
         outline_delta_x = self.gap - outline_delta_x if outline_delta_x < self.gap else 0.0
-        outline_size = numpy.array([
+        outline_size = np.array([
             self.body_size[0] / 2.0 + outline_delta_x,
             self.body_size[1] / 2.0])
         outline = exporter.Rect(outline_size, outline_size * -1.0, self.thickness)
@@ -162,9 +163,9 @@ class MemoryCard(exporter.Footprint):
                          description=MemoryCard.describe(descriptor), spec=spec)
 
         self.signal_pad_count = 9
-        self.signal_pad_size = numpy.array([0.7, 1.6])
+        self.signal_pad_size = np.array([0.7, 1.6])
         self.signal_pad_pitch = -1.1
-        self.signal_pad_offset = numpy.array([2.25, -10.5])
+        self.signal_pad_offset = np.array([2.25, -10.5])
 
         # Top left pad, top right pad, bottom left pad, bottom right pad
         self.mount_pad_sizes = ((1.2, 1.4), (1.6, 1.4), (1.2, 2.2), (1.2, 2.2))
@@ -173,9 +174,9 @@ class MemoryCard(exporter.Footprint):
         self.mount_hole_diameter = 1.0
         self.mount_hole_offsets = ((-4.93, 0.0), (3.05, 0.0))
 
-        self.body_size = numpy.array([14.7, 14.5])
-        self.body_offset = numpy.array([0.0, -2.75])
-        self.label_offset = numpy.array([0.0, -2.0])
+        self.body_size = np.array([14.7, 14.5])
+        self.body_offset = np.array([0.0, -2.75])
+        self.label_offset = np.array([0.0, -2.0])
 
     def generate(self):
         silkscreen, pads = [], []
@@ -183,7 +184,7 @@ class MemoryCard(exporter.Footprint):
 
         # First pin mark
         dot_mark_position = self.signal_pad_offset \
-            - numpy.array([0.0, self.signal_pad_size[1] / 2.0 + self.gap + self.thickness])
+            - np.array([0.0, self.signal_pad_size[1] / 2.0 + self.gap + self.thickness])
         silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
                                           self.thickness, True))
 
@@ -201,7 +202,7 @@ class MemoryCard(exporter.Footprint):
             x_offset = self.signal_pad_offset[0] + self.signal_pad_pitch * i
             y_offset = self.signal_pad_offset[1]
             pads.append(exporter.SmdPad(str(i + 1), self.signal_pad_size,
-                                        numpy.array([x_offset, y_offset])))
+                                        np.array([x_offset, y_offset])))
 
         # Body outline
         top_corner = self.body_size / 2.0
@@ -232,8 +233,8 @@ class AngularSmaFootprint(exporter.Footprint):
                          description=AngularSmaFootprint.describe(descriptor), spec=spec)
 
         self.space = space
-        self.inner_size = numpy.array(inner_size)
-        self.outer_size = numpy.array(outer_size)
+        self.inner_size = np.array(inner_size)
+        self.outer_size = np.array(outer_size)
 
     @staticmethod
     def make_poly_line(points, thickness, layer):
@@ -266,10 +267,10 @@ class AngularSmaFootprint(exporter.Footprint):
         y_top_outline = -(self.inner_size[1] + self.thickness) / 2.0 - self.gap
 
         outline_points = [
-            numpy.array([x_outline, y_bottom_outline]),
-            numpy.array([x_outline, y_top_outline]),
-            numpy.array([-x_outline, y_top_outline]),
-            numpy.array([-x_outline, y_bottom_outline])
+            np.array([x_outline, y_bottom_outline]),
+            np.array([x_outline, y_top_outline]),
+            np.array([-x_outline, y_top_outline]),
+            np.array([-x_outline, y_bottom_outline])
         ]
         objects.extend(AngularSmaFootprint.make_poly_line(outline_points, self.thickness,
             exporter.Layer.SILK_FRONT))
@@ -313,22 +314,22 @@ class MiniUSB(exporter.Footprint):
 
         self.pad_offset = 3.05
         self.pad_pitch = 0.8
-        self.pad_size = numpy.array([2.3, 0.5])
+        self.pad_size = np.array([2.3, 0.5])
         self.mount_pad_offset = 4.4
         self.front_mount_pad = -2.95
         self.back_mount_pad = 2.55
-        self.mount_pad_size = numpy.array([2.5, 2.0])
+        self.mount_pad_size = np.array([2.5, 2.0])
         self.mount_hole_diameter = 0.9
         self.mount_hole_spacing = 2.2
-        self.body_size = numpy.array([9.3, 7.7])
-        self.body_offset = numpy.array([1.35, 0.0])
+        self.body_size = np.array([9.3, 7.7])
+        self.body_offset = np.array([1.35, 0.0])
 
     def generate(self):
         silkscreen, pads = [], []
         silkscreen.append(exporter.Label(self.name, (0.0, 0.0), self.thickness, self.font))
 
         # First pin mark
-        dot_mark_position = numpy.array([
+        dot_mark_position = np.array([
             self.pad_offset + self.pad_size[0] / 2.0 + self.gap + self.thickness,
             -2.0 * self.pad_pitch
         ])
@@ -354,7 +355,7 @@ class MiniUSB(exporter.Footprint):
         pads.append(MiniUSB.MountHole('', (0.0, -self.mount_hole_spacing),
             self.mount_hole_diameter))
 
-        edge_margin = numpy.array([self.thickness / 2.0, 0])
+        edge_margin = np.array([self.thickness / 2.0, 0])
         top_corner = self.body_size / 2.0
         outline = exporter.Rect(top_corner - self.body_offset,
             edge_margin - top_corner - self.body_offset, self.thickness)
@@ -385,8 +386,8 @@ class USBTypeC(exporter.Footprint):
         self.pad_offset = 4.75
         self.pad_pitch_a = 0.5
         self.pad_pitch_b = 0.8
-        self.pad_size_a = numpy.array([0.3, 1.14])
-        self.pad_size_b = numpy.array([0.6, 1.14])
+        self.pad_size_a = np.array([0.3, 1.14])
+        self.pad_size_b = np.array([0.6, 1.14])
         self.pad_start_b = 3.2
 
         self.mount_hole_offset_a = 3.68
@@ -396,13 +397,13 @@ class USBTypeC(exporter.Footprint):
         self.mount_hole_offset_b = 4.18
         self.mount_hole_offset_c = 0.0
         self.mount_hole_spacing_b = 4.32
-        self.mount_hole_size_b = numpy.array([1.0, 2.1])
-        self.mount_hole_size_c = numpy.array([1.0, 1.8])
-        self.mount_hole_b = numpy.array([0.6, 1.7])
-        self.mount_hole_c = numpy.array([0.6, 1.4])
+        self.mount_hole_size_b = np.array([1.0, 2.1])
+        self.mount_hole_size_c = np.array([1.0, 1.8])
+        self.mount_hole_b = np.array([0.6, 1.7])
+        self.mount_hole_c = np.array([0.6, 1.4])
 
-        self.body_size = numpy.array([8.94, 7.4])
-        self.body_offset = numpy.array([0.0, 1.05])
+        self.body_size = np.array([8.94, 7.4])
+        self.body_offset = np.array([0.0, 1.05])
 
     def generate(self):
         silkscreen, pads = [], []
@@ -442,7 +443,7 @@ class USBTypeC(exporter.Footprint):
             (-self.mount_hole_spacing_b, -self.mount_hole_offset_c),
             self.mount_hole_size_c, self.mount_hole_c))
 
-        edge_margin = numpy.array([self.thickness / 2.0, 0])
+        edge_margin = np.array([self.thickness / 2.0, 0])
         top_corner = self.body_size / 2.0
         outline = exporter.Rect(top_corner - self.body_offset,
             edge_margin - top_corner - self.body_offset, self.thickness)
@@ -487,12 +488,12 @@ class XT(exporter.Footprint):
         super().__init__(name=descriptor['title'],
                          description=XT.describe(descriptor), spec=spec)
 
-        self.body_size = numpy.array(descriptor['body']['size'])
-        self.body_offset_from_pin = numpy.array(descriptor['body']['offset'])
+        self.body_size = np.array(descriptor['body']['size'])
+        self.body_offset_from_pin = np.array(descriptor['body']['offset'])
 
         self.pin_count = descriptor['pins']['count']
         self.pin_pitch = descriptor['pins']['pitch']
-        self.pad_size = numpy.array([
+        self.pad_size = np.array([
             descriptor['pads']['diameter'],
             descriptor['pads']['diameter']
         ])
@@ -510,8 +511,8 @@ class XT(exporter.Footprint):
 
         # Mounting holes
         mount_holes = [
-            numpy.array([self.mount_pitch / 2.0, self.mount_offset_from_pin]),
-            numpy.array([-self.mount_pitch / 2.0, self.mount_offset_from_pin])
+            np.array([self.mount_pitch / 2.0, self.mount_offset_from_pin]),
+            np.array([-self.mount_pitch / 2.0, self.mount_offset_from_pin])
         ]
         pads.append(XT.MountHole('', mount_holes[0], self.mount_diameter))
         pads.append(XT.MountHole('', mount_holes[1], self.mount_diameter))
@@ -523,23 +524,23 @@ class XT(exporter.Footprint):
             pads.append(exporter.HolePad(str(i + 1), self.pad_size, (offset, 0.0), self.pad_hole, style))
 
         # Body outline
-        body_offset = numpy.array([0.0, self.body_size[1] / 2.0 + self.body_offset_from_pin])
+        body_offset = np.array([0.0, self.body_size[1] / 2.0 + self.body_offset_from_pin])
         top_corner = self.body_size[0:2] / 2.0
 
         polyline = []
-        polyline.append(top_corner * numpy.array([-1.0, +1.0]) + body_offset)
-        polyline.append(top_corner * numpy.array([+1.0, +1.0]) + body_offset)
-        polyline.append(numpy.array([top_corner[0], mount_holes[0][1] + self.mount_diameter]))
-        polyline.append(mount_holes[0] + numpy.array([self.mount_diameter, self.mount_diameter]))
-        polyline.append(mount_holes[0] + numpy.array([self.mount_diameter, -self.mount_diameter]))
-        polyline.append(numpy.array([top_corner[0], mount_holes[0][1] - self.mount_diameter]))
-        polyline.append(top_corner * numpy.array([+1.0, -1.0]) + body_offset)
-        polyline.append(top_corner * numpy.array([-1.0, -1.0]) + body_offset)
-        polyline.append(numpy.array([-top_corner[0], mount_holes[1][1] - self.mount_diameter]))
-        polyline.append(mount_holes[1] + numpy.array([-self.mount_diameter, -self.mount_diameter]))
-        polyline.append(mount_holes[1] + numpy.array([-self.mount_diameter, self.mount_diameter]))
-        polyline.append(numpy.array([-top_corner[0], mount_holes[1][1] + self.mount_diameter]))
-        polyline.append(top_corner * numpy.array([-1.0, +1.0]) + body_offset)
+        polyline.append(top_corner * np.array([-1.0, +1.0]) + body_offset)
+        polyline.append(top_corner * np.array([+1.0, +1.0]) + body_offset)
+        polyline.append(np.array([top_corner[0], mount_holes[0][1] + self.mount_diameter]))
+        polyline.append(mount_holes[0] + np.array([self.mount_diameter, self.mount_diameter]))
+        polyline.append(mount_holes[0] + np.array([self.mount_diameter, -self.mount_diameter]))
+        polyline.append(np.array([top_corner[0], mount_holes[0][1] - self.mount_diameter]))
+        polyline.append(top_corner * np.array([+1.0, -1.0]) + body_offset)
+        polyline.append(top_corner * np.array([-1.0, -1.0]) + body_offset)
+        polyline.append(np.array([-top_corner[0], mount_holes[1][1] - self.mount_diameter]))
+        polyline.append(mount_holes[1] + np.array([-self.mount_diameter, -self.mount_diameter]))
+        polyline.append(mount_holes[1] + np.array([-self.mount_diameter, self.mount_diameter]))
+        polyline.append(np.array([-top_corner[0], mount_holes[1][1] + self.mount_diameter]))
+        polyline.append(top_corner * np.array([-1.0, +1.0]) + body_offset)
 
         for i in range(0, len(polyline) - 1):
             line = exporter.Line(polyline[i], polyline[i + 1], self.thickness)

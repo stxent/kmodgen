@@ -6,7 +6,7 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import math
-import numpy
+import numpy as np
 
 from wrlconv import geometry
 from wrlconv import model
@@ -78,11 +78,11 @@ class QFP:
             mark_resolution=resolutions['circle']
         )
         dot_mesh = geometry.Circle(QFP.MARK_RADIUS, resolutions['circle'])
-        dot_mesh.translate(numpy.array([*dot_offset, body_size[2] + QFP.BODY_OFFSET_Z]))
+        dot_mesh.translate(np.array([*dot_offset, body_size[2] + QFP.BODY_OFFSET_Z]))
 
         if 'QFP.Plastic' in materials:
             body_mesh.appearance().material = materials['QFP.Plastic']
-        body_mesh.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0 + QFP.BODY_OFFSET_Z]))
+        body_mesh.translate(np.array([0.0, 0.0, body_size[2] / 2.0 + QFP.BODY_OFFSET_Z]))
         body_mesh.rename('Body')
 
         if 'QFP.Dot' in materials:
@@ -93,7 +93,7 @@ class QFP:
             pin_shape_size=pin_shape,
             pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
             pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
-            pin_slope=numpy.deg2rad(10.0),
+            pin_slope=np.deg2rad(10.0),
             end_slope=body_slope,
             chamfer_resolution=resolutions['chamfer'],
             edge_resolution=resolutions['edge'],
@@ -114,7 +114,7 @@ class QFP:
 
     @staticmethod
     def calc_mark_offset(count, pitch):
-        first_pin_offset = (numpy.asarray(count, dtype=numpy.float32) - 1.0) * pitch / 2.0
+        first_pin_offset = (np.asarray(count, dtype=np.float32) - 1.0) * pitch / 2.0
         return -first_pin_offset + pitch / 2.0
 
 

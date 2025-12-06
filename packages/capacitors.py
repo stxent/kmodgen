@@ -6,7 +6,7 @@
 # Project is distributed under the terms of the GNU General Public License v3.0
 
 import math
-import numpy
+import numpy as np
 
 from wrlconv import curves
 from wrlconv import model
@@ -44,34 +44,34 @@ class RadialCapacitor:
 
         for i in range(0, sections):
             direction = 2.0 * math.pi / float(sections) * float(i)
-            vector = numpy.array([math.cos(direction), math.sin(direction), 0.0])
+            vector = np.array([math.cos(direction), math.sin(direction), 0.0])
             first_circle_points.append(center + vector * first_circle_radius
-                + numpy.array([0.0, 0.0, -depth]))
+                + np.array([0.0, 0.0, -depth]))
             second_circle_points.append(center + vector * second_circle_radius)
 
             direction = 2.0 * math.pi / float(sections) * (float(i) + 0.5)
-            vector = numpy.array([
+            vector = np.array([
                 math.cos(direction),
                 math.sin(direction),
                 0.0])
-            normal = numpy.array([
+            normal = np.array([
                 math.cos(direction + math.pi / 2.0),
                 math.sin(direction + math.pi / 2.0),
                 0.0])
             points = [
                 center + vector * cap_radius + normal * section_width / 2.0,
                 center + vector * cap_radius + normal * section_width / 4.0
-                    + numpy.array([0.0, 0.0, -depth]),
+                    + np.array([0.0, 0.0, -depth]),
                 center + vector * cap_radius - normal * section_width / 4.0
-                    + numpy.array([0.0, 0.0, -depth]),
+                    + np.array([0.0, 0.0, -depth]),
                 center + vector * cap_radius - normal * section_width / 2.0]
             outer_points.append(points)
             points = [
                 center + vector * body_radius + normal * section_width / 2.0,
                 center + vector * body_radius + normal * section_width / 4.0
-                    + numpy.array([0.0, 0.0, -depth]),
+                    + np.array([0.0, 0.0, -depth]),
                 center + vector * body_radius - normal * section_width / 4.0
-                    + numpy.array([0.0, 0.0, -depth]),
+                    + np.array([0.0, 0.0, -depth]),
                 center + vector * body_radius - normal * section_width / 2.0]
             body_points.append(points)
 
@@ -86,8 +86,8 @@ class RadialCapacitor:
                 2.0 * math.pi / float(sections) * (float(i) + 0.5) + math.pi / 2.0,
                 2.0 * math.pi / float(sections) * (float(i) - 0.5) + math.pi / 2.0)
             normals = (
-                numpy.array([math.cos(normal_angles[0]), math.sin(normal_angles[0]), 0.0]),
-                numpy.array([math.cos(normal_angles[1]), math.sin(normal_angles[1]), 0.0]))
+                np.array([math.cos(normal_angles[0]), math.sin(normal_angles[0]), 0.0]),
+                np.array([math.cos(normal_angles[1]), math.sin(normal_angles[1]), 0.0]))
 
             points = [v for v in vertices if belongs(angle(v), inner[0], inner[1])]
 
@@ -294,7 +294,7 @@ class RadialCapacitor:
     @staticmethod
     def build_capacitor_body(curve, edges, polarized, materials, name, cap_sections,
                              cap_inner_radius, cap_outer_radius, cap_section_width, _):
-        slices = curves.rotate(curve=curve, axis=numpy.array([0.0, 0.0, 1.0]), edges=edges)
+        slices = curves.rotate(curve=curve, axis=np.array([0.0, 0.0, 1.0]), edges=edges)
         meshes = []
 
         bottom_cap = curves.create_tri_cap_mesh(slices=slices, inverse=True)

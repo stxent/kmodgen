@@ -7,7 +7,7 @@
 
 import math
 import time
-import numpy
+import numpy as np
 
 import exporter
 
@@ -94,7 +94,7 @@ class Converter:
     def circle_to_text(circle):
         if circle.part is not None:
             # Arc
-            angle = numpy.deg2rad(circle.part[0])
+            angle = np.deg2rad(circle.part[0])
             start = (circle.position[0] + math.cos(angle) * circle.radius,
                      circle.position[1] + math.sin(angle) * circle.radius)
             rotation = abs(circle.part[1] - circle.part[0])

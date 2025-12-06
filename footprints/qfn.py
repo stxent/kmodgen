@@ -5,7 +5,8 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
-import numpy
+import numpy as np
+
 import exporter
 import primitives
 
@@ -17,12 +18,12 @@ class QFN(exporter.Footprint):
 
         heatsink_size = None
         try:
-            heatsink_size = numpy.array(descriptor['pads']['heatsink'])
+            heatsink_size = np.array(descriptor['pads']['heatsink'])
         except KeyError:
             pass
         if heatsink_size is None:
             try:
-                heatsink_size = numpy.array(descriptor['heatsink']['size'])
+                heatsink_size = np.array(descriptor['heatsink']['size'])
             except KeyError:
                 pass
         self.heatsink_size = heatsink_size
@@ -31,7 +32,7 @@ class QFN(exporter.Footprint):
             columns, rows = descriptor['pins']['columns'], descriptor['pins']['rows']
         except KeyError:
             columns, rows = descriptor['pins']['count'] // 2, 0
-        self.count = numpy.array([columns, rows])
+        self.count = np.array([columns, rows])
 
         try:
             self.mark_aligned = descriptor['mark']['aligned']
@@ -43,8 +44,8 @@ class QFN(exporter.Footprint):
         except KeyError:
             pass
 
-        self.body_size = numpy.array(descriptor['body']['size'])
-        self.pad_size = numpy.array(descriptor['pads']['size'])
+        self.body_size = np.array(descriptor['body']['size'])
+        self.pad_size = np.array(descriptor['pads']['size'])
         self.margin = descriptor['pins']['margin']
         self.pitch = descriptor['pins']['pitch']
 
@@ -53,7 +54,7 @@ class QFN(exporter.Footprint):
 
     def pad(self, rev):
         x_offset, y_offset = self.pad_size
-        return numpy.array([x_offset, y_offset]) if not rev else numpy.array([y_offset, x_offset])
+        return np.array([x_offset, y_offset]) if not rev else np.array([y_offset, x_offset])
 
     def generate(self):
         silkscreen, pads = [], []
@@ -61,15 +62,15 @@ class QFN(exporter.Footprint):
         silkscreen.append(exporter.Label(self.title, (0.0, 0.0), self.thickness, self.font))
 
         # Horizontal and vertical offsets to first pins on each side
-        first_pin_offset = (numpy.asarray(self.count, dtype=numpy.float32) - 1.0) * self.pitch / 2.0
+        first_pin_offset = (np.asarray(self.count, dtype=np.float32) - 1.0) * self.pitch / 2.0
 
         # Body outline
         top_corner_from_body = self.body_size[0:2] / 2.0
-        top_corner_from_pins = numpy.array([
+        top_corner_from_pins = np.array([
             first_pin_offset[0] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap,
             first_pin_offset[1] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap
         ])
-        top_corner = numpy.maximum(top_corner_from_body, top_corner_from_pins)
+        top_corner = np.maximum(top_corner_from_body, top_corner_from_pins)
         silkscreen_raw.extend(exporter.Rect(top_corner, -top_corner, self.thickness).lines)
 
         # Outer first pin mark
@@ -77,13 +78,13 @@ class QFN(exporter.Footprint):
             pin_border = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
             dot_mark_x_offset = -first_pin_offset[0]
             dot_mark_y_offset = pin_border + self.gap + self.thickness
-            dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
+            dot_mark_position = np.array([dot_mark_x_offset, dot_mark_y_offset])
         else:
             dot_offset_from_pin = top_corner_from_pins[0] + self.thickness / 2.0
             dot_offset_from_body = (self.body_size[0] - self.thickness) / 2.0
             dot_mark_x_offset = -max(dot_offset_from_pin, dot_offset_from_body)
             dot_mark_y_offset = top_corner[1] + self.gap + self.thickness * 1.5
-            dot_mark_position = numpy.array([dot_mark_x_offset, dot_mark_y_offset])
+            dot_mark_position = np.array([dot_mark_x_offset, dot_mark_y_offset])
         silkscreen.append(exporter.Circle(dot_mark_position, self.thickness / 2.0,
                                           self.thickness, True))
 
@@ -93,9 +94,9 @@ class QFN(exporter.Footprint):
         for i in range(0, self.count[0]):
             x_offset = i * self.pitch - first_pin_offset[0]
             pads.append(exporter.SmdPad(str(1 + i), pad(i),
-                                        numpy.array([x_offset, y_offset])))
+                                        np.array([x_offset, y_offset])))
             pads.append(exporter.SmdPad(str(1 + i + self.count[0] + self.count[1]), pad(i),
-                                        numpy.array([-x_offset, -y_offset])))
+                                        np.array([-x_offset, -y_offset])))
 
         # Vertical pads
         x_offset = self.body_size[0] / 2.0 + self.margin
@@ -103,9 +104,9 @@ class QFN(exporter.Footprint):
         for j in range(0, self.count[1]):
             y_offset = j * self.pitch - first_pin_offset[1]
             pads.append(exporter.SmdPad(str(1 + j + self.count[0]), pad(j),
-                                        numpy.array([x_offset, -y_offset])))
+                                        np.array([x_offset, -y_offset])))
             pads.append(exporter.SmdPad(str(1 + j + 2 * self.count[0] + self.count[1]), pad(j),
-                                        numpy.array([-x_offset, y_offset])))
+                                        np.array([-x_offset, y_offset])))
 
         # Central pad
         if self.heatsink_size is not None:

@@ -7,7 +7,7 @@
 
 import copy
 import math
-import numpy
+import numpy as np
 
 from wrlconv import curves
 from wrlconv import geometry
@@ -85,7 +85,7 @@ class MELF:
     @staticmethod
     def build_contact_curves(length, body_curvature, body_radius, contact_curvature,
                              contact_length, contact_radius, edge_resolution, line_resolution):
-        rotation = model.Transform(matrix=model.make_rotation_matrix(numpy.array([0.0, 0.0, 1.0]),
+        rotation = model.Transform(matrix=model.make_rotation_matrix(np.array([0.0, 0.0, 1.0]),
             math.pi))
         weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         left_contact = []
@@ -147,7 +147,7 @@ class MELF:
         except KeyError:
             band_offset = 0.0
 
-        axis = numpy.array([1.0, 0.0, 0.0])
+        axis = np.array([1.0, 0.0, 0.0])
         meshes = []
 
         # Polarity mark
@@ -230,7 +230,7 @@ class MELF:
         meshes.append(joined_mesh)
 
         for mesh in meshes:
-            mesh.translate(numpy.array([0.0, 0.0, contact_radius]))
+            mesh.translate(np.array([0.0, 0.0, contact_radius]))
         return meshes
 
 
@@ -317,7 +317,7 @@ class SOT:
         )
         if dot_radius is not None:
             dot_mesh = geometry.Circle(dot_radius, resolutions['circle'])
-            dot_mesh.translate(numpy.array([*dot_offset, body_offset_z + body_size[2] / 2.0]))
+            dot_mesh.translate(np.array([*dot_offset, body_offset_z + body_size[2] / 2.0]))
         else:
             dot_mesh = None
 
@@ -325,7 +325,7 @@ class SOT:
 
         if 'SOT.Plastic' in materials:
             body_mesh.appearance().material = materials['SOT.Plastic']
-        body_mesh.translate(numpy.array([0.0, 0.0, body_offset_z]))
+        body_mesh.translate(np.array([0.0, 0.0, body_offset_z]))
         body_mesh.rename('Body')
         meshes.append(body_mesh)
 
@@ -344,9 +344,9 @@ class SOT:
         except KeyError:
             flat_pin = False
         try:
-            pin_slope = numpy.deg2rad(descriptor['pins']['slope'])
+            pin_slope = np.deg2rad(descriptor['pins']['slope'])
         except KeyError:
-            pin_slope = numpy.deg2rad(10.0)
+            pin_slope = np.deg2rad(10.0)
 
         try:
             band_offset = primitives.hmils(descriptor['band']['offset'])

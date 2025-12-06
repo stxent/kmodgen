@@ -8,7 +8,7 @@
 import functools
 import hashlib
 import math
-import numpy
+import numpy as np
 
 from wrlconv import curves
 
@@ -19,7 +19,7 @@ def make_vector(data, size=None):
     if isinstance(data, (tuple, list)):
         if any(not isinstance(axis, float) for axis in data):
             raise ValueError()
-    elif not isinstance(data, numpy.ndarray):
+    elif not isinstance(data, np.ndarray):
         raise TypeError()
 
     if isinstance(size, tuple):
@@ -29,7 +29,7 @@ def make_vector(data, size=None):
         if len(data) != size:
             return IndexError()
 
-    if isinstance(data, numpy.ndarray):
+    if isinstance(data, np.ndarray):
         return tuple(data.tolist())
     if isinstance(data, list):
         return tuple(data)

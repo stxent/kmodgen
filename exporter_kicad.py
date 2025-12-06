@@ -9,7 +9,7 @@ import datetime
 import math
 import re
 import time
-import numpy
+import numpy as np
 
 import exporter
 
@@ -27,7 +27,7 @@ class Converter:
     def circle_to_text(circle):
         if circle.part is not None:
             # Arc
-            angle = numpy.deg2rad(circle.part[0])
+            angle = np.deg2rad(circle.part[0])
             start = (circle.position[0] + math.cos(angle) * circle.radius,
                      circle.position[1] + math.sin(angle) * circle.radius)
             return f'DA {circle.position[0]:g} {circle.position[1]:g} {start[0]:g} {start[1]:g}' \

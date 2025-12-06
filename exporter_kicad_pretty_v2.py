@@ -7,7 +7,7 @@
 
 import math
 import uuid
-import numpy
+import numpy as np
 
 import exporter
 
@@ -116,9 +116,9 @@ class Converter:
         if circle.part is not None:
             # Arc
             rotation = abs(circle.part[1] - circle.part[0])
-            beg_angle = numpy.deg2rad(circle.part[0])
-            mid_angle = numpy.deg2rad(circle.part[0] + rotation / 2.0)
-            end_angle = numpy.deg2rad(circle.part[1])
+            beg_angle = np.deg2rad(circle.part[0])
+            mid_angle = np.deg2rad(circle.part[0] + rotation / 2.0)
+            end_angle = np.deg2rad(circle.part[1])
 
             beg = (circle.position[0] + math.cos(beg_angle) * circle.radius,
                    circle.position[1] + math.sin(beg_angle) * circle.radius)

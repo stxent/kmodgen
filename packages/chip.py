@@ -7,7 +7,7 @@
 
 import copy
 import math
-import numpy
+import numpy as np
 
 import primitives
 from packages import generic
@@ -26,8 +26,8 @@ class ChipBase:
     def make_chip(body_size, lead_width, chamfer, edge_resolution, line_resolution):
         case_chamfer = chamfer / (2.0 * math.sqrt(2.0))
 
-        lead_size = numpy.array([lead_width, body_size[1], body_size[2]])
-        ceramic_size = numpy.array([
+        lead_size = np.array([lead_width, body_size[1], body_size[2]])
+        ceramic_size = np.array([
             body_size[0] - 2.0 * lead_width,
             body_size[1] - 2.0 * case_chamfer,
             body_size[2] - 2.0 * case_chamfer])
@@ -35,15 +35,15 @@ class ChipBase:
         leads = primitives.make_chip_leads(case_size=ceramic_size, lead_size=lead_size,
             case_chamfer=case_chamfer, lead_chamfer=chamfer,
             edge_resolution=edge_resolution, line_resolution=line_resolution)
-        leads.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
+        leads.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
         body = primitives.make_chip_body(size=ceramic_size, chamfer=case_chamfer,
             edge_resolution=edge_resolution)
-        body.translate(numpy.array([0.0, 0.0, body_size[2] / 2.0]))
+        body.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
 
         return [body, leads]
 
     def generate(self, materials, resolutions, _, descriptor):
-        body_size = primitives.hmils(numpy.array(descriptor['body']['size']))
+        body_size = primitives.hmils(np.array(descriptor['body']['size']))
         lead_width = primitives.hmils(descriptor['pins']['width'])
         chamfer_from_size = min(body_size[1] * 0.1, body_size[2] * 0.1)
 
@@ -204,7 +204,7 @@ class ChipResistor:
             for i in range(1, resolution):
                 mesh.geo_vertices.append(beg + step * i)
 
-        mean = numpy.zeros(3)
+        mean = np.zeros(3)
         for vertex in mesh.geo_vertices:
             mean += vertex
         mean /= len(mesh.geo_vertices)
@@ -272,16 +272,16 @@ class ChipResistor:
         path_points = curves.optimize(points)
 
         beg, end = path_points[0], path_points[-1]
-        corner_shift = numpy.array([chamfer * 3.0, 0.0, 0.0])
-        edge_offset_x = numpy.array([body_length / 2.0, 0.0, 0.0])
-        edge_offset_y = numpy.array([0.0, lead_width / 2.0, 0.0])
+        corner_shift = np.array([chamfer * 3.0, 0.0, 0.0])
+        edge_offset_x = np.array([body_length / 2.0, 0.0, 0.0])
+        edge_offset_y = np.array([0.0, lead_width / 2.0, 0.0])
         edge_pull = (chamfer * math.pi / 2.0) \
             / (lead_height - 2.0 * (chamfer + lead_thickness)) / edge_resolution
 
         corner_points = [
             (
-                numpy.array([-beg[0], *beg[1:]]) + edge_offset_x + edge_offset_y,
-                numpy.array([-end[0], *end[1:]]) + edge_offset_x + edge_offset_y
+                np.array([-beg[0], *beg[1:]]) + edge_offset_x + edge_offset_y,
+                np.array([-end[0], *end[1:]]) + edge_offset_x + edge_offset_y
             ), (
                 beg - edge_offset_x + edge_offset_y,
                 end - edge_offset_x + edge_offset_y
@@ -289,14 +289,14 @@ class ChipResistor:
                 beg - edge_offset_x - edge_offset_y,
                 end - edge_offset_x - edge_offset_y
             ), (
-                numpy.array([-beg[0], *beg[1:]]) + edge_offset_x - edge_offset_y,
-                numpy.array([-end[0], *end[1:]]) + edge_offset_x - edge_offset_y
+                np.array([-beg[0], *beg[1:]]) + edge_offset_x - edge_offset_y,
+                np.array([-end[0], *end[1:]]) + edge_offset_x - edge_offset_y
             )
         ]
 
         meshes = []
-        vdown = numpy.array([0.0, 0.0, -1.0]) * chamfer
-        vside = numpy.array([0.0, 1.0, 0.0]) * chamfer
+        vdown = np.array([0.0, 0.0, -1.0]) * chamfer
+        vside = np.array([0.0, 1.0, 0.0]) * chamfer
 
         # Body edges
 
@@ -415,16 +415,16 @@ class ChipResistor:
         # Fill contact faces
 
         meshes.append(ChipResistor.make_body_path_face(path_points, -vside,
-            -edge_offset_x - edge_offset_y, numpy.array([1.0, 1.0, 1.0]),
+            -edge_offset_x - edge_offset_y, np.array([1.0, 1.0, 1.0]),
             line_resolution, edge_pull))
         meshes.append(ChipResistor.make_body_path_face(path_points, -vside,
-            edge_offset_x - edge_offset_y, numpy.array([-1.0, 1.0, 1.0]),
+            edge_offset_x - edge_offset_y, np.array([-1.0, 1.0, 1.0]),
             line_resolution, edge_pull))
         meshes.append(ChipResistor.make_body_path_face(path_points, vside,
-            -edge_offset_x + edge_offset_y, numpy.array([1.0, 1.0, 1.0]),
+            -edge_offset_x + edge_offset_y, np.array([1.0, 1.0, 1.0]),
             line_resolution, edge_pull))
         meshes.append(ChipResistor.make_body_path_face(path_points, vside,
-            edge_offset_x + edge_offset_y, numpy.array([-1.0, 1.0, 1.0]),
+            edge_offset_x + edge_offset_y, np.array([-1.0, 1.0, 1.0]),
             line_resolution, edge_pull))
 
         body = meshes[0]
@@ -535,18 +535,18 @@ class ChipResistor:
                 t_seg = math.cos(math.pi * (slope_step / bridge_resolution)) / 2.0 + 0.5
                 t_offset = (pin_shape_size[1] - lead_bridge_width) * (1.0 - t_seg)
                 t_scale = (pin_shape_size[1] - t_offset) / pin_shape_size[1]
-                return numpy.array([1.0, t_scale, 1.0])
+                return np.array([1.0, t_scale, 1.0])
 
             if chamfer_step is not None:
                 t_seg = math.sin((math.pi / 2.0) * (chamfer_step / edge_resolution))
                 t_offset = chamfer * (1.0 - t_seg)
-                t_scale = numpy.array([
+                t_scale = np.array([
                     (pin_shape_size[0] - t_offset) / pin_shape_size[0],
                     (pin_shape_size[1] - t_offset * 2.0) / pin_shape_size[1]
                 ])
-                return numpy.array([*t_scale, 1.0])
+                return np.array([*t_scale, 1.0])
 
-            return numpy.ones(3)
+            return np.ones(3)
 
         pin_slices = curves.loft(path_points, shape_points, scaling=mesh_scaling_func)
         pin_mesh = primitives.build_loft_mesh(pin_slices, True, False)
@@ -583,7 +583,7 @@ class ChipResistor:
         return bot_part
 
     def generate(self, materials, resolutions, _, descriptor):
-        body_size = primitives.hmils(numpy.array(descriptor['body']['size']))
+        body_size = primitives.hmils(np.array(descriptor['body']['size']))
         pin_width = primitives.hmils(descriptor['pins']['width'])
         chamfer_from_size = min(body_size[1] * 0.1, body_size[2] * 0.05)
         thickness_from_size = chamfer_from_size * 2.0
@@ -658,7 +658,7 @@ class ChipShunt(ChipResistor):
     def make_resistor_element_curve(length, thickness, clearance, lead_length, line_resolution):
         parts = []
 
-        slope = numpy.deg2rad(30.0)
+        slope = np.deg2rad(30.0)
         slope_length = clearance / math.sin(slope)
 
         x_offset = length / 2.0 - (lead_length + slope_length + thickness)
@@ -678,7 +678,7 @@ class ChipShunt(ChipResistor):
         parts = []
 
         x_offset, z_offset = length / 2.0, thickness / 2.0
-        slope = numpy.deg2rad(30.0)
+        slope = np.deg2rad(30.0)
         slope_length = clearance / math.sin(slope)
 
         parts.append(curves.Line(
@@ -740,13 +740,13 @@ class ChipShunt(ChipResistor):
                 t_seg = math.sin((math.pi / 2.0) * (chamfer_step / (edge_resolution - 1)))
                 t_offset = chamfer * (1.0 - t_seg)
 
-                t_scale = numpy.array([
+                t_scale = np.array([
                     (pin_shape_size[0] - t_offset) / pin_shape_size[0],
                     (pin_shape_size[1] - t_offset * 2.0) / pin_shape_size[1]
                 ])
-                return numpy.array([*t_scale, 1.0])
+                return np.array([*t_scale, 1.0])
 
-            return numpy.ones(3)
+            return np.ones(3)
 
         pin_slices = curves.loft(path_points, shape_points, scaling=mesh_scaling_func)
         pin_mesh = primitives.build_loft_mesh(pin_slices, True, False)
@@ -779,7 +779,7 @@ class ChipShunt(ChipResistor):
         return pin_mesh
 
     def generate(self, materials, resolutions, _, descriptor):
-        body_size = primitives.hmils(numpy.array(descriptor['body']['size']))
+        body_size = primitives.hmils(np.array(descriptor['body']['size']))
         clearance=primitives.hmils(descriptor['body']['clearance'])
         thickness=primitives.hmils(descriptor['body']['thickness'])
         pin_width = primitives.hmils(descriptor['pins']['width'])
