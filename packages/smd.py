@@ -9,11 +9,11 @@ import copy
 import math
 import numpy as np
 
+import primitives
+from packages import generic
 from wrlconv import curves
 from wrlconv import geometry
 from wrlconv import model
-import primitives
-from packages import generic
 
 
 class Chip(generic.GenericModelFilter):
@@ -164,8 +164,8 @@ class MELF:
                                                  edges=resolutions['circle']))
             band_meshes = []
             for entry in band_slices:
-                band_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
-                                                               inverse=True))
+                band_meshes.append(geometry.build_rotation_mesh(slices=entry, wrap=True,
+                                                                inverse=True))
 
             joined_mesh = model.Mesh()
             for mesh in band_meshes:
@@ -190,8 +190,8 @@ class MELF:
             body_slices.append(curves.rotate(curve=entry, axis=axis, edges=resolutions['circle']))
         body_meshes = []
         for entry in body_slices:
-            body_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
-                                                           inverse=True))
+            body_meshes.append(geometry.build_rotation_mesh(slices=entry, wrap=True,
+                                                            inverse=True))
 
         joined_mesh = model.Mesh()
         for mesh in body_meshes:
@@ -218,8 +218,8 @@ class MELF:
                                                 edges=resolutions['circle']))
         contact_meshes = []
         for entry in contact_slices:
-            contact_meshes.append(curves.create_rotation_mesh(slices=entry, wrap=True,
-                                                              inverse=True))
+            contact_meshes.append(geometry.build_rotation_mesh(slices=entry, wrap=True,
+                                                               inverse=True))
 
         joined_mesh = model.Mesh()
         for mesh in contact_meshes:

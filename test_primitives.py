@@ -8,8 +8,8 @@
 import math
 import numpy as np
 
-from wrlconv import curves, geometry, helpers, model, x3d_export
 import primitives
+from wrlconv import curves, geometry, helpers, model, x3d_export
 
 def compare_models(source_file, destination_data):
     with open('tests/' + source_file, 'rb') as source:
@@ -267,19 +267,21 @@ class TestPrimitives:
     FILE_LOFT_MESH = 'test_loft_mesh.x3d'
     FILE_SOLID_CAP = 'test_solid_cap.x3d'
     FILE_RECT_HALF = 'test_rect_half.x3d'
+    FILE_ROTATION_CAP = 'test_rotation_cap.x3d'
     FILE_ROTATION_MESH = 'test_rotation_mesh.x3d'
 
     @staticmethod
-    def make_barrel_curve(radius, height, edge_resolution):
+    def make_barrel_curve(radius, height, edge_resolution, closed=True):
         curvature = radius / 5.0
         weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
         curve = []
 
-        curve.append(curves.Line(
-            (0.0, 0.0, 0.0),
-            (radius - curvature, 0.0, 0.0),
-            1
-        ))
+        if closed:
+            curve.append(curves.Line(
+                (0.0, 0.0, 0.0),
+                (radius - curvature, 0.0, 0.0),
+                1
+            ))
         curve.append(curves.Bezier(
             (radius - curvature, 0.0, 0.0),
             (curvature * weight, 0.0, 0.0),
@@ -299,11 +301,12 @@ class TestPrimitives:
             (curvature * weight, 0.0, 0.0),
             edge_resolution
         ))
-        curve.append(curves.Line(
-            (radius - curvature, 0.0, height),
-            (0.0, 0.0, height),
-            1
-        ))
+        if closed:
+            curve.append(curves.Line(
+                (radius - curvature, 0.0, height),
+                (0.0, 0.0, height),
+                1
+            ))
         return curve
 
     def test_make_body_cap(self, tmp_path):
@@ -334,15 +337,12 @@ class TestPrimitives:
             path_points.extend(element.tessellate())
         path_points = curves.optimize(path_points)
 
-        shape_dict = geometry.make_circle_outline(np.array([0.0, 0.0, 0.0]), 0.5, 12)
-        shape_points = []
-        for i in range(0, len(shape_dict)):
-            shape_points.append(shape_dict[i])
+        shape_points = primitives.make_circle_outline(np.array([0.0, 0.0, 0.0]), 0.5, 12)
         shape_points.reverse()
         shape_points.append(shape_points[0])
 
         slices = curves.loft(path=path_points, shape=shape_points)
-        mesh = primitives.build_loft_mesh(slices, True, True)
+        mesh = geometry.build_loft_mesh(slices, True, True)
 
         serialized = serialize_models([mesh], tmp_path, name)
         assert compare_models(name, serialized) is True
@@ -359,11 +359,11 @@ class TestPrimitives:
         ]
 
         mesh = model.Mesh()
-        vertices = geometry.make_bezier_quad_outline(corners)
+        vertices = primitives.make_bezier_quad_outline(corners)
 
-        for i in range(0, len(vertices)):
-            mesh.geo_vertices.append(vertices[i])
-        primitives.append_solid_cap(mesh, vertices, origin=np.array([0.0, 0.0, -1.0]))
+        mesh.geo_vertices.extend(vertices)
+        vertices_indexed = dict(zip(list(range(0, len(vertices))), vertices))
+        primitives.append_solid_cap(mesh, vertices_indexed, origin=np.array([0.0, 0.0, -1.0]))
 
         serialized = serialize_models([mesh], tmp_path, name)
         assert compare_models(name, serialized) is True
@@ -389,13 +389,44 @@ class TestPrimitives:
             shape_points = []
             [shape_points.extend(element.tessellate()) for element in shape_curve]
             slices = curves.loft(path_points, shape_points)
-            return primitives.build_loft_mesh(slices, not rotate, rotate)
+            return geometry.build_loft_mesh(slices, not rotate, rotate)
 
         meshes = [make_mesh(False), make_mesh(True)]
         meshes[0].translate((0.0, 0.5, 0.0))
         meshes[1].translate((0.0, -0.5, 0.0))
 
         serialized = serialize_models(meshes, tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_make_rotation_cap(self, tmp_path):
+        name = TestPrimitives.FILE_ROTATION_CAP
+        model.reset_allocator()
+
+        curve = TestPrimitives.make_barrel_curve(
+            radius=1.0,
+            height=2.0,
+            edge_resolution=3,
+            closed=False
+        )
+        slices = curves.rotate(
+            curve=curve,
+            axis=np.array([0.0, 0.0, 1.0]),
+            edges=24
+        )
+
+        beg_cap = primitives.make_rotation_cap_mesh(slices, True)
+        end_cap = primitives.make_rotation_cap_mesh(slices, False)
+
+        mesh = geometry.build_rotation_mesh(
+            slices=slices,
+            wrap=True,
+            inverse=True
+        )
+        mesh.append(beg_cap)
+        mesh.append(end_cap)
+        mesh.optimize()
+
+        serialized = serialize_models([mesh], tmp_path, name)
         assert compare_models(name, serialized) is True
 
     def test_make_rotation_mesh(self, tmp_path):
@@ -412,7 +443,7 @@ class TestPrimitives:
             axis=np.array([0.0, 0.0, 1.0]),
             edges=24
         )
-        mesh = curves.create_rotation_mesh(
+        mesh = geometry.build_rotation_mesh(
             slices=slices,
             wrap=True,
             inverse=True
@@ -662,3 +693,89 @@ class TestSlopedBox:
 
     def test_make_sloped_box_lp(self, tmp_path):
         TestSlopedBox.make_sloped_box(tmp_path, TestSlopedBox.FILE_SLOPED_BOX_LP, 1, 1)
+
+
+class TestShapeScale:
+    FILE_SHAPE_EQUALIZED = 'test_shape_equalized.x3d'
+    FILE_SHAPE_SCALE_SIMPLE = 'test_shape_scale_simple.x3d'
+    FILE_SHAPE_SCALE_SMART = 'test_shape_scale_smart.x3d'
+    FILE_SHAPE_SCALE_SIMPLE_INV = 'test_shape_scale_simple_inv.x3d'
+    FILE_SHAPE_SCALE_SMART_INV = 'test_shape_scale_smart_inv.x3d'
+
+    def make_simple_scaled_rect(path, name, edge_resolution, line_resolution, inverse):
+        def shift_slice(points, offset):
+            return [point + np.array([0.0, 0.0, offset]) for point in points]
+
+        model.reset_allocator()
+
+        elements = primitives.make_rounded_rect(size=np.array([2.0, 1.0]), roundness=0.4,
+                                                segments=edge_resolution,
+                                                segments_line=line_resolution)
+        shape = []
+        [shape.extend(element.tessellate()) for element in elements]
+        shape = curves.optimize(shape)
+
+        slices = []
+        for i in range(-3, 4):
+            points = primitives.simple_scale(shape, np.array([i * 0.07, i * 0.07, 0.0]))
+            slices.append(shift_slice(points, 0.05 * (i + 3)))
+        mesh = primitives.slice_connect_direct(slices, inverse)
+        serialized = serialize_models([mesh], path, name)
+        assert compare_models(name, serialized) is True
+
+    def make_smart_scaled_rect(path, name, edge_resolution, line_resolution, inverse):
+        def shift_slice(points, offset):
+            return [point + np.array([0.0, 0.0, offset]) for point in points]
+
+        model.reset_allocator()
+
+        elements = primitives.make_rounded_rect(size=np.array([2.0, 1.0]), roundness=0.1,
+                                                segments=edge_resolution,
+                                                segments_line=line_resolution)
+        shape = []
+        [shape.extend(element.tessellate()) for element in elements]
+        shape = curves.optimize(shape)
+
+        slices = []
+        for i in range(-3, 4):
+            points = primitives.smart_scale(shape, i * 0.07)
+            slices.append(shift_slice(points, 0.05 * (i + 3)))
+        slices.append([np.array([0.0, 0.0, 6 * 0.05])])
+        mesh = primitives.slice_connect_nearest(slices, inverse)
+        serialized = serialize_models([mesh], path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_equalized_rect(self, tmp_path):
+        name = TestShapeScale.FILE_SHAPE_EQUALIZED
+        model.reset_allocator()
+
+        elements = primitives.make_rounded_rect(size=np.array([2.0, 1.0]), roundness=0.1,
+                                                segments=3)
+        shape = []
+        [shape.extend(element.tessellate()) for element in elements]
+        shape = curves.optimize(shape)
+
+        inner_circle = primitives.slice_equalize(shape, 0.25)
+        slices = [shape, inner_circle]
+        print(len(slices[0]), slices[0])
+        print(len(slices[1]), slices[1])
+
+        mesh = primitives.slice_connect_direct(slices, False)
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_simple_scale(self, tmp_path):
+        TestShapeScale.make_simple_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE,
+                                               5, 3, False)
+
+    def test_smart_scale(self, tmp_path):
+        TestShapeScale.make_smart_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART,
+                                              5, 3, False)
+
+    def test_simple_scale_inversion(self, tmp_path):
+        TestShapeScale.make_simple_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE_INV,
+                                               5, 3, True)
+
+    def test_smart_scale_inversion(self, tmp_path):
+        TestShapeScale.make_smart_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART_INV,
+                                              5, 3, True)

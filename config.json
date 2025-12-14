@@ -84,6 +84,7 @@
     "Lead": "Tin"
   },
   "resolutions": {
+    "arc": 4,
     "body": 3,
     "chamfer": 1,
     "circle": 24,

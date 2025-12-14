@@ -483,10 +483,6 @@ class SOT(exporter.Footprint):
         return descriptor['body']['model'] if 'model' in descriptor['body'] else None
 
 
-class CDRH(Chip):
-    pass
-
-
 class ChipCapacitor(Chip):
     pass
 
@@ -499,11 +495,19 @@ class ChipInductor(Chip):
     pass
 
 
+class ChipOpenDrumInductor(Chip):
+    pass
+
+
 class ChipResistor(Chip):
     pass
 
 
 class ChipShunt(Chip):
+    pass
+
+
+class CDRH(Chip):
     pass
 
 
@@ -513,10 +517,11 @@ types = [
     DPAK,
     MELF,
     SOT,
-    CDRH,
     ChipCapacitor,
     ChipFerrite,
     ChipInductor,
+    ChipOpenDrumInductor,
     ChipResistor,
-    ChipShunt
+    ChipShunt,
+    CDRH
 ]

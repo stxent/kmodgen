@@ -8,9 +8,9 @@
 import math
 import numpy as np
 
+import primitives
 from wrlconv import geometry
 from wrlconv import model
-import primitives
 
 
 class QFP:

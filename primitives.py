@@ -455,6 +455,62 @@ class QuadJoint:
         return pairs[angles.index(min(angles))]
 
 
+def make_bezier_quad_outline(points, resolution=(1, 1), roundness=1.0 / 3.0):
+    p01_vec = (points[1] - points[0]) * roundness
+    p03_vec = (points[3] - points[0]) * roundness
+    p21_vec = (points[1] - points[2]) * roundness
+    p23_vec = (points[3] - points[2]) * roundness
+
+    p10_vec = -p01_vec
+    p12_vec = -p21_vec
+    p30_vec = -p03_vec
+    p32_vec = -p23_vec
+
+    side_a = curves.Bezier(points[0], p01_vec, points[1], p10_vec, resolution[0])
+    side_b = curves.Bezier(points[1], p12_vec, points[2], p21_vec, resolution[1])
+    side_c = curves.Bezier(points[2], p23_vec, points[3], p32_vec, resolution[0])
+    side_d = curves.Bezier(points[3], p30_vec, points[0], p03_vec, resolution[1])
+
+    vertices = []
+    vertices.extend(side_a.tessellate())
+    vertices.extend(side_b.tessellate())
+    vertices.extend(side_c.tessellate())
+    vertices.extend(side_d.tessellate())
+
+    return vertices
+
+def make_circle_outline(center, radius, edges):
+    vertices = []
+    angle, delta = 0.0, math.pi * 2.0 / edges
+
+    for _ in range(0, edges):
+        # pylint: disable=invalid-name
+        x = radius * math.cos(angle)
+        y = radius * math.sin(angle)
+        # pylint: enable=invalid-name
+
+        vertices.append(center + np.array([x, y, 0.0]))
+        angle += delta
+
+    return vertices
+
+def sort_vertices_by_angle(vertices, mean, normal, direction=None):
+    keys = list(vertices.keys())
+
+    if direction is None:
+        direction = vertices[next(iter(vertices))] - mean
+
+    angles = []
+    for key in keys:
+        vector = vertices[key] - mean
+        angle = model.angle(direction, vector)
+        if np.linalg.det(np.array([direction, vector, normal])) < 0.0:
+            angle = -angle
+        angles.append((key, angle))
+    angles.sort(key=lambda x: x[1])
+
+    return angles
+
 def append_hollow_cap(mesh, outer, inner, normal):
     inner_mean = np.zeros(3)
     for vertex in inner.values():
@@ -462,8 +518,8 @@ def append_hollow_cap(mesh, outer, inner, normal):
     inner_mean /= len(inner)
 
     direction = inner[next(iter(inner))] - inner_mean
-    inner_indices = geometry.sort_vertices_by_angle(inner, inner_mean, normal, direction)
-    outer_indices = geometry.sort_vertices_by_angle(outer, inner_mean, normal, direction)
+    inner_indices = sort_vertices_by_angle(inner, inner_mean, normal, direction)
+    outer_indices = sort_vertices_by_angle(outer, inner_mean, normal, direction)
 
     i_count, o_count = len(inner_indices), len(outer_indices)
     i_index, o_index = 0, 0
@@ -508,7 +564,7 @@ def append_solid_cap(mesh, vertices, origin=None, normal=None):
     if normal is None:
         normal = model.normalize(mean - origin)
 
-    indices = [x[0] for x in geometry.sort_vertices_by_angle(vertices, mean, normal)]
+    indices = [x[0] for x in sort_vertices_by_angle(vertices, mean, normal)]
     mean_index = len(mesh.geo_vertices)
     mesh.geo_vertices.append(mean)
 
@@ -528,12 +584,37 @@ def make_body_cap(corners, radius, offset, edges, resolution=(1, 1)):
     mean = sum(corners) / len(corners)
     circle_offset = mean + np.array([*offset, 0.0])
 
-    outer_vertices = geometry.make_bezier_quad_outline(corners, resolution)
-    inner_vertices = geometry.make_circle_outline(circle_offset, radius, edges)
+    outer_vertices = make_bezier_quad_outline(corners, resolution)
+    inner_vertices = make_circle_outline(circle_offset, radius, edges)
+    mesh.geo_vertices.extend(outer_vertices)
 
-    for vertex in outer_vertices.values():
-        mesh.geo_vertices.append(vertex)
-    append_hollow_cap(mesh, outer_vertices, inner_vertices, np.array([0.0, 0.0, 1.0]))
+    outer_vertices_indexed = dict(zip(list(range(0, len(outer_vertices))), outer_vertices))
+    inner_vertices_indexed = dict(zip(list(range(0, len(inner_vertices))), inner_vertices))
+    append_hollow_cap(mesh, outer_vertices_indexed, inner_vertices_indexed,
+                      np.array([0.0, 0.0, 1.0]))
+    return mesh
+
+def make_rotation_cap_mesh(slices, inverse):
+    if inverse:
+        vertices = [slices[i][0] for i in range(0, len(slices))]
+    else:
+        vertices = [slices[i][-1] for i in range(0, len(slices))]
+
+    indices = range(0, len(slices))
+    geo_vertices = vertices + [sum(vertices) / len(slices)]
+    geo_polygons = []
+
+    if not inverse:
+        for i, value in enumerate(indices):
+            geo_polygons.append([len(vertices), value, indices[i - 1]])
+    else:
+        for i, value in enumerate(indices):
+            geo_polygons.append([indices[i - 1], value, len(vertices)])
+
+    # Generate object
+    mesh = model.Mesh()
+    mesh.geo_vertices = geo_vertices
+    mesh.geo_polygons = geo_polygons
     return mesh
 
 def make_rounded_edge(beg, end, resolution, inversion=False, roundness=1.0 / 3.0):
@@ -854,7 +935,7 @@ def make_chip_body(size, chamfer, edge_resolution):
     shape_points = curves.optimize(shape_points)
 
     slices = curves.loft(path=path_points, shape=shape_points)
-    return build_loft_mesh(slices, False, False)
+    return geometry.build_loft_mesh(slices, False, False)
 
 def make_chip_lead_cap(size, chamfer, invert, edge_resolution, line_resolution, axis):
     x, y, z = np.array(size) / 2.0 # pylint: disable=invalid-name
@@ -953,7 +1034,7 @@ def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, inver
         return lead_points
 
     slices = curves.loft(path=path_points, shape=None, morphing=mesh_morphing_func)
-    return build_loft_mesh(slices, False, False)
+    return geometry.build_loft_mesh(slices, False, False)
 
 def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resolution,
                     line_resolution):
@@ -1160,23 +1241,23 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
                              sharpness=math.pi * (5.0 / 6.0), edge_resolution=edge_resolution,
                              line_resolution=line_resolution)
 
-def make_rounded_rect(size, roundness, segments):
+def make_rounded_rect(size, roundness, segments, segments_line=1):
     # pylint: disable=invalid-name
     dx, dy = size[0] / 2.0, size[1] / 2.0
     r, rb = roundness, roundness * curves.calc_bezier_weight(angle=math.pi / 2.0)
     # pylint: enable=invalid-name
 
     shape = []
-    shape.append(curves.Line((-dx + r, dy, 0.0), (dx - r, dy, 0.0), 1))
+    shape.append(curves.Line((-dx + r, dy, 0.0), (dx - r, dy, 0.0), segments_line))
     shape.append(curves.Bezier((dx - r, dy, 0.0), (rb, 0.0, 0.0),
                                (dx, dy - r, 0.0), (0.0, rb, 0.0), segments))
-    shape.append(curves.Line((dx, dy - r, 0.0), (dx, -dy + r, 0.0), 1))
+    shape.append(curves.Line((dx, dy - r, 0.0), (dx, -dy + r, 0.0), segments_line))
     shape.append(curves.Bezier((dx, -dy + r, 0.0), (0.0, -rb, 0.0),
                                (dx - r, -dy, 0.0), (rb, 0.0, 0.0), segments))
-    shape.append(curves.Line((dx - r, -dy, 0.0), (-dx + r, -dy, 0.0), 1))
+    shape.append(curves.Line((dx - r, -dy, 0.0), (-dx + r, -dy, 0.0), segments_line))
     shape.append(curves.Bezier((-dx + r, -dy, 0.0), (-rb, 0.0, 0.0),
                                (-dx, -dy + r, 0.0), (0.0, -rb, 0.0), segments))
-    shape.append(curves.Line((-dx, -dy + r, 0.0), (-dx, dy - r, 0.0), 1))
+    shape.append(curves.Line((-dx, -dy + r, 0.0), (-dx, dy - r, 0.0), segments_line))
     shape.append(curves.Bezier((-dx, dy - r, 0.0), (0.0, rb, 0.0),
                                (-dx + r, dy, 0.0), (-rb, 0.0, 0.0), segments))
 
@@ -1301,45 +1382,6 @@ def make_pin_curve(pin_shape_size, pin_height, pin_length, pin_slope, chamfer, r
 
     return curve
 
-def build_loft_mesh(slices, fill_start=True, fill_end=True):
-    mesh = model.Mesh()
-
-    number = len(slices[0])
-    for points in slices:
-        mesh.geo_vertices.extend(points)
-
-    if fill_start:
-        v_center_index = len(mesh.geo_vertices)
-        mesh.geo_vertices.append(model.calc_median_point(slices[0]))
-
-        for i in range(0, number - 1):
-            mesh.geo_polygons.append([i, i + 1, v_center_index])
-        if not model.Mesh.isclose(slices[0][0], slices[0][-1]):
-            # Slice is not closed, append additional polygon
-            mesh.geo_polygons.append([number - 1, 0, v_center_index])
-
-    for i in range(0, len(slices) - 1):
-        for j in range(0, number - 1):
-            mesh.geo_polygons.append([
-                i * number + j,
-                (i + 1) * number + j,
-                (i + 1) * number + j + 1,
-                i * number + j + 1
-            ])
-
-    if fill_end:
-        v_center_index = len(mesh.geo_vertices)
-        v_start_index = (len(slices) - 1) * number
-        mesh.geo_vertices.append(model.calc_median_point(slices[-1]))
-
-        for i in range(v_start_index, v_start_index + number - 1):
-            mesh.geo_polygons.append([i + 1, i, v_center_index])
-        if not model.Mesh.isclose(slices[-1][0], slices[-1][-1]):
-            # Slice is not closed, append additional polygon
-            mesh.geo_polygons.append([v_start_index, v_start_index + number - 1, v_center_index])
-
-    return mesh
-
 def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
                   chamfer_resolution, edge_resolution, line_resolution, flat=False):
     chamfer = min(pin_shape_size) / 10.0
@@ -1394,4 +1436,239 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
 
     slices = curves.loft(path=path_points, shape=shape_points, rotation=mesh_rotation_func,
                          scaling=mesh_scaling_func)
-    return build_loft_mesh(slices, True, False)
+    return geometry.build_loft_mesh(slices, True, False)
+
+def slice_connect_direct(slices, inverse):
+    mesh = model.Mesh()
+
+    number = len(slices[0])
+    for points in slices:
+        mesh.geo_vertices.extend(points)
+
+    for i in range(0, len(slices) - 1):
+        for j in range(0, number - 1):
+            poly = [
+                i * number + j,
+                (i + 1) * number + j,
+                (i + 1) * number + j + 1,
+                i * number + j + 1
+            ]
+            if inverse:
+                poly.reverse()
+            mesh.geo_polygons.append(poly)
+
+    return mesh
+
+def slice_connect_nearest(slices, inverse):
+    def find_nearest(point, shape):
+        if not shape:
+            raise ValueError()
+        if len(shape) == 1:
+            return 0
+
+        min_distance = None
+        min_index = None
+        for i, value in enumerate(shape):
+            distance = np.linalg.norm(value - point)
+            if min_distance is None or distance < min_distance:
+                min_distance = distance
+                min_index = i
+        return min_index
+
+    mesh = model.Mesh()
+
+    start_offset = len(mesh.geo_vertices)
+    mesh.geo_vertices.extend(slices[0])
+    for i in range(1, len(slices)):
+        slice_offset = len(mesh.geo_vertices)
+        mesh.geo_vertices.extend(slices[i])
+
+        for j in range(0, slice_offset - start_offset):
+            j_next = (j + 1) % (slice_offset - start_offset)
+            nearest_0 = find_nearest(slices[i - 1][j], slices[i])
+            nearest_1 = find_nearest(slices[i - 1][j_next], slices[i])
+
+            if nearest_1 - nearest_0 < len(slices[i]) // 2:
+                toggle = False
+                while nearest_0 < nearest_1 - 1:
+                    if toggle:
+                        poly = [
+                            start_offset + j,
+                            slice_offset + nearest_0,
+                            slice_offset + nearest_0 + 1
+                        ]
+                        if inverse:
+                            poly.reverse()
+                        mesh.geo_polygons.append(poly)
+                        nearest_0 += 1
+                    else:
+                        poly = [
+                            start_offset + j_next,
+                            slice_offset + nearest_1 - 1,
+                            slice_offset + nearest_1
+                        ]
+                        if inverse:
+                            poly.reverse()
+                        mesh.geo_polygons.append(poly)
+                        nearest_1 -= 1
+                    toggle = not toggle
+
+            if nearest_0 != nearest_1:
+                poly = [
+                    start_offset + j,
+                    slice_offset + nearest_0,
+                    slice_offset + nearest_1,
+                    start_offset + j_next
+                ]
+                if inverse:
+                    poly.reverse()
+                mesh.geo_polygons.append(poly)
+            else:
+                poly = [
+                    start_offset + j,
+                    slice_offset + nearest_0,
+                    start_offset + j_next
+                ]
+                if inverse:
+                    poly.reverse()
+                mesh.geo_polygons.append(poly)
+        start_offset = slice_offset
+
+    return mesh
+
+def slice_equalize(shape, radius):
+    center = model.calc_center_point(shape)
+    return [model.normalize(point - center) * radius for point in shape]
+
+def smooth_corner(point_a, point_b, point_c, count):
+    if count < 3:
+        raise ValueError()
+
+    tension_beg = point_b - point_a
+    tension_end = point_b - point_c
+    corner = curves.Bezier(point_a, tension_beg, point_c, tension_end, count)
+    return corner.tessellate()
+
+def remove_knots(points):
+    max_len_delta = 10.0
+    max_smoothing = 5
+
+    def index_distance(start, end):
+        return end - start + 1 if end > start else len(points) - start + end
+    def round_index(index):
+        return (index + len(points)) % len(points)
+
+    output = []
+    last_point = len(points)
+    skip = False
+    i = 0
+
+    while i < last_point:
+        edge = (points[i], points[round_index(i + 1)])
+
+        if i + 2 >= last_point:
+            if not skip:
+                output.append(points[i])
+            skip = False
+            i += 1
+            continue
+
+        last_index = None
+        last_intersection = None
+        for j in range(i + 2, len(points) - 1):
+            check_edge = (points[round_index(j)], points[round_index(j + 1)])
+            line_intersection = curves.intersect_lines(edge, check_edge)
+            if line_intersection is not None:
+                last_index = j
+                last_intersection = line_intersection
+                if i == 0:
+                    last_point = j
+                    break
+                continue
+
+        if last_index is not None:
+            j = last_index
+            cross_point = np.array([*last_intersection, 0.0])
+
+            prev_len = np.linalg.norm(cross_point - points[i])
+            next_len = np.linalg.norm(points[round_index(j + 1)] - cross_point)
+            skipped_points = index_distance(i, j)
+            replace_start = None
+
+            if output and next_len > prev_len * max_len_delta:
+                # Merge with previous point
+                del output[-1]
+                skipped_points += 1
+                smooth_beg = points[round_index(i - 1)]
+                smooth_end = points[round_index(j + 1)]
+                i = j + 1
+            elif prev_len > next_len * max_len_delta:
+                # Merge with next point
+                if skip:
+                    del output[-1]
+                skipped_points += 1
+                smooth_beg = points[i]
+                smooth_end = points[round_index(j + 2)]
+                i = j + 2
+            else:
+                if i == 0:
+                    # Collision of first segment and one of the end segments
+                    smooth_beg = points[round_index(j)]
+                    smooth_end = points[i + 1]
+                    i = i + 1
+                else:
+                    if skip:
+                        del output[-1]
+                    smooth_beg = points[i]
+                    smooth_end = points[round_index(j + 1)]
+                    i = j + 1
+            skip = True
+
+            smoothed_points = smooth_corner(smooth_beg, cross_point, smooth_end,
+                                            min(skipped_points, max_smoothing))
+            output.extend(smoothed_points)
+            continue
+
+        if not skip:
+            output.append(points[i])
+        skip = False
+        i += 1
+
+    return output
+
+def simple_scale(shape, offset):
+    center = model.calc_center_point(shape)
+    bottom, top = model.calc_bounding_box(shape)
+    size = top - bottom
+
+    scale = np.array([
+        1.0 - offset[0] / size[0] if size[0] != 0.0 else 1.0,
+        1.0 - offset[1] / size[1] if size[1] != 0.0 else 1.0,
+        1.0 - offset[2] / size[2] if size[2] != 0.0 else 1.0
+    ])
+    return [(center - point) * scale for point in shape]
+
+def smart_scale(points, offset, center=np.zeros(3)):
+    last_point = len(points)
+    if model.Mesh.isclose(points[0], points[-1]):
+        last_point -= 1
+
+    def round_index(index):
+        return index % last_point
+
+    output = []
+    for i in range(0, last_point):
+        vec_a = model.normalize(points[round_index(i - 1)] - points[i])
+        vec_b = model.normalize(points[round_index(i + 1)] - points[i])
+        det = np.linalg.det(np.array([vec_a[:2], vec_b[:2]]))
+        dot = np.dot(vec_a, vec_b)
+
+        if abs(dot) == 1.0:
+            vec = model.normalize(center - points[i]) * offset
+        else:
+            vec = model.normalize(vec_a + vec_b) * offset
+            if det < 0:
+                vec = -vec
+        output.append(points[i] + vec)
+
+    return remove_knots(output)

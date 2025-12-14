@@ -1,0 +1,46 @@
+{
+  "materials": {
+    "Inductor.Copper": "Copper",
+    "Inductor.Ferrite": "BlackCeramic",
+    "Inductor.Lead": "Lead"
+  },
+  "parts": [
+    {
+      "package": {"type": "ChipOpenDrumInductor", "spec": "thick"},
+      "title": "CD32",
+      "body": {"size": [3.0, 3.5, 2.1]},
+      "pins": {},
+      "pads": {"pitch": 1.2, "size": [1.4, 3.5]},
+      "mark": {"wrap": false},
+      "wire": {"diameter": 0.2},
+      "source": "Shuoxing Electronics"
+    }, {
+      "package": {"type": "ChipOpenDrumInductor", "spec": "thick"},
+      "title": "CD43",
+      "body": {"size": [4.0, 4.5, 3.2]},
+      "pins": {},
+      "pads": {"pitch": 1.5, "size": [1.75, 4.5]},
+      "mark": {"wrap": false},
+      "wire": {"diameter": 0.25},
+      "source": "Sumida specifications"
+    }, {
+      "package": {"type": "ChipOpenDrumInductor", "spec": "thick"},
+      "title": "CD54",
+      "body": {"size": [5.2, 5.8, 4.5]},
+      "pins": {},
+      "pads": {"pitch": 1.7, "size": [2.15, 5.5]},
+      "mark": {"wrap": false},
+      "wire": {"diameter": 0.3},
+      "source": "Sumida specifications"
+    }, {
+      "package": {"type": "ChipOpenDrumInductor", "spec": "thick"},
+      "title": "CD75",
+      "body": {"size": [7.0, 7.8, 5.0]},
+      "pins": {},
+      "pads": {"pitch": 2.0, "size": [3.0, 7.5]},
+      "mark": {"wrap": false},
+      "wire": {"diameter": 0.4},
+      "source": "Sumida specifications"
+    }
+  ]
+}

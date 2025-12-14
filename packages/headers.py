@@ -9,8 +9,8 @@ import copy
 import math
 import re
 
-from wrlconv import model
 import primitives
+from wrlconv import model
 
 def lookup(mesh_list, mesh_name):
     for entry in mesh_list:

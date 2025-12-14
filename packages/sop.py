@@ -8,8 +8,8 @@
 import math
 import numpy as np
 
-from wrlconv import model
 import primitives
+from wrlconv import model
 
 
 class SOP:

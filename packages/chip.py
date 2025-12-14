@@ -210,7 +210,7 @@ class ChipResistor:
         mean /= len(mesh.geo_vertices)
 
         vertices = dict(zip(list(range(0, len(mesh.geo_vertices))), mesh.geo_vertices))
-        indices = [x[0] for x in geometry.sort_vertices_by_angle(vertices, mean, normal)]
+        indices = [x[0] for x in primitives.sort_vertices_by_angle(vertices, mean, normal)]
         count = len(vertices)
 
         if pull is not None:
@@ -549,7 +549,7 @@ class ChipResistor:
             return np.ones(3)
 
         pin_slices = curves.loft(path_points, shape_points, scaling=mesh_scaling_func)
-        pin_mesh = primitives.build_loft_mesh(pin_slices, True, False)
+        pin_mesh = geometry.build_loft_mesh(pin_slices, True, False)
 
         return pin_mesh
 
@@ -576,7 +576,7 @@ class ChipResistor:
         bot_part_path_points = bot_part_path.tessellate()
 
         bot_part_slices = curves.loft(path=bot_part_path_points, shape=bot_part_shape_points)
-        bot_part = primitives.build_loft_mesh(bot_part_slices, False, False)
+        bot_part = geometry.build_loft_mesh(bot_part_slices, False, False)
 
         bot_part.append(top_part)
         bot_part.optimize()
@@ -749,7 +749,7 @@ class ChipShunt(ChipResistor):
             return np.ones(3)
 
         pin_slices = curves.loft(path_points, shape_points, scaling=mesh_scaling_func)
-        pin_mesh = primitives.build_loft_mesh(pin_slices, True, False)
+        pin_mesh = geometry.build_loft_mesh(pin_slices, True, False)
 
         return pin_mesh
 
@@ -774,7 +774,7 @@ class ChipShunt(ChipResistor):
         shape_points = [shape_transform.apply(point) for point in points]
 
         pin_slices = curves.loft(path_points, shape_points)
-        pin_mesh = primitives.build_loft_mesh(pin_slices, False, False)
+        pin_mesh = geometry.build_loft_mesh(pin_slices, False, False)
 
         return pin_mesh
 

@@ -8,9 +8,9 @@
 import math
 import numpy as np
 
+import primitives
 from wrlconv import geometry
 from wrlconv import model
-import primitives
 
 
 class QFN:
@@ -137,9 +137,11 @@ class QFN:
             np.array([-heatsink_size[0] / 2.0, -heatsink_size[1] / 2.0, -body_size[2] / 2.0]),
             np.array([ heatsink_size[0] / 2.0, -heatsink_size[1] / 2.0, -body_size[2] / 2.0])
         ]
-        heatsink_vertices = geometry.make_bezier_quad_outline(heatsink_corners)
+        heatsink_vertices = primitives.make_bezier_quad_outline(heatsink_corners)
+        heatsink_vertices_indexed = dict(zip(list(range(0, len(heatsink_vertices))),
+                                             heatsink_vertices))
         body_vertices = mesh.find_vertices([region])
-        primitives.append_hollow_cap(mesh, body_vertices, heatsink_vertices,
+        primitives.append_hollow_cap(mesh, body_vertices, heatsink_vertices_indexed,
                                      np.array([0.0, 0.0, -1.0]))
 
     @staticmethod
@@ -149,12 +151,13 @@ class QFN:
             (-plane_size[0] / 2.0, -plane_size[1] / 2.0,          0.0),
             ( plane_size[0] / 2.0,  plane_size[1] / 2.0, body_size[2])
         )
-        mark_vertices = geometry.make_circle_outline(
+        mark_vertices = primitives.make_circle_outline(
             np.array([*mark_offset, body_size[2] / 2.0]),
             mark_radius, resolution
         )
+        mark_vertices_indexed = dict(zip(list(range(0, len(mark_vertices))), mark_vertices))
         body_vertices = mesh.find_vertices([region])
-        primitives.append_hollow_cap(mesh, body_vertices, mark_vertices,
+        primitives.append_hollow_cap(mesh, body_vertices, mark_vertices_indexed,
                                      normal=np.array([0.0, 0.0, 1.0]))
 
     @staticmethod
