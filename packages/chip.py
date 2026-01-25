@@ -559,7 +559,7 @@ class ChipResistor:
         roundness = chamfer / math.sqrt(2.0)
         top_part = primitives.make_chip_lead_cap(
             size=(glass_length, glass_width, (lead_thickness + roundness) * 2.0), chamfer=chamfer,
-            invert=False, edge_resolution=edge_resolution, line_resolution=1, axis=2)
+            inversion=False, edge_resolution=edge_resolution, line_resolution=1, axis=2)
 
         bot_part_shape = primitives.make_rounded_rect(size=(glass_length, glass_width),
             roundness=roundness, segments=edge_resolution)

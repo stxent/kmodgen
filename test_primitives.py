@@ -8,6 +8,7 @@
 import math
 import numpy as np
 
+import bezier
 import primitives
 from wrlconv import curves, geometry, helpers, model, x3d_export
 
@@ -74,7 +75,7 @@ class TestChips:
         cap_xp = primitives.make_chip_lead_cap(
             size=box_size,
             chamfer=box_chamfer,
-            invert=False,
+            inversion=False,
             edge_resolution=edge_resolution[0],
             line_resolution=line_resolution[0],
             axis=0
@@ -82,7 +83,7 @@ class TestChips:
         cap_xn = primitives.make_chip_lead_cap(
             size=box_size,
             chamfer=box_chamfer,
-            invert=True,
+            inversion=True,
             edge_resolution=edge_resolution[1],
             line_resolution=line_resolution[1],
             axis=0
@@ -90,7 +91,7 @@ class TestChips:
         cap_yp = primitives.make_chip_lead_cap(
             size=box_size,
             chamfer=box_chamfer,
-            invert=False,
+            inversion=False,
             edge_resolution=edge_resolution[1],
             line_resolution=line_resolution[1],
             axis=1
@@ -98,7 +99,7 @@ class TestChips:
         cap_yn = primitives.make_chip_lead_cap(
             size=box_size,
             chamfer=box_chamfer,
-            invert=True,
+            inversion=True,
             edge_resolution=edge_resolution[2],
             line_resolution=line_resolution[2],
             axis=1
@@ -106,7 +107,7 @@ class TestChips:
         cap_zp = primitives.make_chip_lead_cap(
             size=box_size,
             chamfer=box_chamfer,
-            invert=False,
+            inversion=False,
             edge_resolution=edge_resolution[2],
             line_resolution=line_resolution[2],
             axis=2
@@ -114,7 +115,7 @@ class TestChips:
         cap_zn = primitives.make_chip_lead_cap(
             size=box_size,
             chamfer=box_chamfer,
-            invert=True,
+            inversion=True,
             edge_resolution=edge_resolution[0],
             line_resolution=line_resolution[0],
             axis=2
@@ -171,13 +172,6 @@ class TestHelpers:
         value = model.calc_median_point([(1.0, 1.0, 1.0), (-1.0, -1.0, -1.0)])
         assert np.isclose(value, (0.0, 0.0, 0.0)).all().item() is True
 
-    def test_reverse_projection(self):
-        try:
-            value = primitives.reverse_projection((1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
-        except ValueError:
-            value = None
-        assert value is None
-
     def test_round1f(self):
         value = primitives.round1f(1.0)
         assert value == '1'
@@ -216,7 +210,7 @@ class TestPins:
         model.reset_allocator()
 
         mesh = primitives.make_pin_mesh(
-            pin_shape_size=np.array([0.5, 0.25]),
+            pin_shape_size=np.array([0.5, 0.3]),
             pin_height=2.0,
             pin_length=4.0,
             pin_slope=np.deg2rad(20.0),
@@ -235,7 +229,7 @@ class TestPins:
         model.reset_allocator()
 
         mesh = primitives.make_pin_mesh(
-            pin_shape_size=np.array([0.5, 0.25]),
+            pin_shape_size=np.array([0.5, 0.3]),
             pin_height=2.0,
             pin_length=4.0,
             pin_slope=np.deg2rad(20.0),
@@ -319,7 +313,7 @@ class TestPrimitives:
             np.array([-1.0, -1.0, 0.0]),
             np.array([ 1.0, -1.0, 0.0])
         ]
-        offset = np.array([0.25, 0.25])
+        offset = np.array([0.2, 0.2])
         mesh = primitives.make_body_cap(corners, 0.5, offset, 24)
 
         serialized = serialize_models([mesh], tmp_path, name)
@@ -377,7 +371,7 @@ class TestPrimitives:
 
         edge_resolution = 3
         rect_roundness = 0.1 / math.sqrt(2.0)
-        rect_size = (0.25, 0.5)
+        rect_size = (0.3, 0.5)
 
         def make_mesh(rotate):
             shape_curve = primitives.make_rounded_rect_half(
@@ -420,7 +414,7 @@ class TestPrimitives:
         mesh = geometry.build_rotation_mesh(
             slices=slices,
             wrap=True,
-            inverse=True
+            invert=True
         )
         mesh.append(beg_cap)
         mesh.append(end_cap)
@@ -446,7 +440,7 @@ class TestPrimitives:
         mesh = geometry.build_rotation_mesh(
             slices=slices,
             wrap=True,
-            inverse=True
+            invert=True
         )
 
         serialized = serialize_models([mesh], tmp_path, name)
@@ -472,8 +466,8 @@ class TestBox:
 
         mesh = primitives.make_box(
             size=np.array([2.0, 2.0, 1.0]),
-            chamfer=0.25,
-            band_size=0.25,
+            chamfer=0.2,
+            band_size=0.2,
             band_offset=0.0,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
@@ -488,7 +482,7 @@ class TestBox:
 
         mesh = primitives.make_box(
             size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
@@ -502,17 +496,17 @@ class TestBox:
 
         body = primitives.make_box(
             size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
-            mark_radius=0.25,
-            mark_offset=np.array([0.25, 0.25]),
+            mark_radius=0.3,
+            mark_offset=np.array([0.2, 0.2]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
 
-        mark = geometry.Circle(0.25, mark_resolution)
-        mark.translate(np.array([0.25, 0.25, 1.0]))
+        mark = geometry.Circle(0.3, mark_resolution)
+        mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
@@ -524,11 +518,11 @@ class TestBox:
 
         mesh = primitives.make_box(
             size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             band_size=0.1,
-            band_offset=0.25
+            band_offset=0.3
         )
 
         serialized = serialize_models([mesh], path, name)
@@ -540,19 +534,19 @@ class TestBox:
 
         body = primitives.make_box(
             size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             band_size=0.1,
-            band_offset=-0.25,
-            mark_radius=0.25,
-            mark_offset=np.array([0.25, 0.25]),
+            band_offset=-0.3,
+            mark_radius=0.3,
+            mark_offset=np.array([0.2, 0.2]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
 
-        mark = geometry.Circle(0.25, mark_resolution)
-        mark.translate(np.array([0.25, 0.25, 1.0]))
+        mark = geometry.Circle(0.3, mark_resolution)
+        mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
@@ -564,7 +558,7 @@ class TestBox:
 
         mesh = primitives.make_box(
             size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=3,
             line_resolution=(3, 2, 1)
         )
@@ -616,11 +610,11 @@ class TestRoundedBox:
         mesh = primitives.make_rounded_box(
             size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             band_size=0.1,
-            band_offset=0.25
+            band_offset=0.3
         )
 
         serialized = serialize_models([mesh], path, name)
@@ -633,19 +627,19 @@ class TestRoundedBox:
         body = primitives.make_rounded_box(
             size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
-            chamfer=0.25,
+            chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             band_size=0.1,
-            band_offset=-0.25,
-            mark_radius=0.25,
-            mark_offset=np.array([0.25, 0.25]),
+            band_offset=-0.3,
+            mark_radius=0.3,
+            mark_offset=np.array([0.2, 0.2]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
 
-        mark = geometry.Circle(0.25, mark_resolution)
-        mark.translate(np.array([0.25, 0.25, 1.0]))
+        mark = geometry.Circle(0.3, mark_resolution)
+        mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
         serialized = serialize_models([body, mark], path, name)
@@ -676,13 +670,13 @@ class TestSlopedBox:
 
         mesh = primitives.make_sloped_box(
             size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.25,
+            chamfer=0.2,
             slope=math.pi / 4.0,
             slope_height=0.5,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             band_size=0.1,
-            band_offset=0.25
+            band_offset=0.0
         )
 
         serialized = serialize_models([mesh], path, name)
@@ -702,7 +696,8 @@ class TestShapeScale:
     FILE_SHAPE_SCALE_SIMPLE_INV = 'test_shape_scale_simple_inv.x3d'
     FILE_SHAPE_SCALE_SMART_INV = 'test_shape_scale_smart_inv.x3d'
 
-    def make_simple_scaled_rect(path, name, edge_resolution, line_resolution, inverse):
+    @staticmethod
+    def make_simple_scaled_rect(path, name, edge_resolution, line_resolution, inversion):
         def shift_slice(points, offset):
             return [point + np.array([0.0, 0.0, offset]) for point in points]
 
@@ -719,11 +714,12 @@ class TestShapeScale:
         for i in range(-3, 4):
             points = primitives.simple_scale(shape, np.array([i * 0.07, i * 0.07, 0.0]))
             slices.append(shift_slice(points, 0.05 * (i + 3)))
-        mesh = primitives.slice_connect_direct(slices, inverse)
+        mesh = primitives.slice_connect_direct(slices, inversion)
         serialized = serialize_models([mesh], path, name)
         assert compare_models(name, serialized) is True
 
-    def make_smart_scaled_rect(path, name, edge_resolution, line_resolution, inverse):
+    @staticmethod
+    def make_smart_scaled_rect(path, name, edge_resolution, line_resolution, inversion):
         def shift_slice(points, offset):
             return [point + np.array([0.0, 0.0, offset]) for point in points]
 
@@ -741,7 +737,7 @@ class TestShapeScale:
             points = primitives.smart_scale(shape, i * 0.07)
             slices.append(shift_slice(points, 0.05 * (i + 3)))
         slices.append([np.array([0.0, 0.0, 6 * 0.05])])
-        mesh = primitives.slice_connect_nearest(slices, inverse)
+        mesh = primitives.slice_connect_nearest(slices, inversion)
         serialized = serialize_models([mesh], path, name)
         assert compare_models(name, serialized) is True
 
@@ -755,10 +751,8 @@ class TestShapeScale:
         [shape.extend(element.tessellate()) for element in elements]
         shape = curves.optimize(shape)
 
-        inner_circle = primitives.slice_equalize(shape, 0.25)
+        inner_circle = primitives.slice_equalize(shape, 0.3)
         slices = [shape, inner_circle]
-        print(len(slices[0]), slices[0])
-        print(len(slices[1]), slices[1])
 
         mesh = primitives.slice_connect_direct(slices, False)
         serialized = serialize_models([mesh], tmp_path, name)
@@ -779,3 +773,453 @@ class TestShapeScale:
     def test_smart_scale_inversion(self, tmp_path):
         TestShapeScale.make_smart_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART_INV,
                                               5, 3, True)
+
+
+class TestBezierObject:
+    FILE_BEZIER_BOX_1 = 'test_bezier_box_1.x3d'
+    FILE_BEZIER_BOX_2_FINE = 'test_bezier_box_2_fine.x3d'
+    FILE_BEZIER_BOX_2_FLAT = 'test_bezier_box_2_flat.x3d'
+    FILE_BEZIER_BOX_3 = 'test_bezier_box_3.x3d'
+    FILE_BEZIER_CORNER = 'test_bezier_corner.x3d'
+    FILE_BEZIER_CUBE = 'test_bezier_cube.x3d'
+    FILE_BEZIER_PYRAMID = 'test_bezier_pyramid.x3d'
+    FILE_BEZIER_PYRAMID_2 = 'test_bezier_pyramid_2.x3d'
+
+    @staticmethod
+    def make_bezier_box_1():
+        x, y, z = 1.0, 1.0, 1.0 # pylint: disable=invalid-name
+
+        vertices = [
+            # Offset 0
+            np.array([0.0,   y,   z]),
+            np.array([0.0, 0.0,   z]),
+            np.array([  x, 0.0,   z]),
+            np.array([  x,  -y,   z]),
+            np.array([ -x,  -y,   z]),
+            np.array([ -x,   y,   z]),
+
+            # Offset 6
+            np.array([  x,   y, 0.0]),
+            np.array([0.0,   y, 0.0]),
+            np.array([0.0, 0.0, 0.0]),
+            np.array([  x, 0.0, 0.0]),
+
+            # Offset 10
+            np.array([  x,   y,  -z]),
+            np.array([  x,  -y,  -z]),
+            np.array([ -x,  -y,  -z]),
+            np.array([ -x,   y,  -z]),
+        ]
+        vertex_attributes = {
+            7: {'inversion': True},
+            8: {'inversion': True},
+            9: {'inversion': True}
+        }
+        edges = [
+            # Top
+            [0, 1, 2, 3, 4, 5, 0], [1, 4],
+            # Medium
+            [6, 7, 8, 9, 6],
+            # Bottom
+            [10, 11, 12, 13, 10],
+            # Sides
+            [3, 11], [4, 12], [5, 13],
+            [0, 7], [1, 8], [2, 9],
+            [6, 10], [7, 13], [9, 11]
+        ]
+        edge_attributes = {
+            (1, 8): {'inversion': True},
+            (7, 8): {'inversion': True},
+            (8, 9): {'inversion': True}
+        }
+        faces = [
+            [5, 0, 7, 13], [6, 10, 13, 7], [11, 9, 2, 3], [10, 6, 9, 11],
+            # Top
+            [1, 0, 5, 4],
+            [4, 3, 2, 1],
+            # Medium
+            [6, 7, 8, 9],
+            # Bottom
+            [10, 11, 12, 13],
+            # Sides
+            [1, 8, 7, 0], [2, 9, 8, 1],
+            [4, 5, 13, 12], [3, 4, 12, 11],
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=5,
+            line_resolution=3,
+            vertex_attributes=vertex_attributes,
+            edge_attributes=edge_attributes
+        )
+        return mesh_object.tessellate()
+
+    @staticmethod
+    def make_bezier_box_2(sharpness):
+        x, y, z = 1.0, 1.0, 1.0 # pylint: disable=invalid-name
+
+        vertices = [
+            # Offset 0
+            np.array([  x,   y,   z]),
+            np.array([  x,  -y,   z]),
+            np.array([ -x,  -y,   z]),
+            np.array([ -x,   y,   z]),
+
+            # Offset 4
+            np.array([  x * 1.1,   y * 1.1, 0.0]),
+            np.array([  x * 1.1,  -y * 1.1, 0.0]),
+            np.array([ -x * 1.1,  -y * 1.1, 0.0]),
+            np.array([ -x * 1.1,   y * 1.1, 0.0]),
+
+            # Offset 8
+            np.array([  x,   y,  -z]),
+            np.array([  x,  -y,  -z]),
+            np.array([ -x,  -y,  -z]),
+            np.array([ -x,   y,  -z]),
+        ]
+        edges = [
+            # Horizontal
+            [0, 1, 2, 3, 0],
+            [4, 5, 6, 7, 4],
+            [8, 9, 10, 11, 8],
+            # Vertical
+            [0, 4], [1, 5], [2, 6], [3, 7],
+            [4, 8], [5, 9], [6, 10], [7, 11]
+        ]
+        faces = [
+            # Top
+            [3, 2, 1, 0],
+            # Bottom
+            [8, 9, 10, 11],
+            # Sides
+            [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7],
+            [4, 5, 9, 8], [5, 6, 10, 9], [6, 7, 11, 10], [7, 4, 8, 11]
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            sharpness=sharpness,
+            edge_resolution=5,
+            line_resolution=3
+        )
+        return mesh_object.tessellate()
+
+    @staticmethod
+    def make_bezier_box_3():
+        x, y, z = 1.0, 1.0, 1.0 # pylint: disable=invalid-name
+
+        vertices = [
+            # Offset 0
+            np.array([  x, 0.0,   z]),
+            np.array([  x,  -y,   z]),
+            np.array([ -x,  -y,   z]),
+            np.array([ -x, 0.0,   z]),
+
+            # Offset 4
+            np.array([  x,   y, 0.0]),
+            np.array([ -x,   y, 0.0]),
+
+            # Offset 6
+            np.array([  x,   y,  -z]),
+            np.array([  x,  -y,  -z]),
+            np.array([ -x,  -y,  -z]),
+            np.array([ -x,   y,  -z])
+        ]
+        edges = [
+            # Horizontal
+            [0, 1, 2, 3, 0],
+            [4, 5],
+            [6, 7, 8, 9, 6],
+            # Vertical
+            [0, 4], [3, 5],
+            [4, 6], [5, 9],
+            [1, 7], [2, 8],
+            # Diagonal
+            [6, 4], [3, 5],
+            [4, 7], [5, 8]
+        ]
+        faces = [
+            # Top
+            [3, 2, 1, 0],
+            [4, 5, 3, 0],
+            # Bottom
+            [6, 7, 8, 9],
+            # Sides
+            [1, 2, 8, 7],
+            [6, 9, 5, 4],
+            [7, 4, 0, 1], [7, 6, 4],
+            [2, 3, 5, 8], [5, 9, 8]
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=5,
+            line_resolution=3
+        )
+        return mesh_object.tessellate()
+
+    @staticmethod
+    def make_bezier_corner():
+        x, y, z = 1.0, 1.0, 1.0 # disable=invalid-name
+        inner, outer = 1.0 * 0.553, 1.5 * 0.553
+
+        vertices = [
+            # Offset 0
+            np.array([        x,  y,        z]),
+            np.array([  x * 0.5,  y,        z]),
+            np.array([  x * 0.5, -y,        z]),
+            np.array([        x, -y,        z]),
+
+            # Offset 4
+            np.array([        x,  y,  z * 0.5]),
+            np.array([  x * 0.5,  y,  z * 0.5]),
+            np.array([  x * 0.5, -y,  z * 0.5]),
+            np.array([        x, -y,  z * 0.5]),
+
+            # Offset 8
+            np.array([ -x * 0.5,  y,       -z]),
+            np.array([ -x * 0.5,  y, -z * 0.5]),
+            np.array([ -x * 0.5, -y, -z * 0.5]),
+            np.array([ -x * 0.5, -y,       -z]),
+
+            # Offset 12
+            np.array([       -x,  y,       -z]),
+            np.array([       -x,  y, -z * 0.5]),
+            np.array([       -x, -y, -z * 0.5]),
+            np.array([       -x, -y,       -z])
+        ]
+        vertex_attributes = {
+            4:  {'bezier': { 8: np.array([  0.0, 0.0, -outer])}},
+            5:  {'bezier': { 9: np.array([  0.0, 0.0, -inner])}},
+            6:  {'bezier': {10: np.array([  0.0, 0.0, -inner])}},
+            7:  {'bezier': {11: np.array([  0.0, 0.0, -outer])}},
+            8:  {'bezier': { 4: np.array([outer, 0.0,    0.0])}},
+            9:  {'bezier': { 5: np.array([inner, 0.0,    0.0])}},
+            10: {'bezier': { 6: np.array([inner, 0.0,    0.0])}},
+            11: {'bezier': { 7: np.array([outer, 0.0,    0.0])}}
+        }
+        edges = [
+            # Top
+            [0, 1, 2, 3, 0],
+            [4, 5, 6, 7, 4],
+            # Bottom
+            [8, 9, 10, 11, 8],
+            [12, 13, 14, 15, 12],
+            # Sides
+            [0, 4], [1, 5], [2, 6], [3, 7],
+            [4, 8], [5, 9], [6, 10], [7, 11],
+            [8, 12], [9, 13], [10, 14], [11, 15]
+        ]
+        edge_attributes = {
+            (4, 8):  {'resolution': 10},
+            (5, 9):  {'resolution': 10},
+            (6, 10): {'resolution': 10},
+            (7, 11): {'resolution': 10}
+        }
+        faces = [
+            # Top
+            [0, 1, 2, 3],
+            # Bottom
+            [15, 14, 13, 12],
+            # Sides
+            [4, 5, 1, 0], [5, 6, 2, 1], [6, 7, 3, 2], [7, 4, 0, 3],
+            [8, 9, 5, 4], [9, 10, 6, 5], [10, 11, 7, 6], [11, 8, 4, 7],
+            [12, 13, 9, 8], [13, 14, 10, 9], [14, 15, 11, 10], [15, 12, 8, 11]
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.1,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=5,
+            line_resolution=3,
+            vertex_attributes=vertex_attributes,
+            edge_attributes=edge_attributes
+        )
+        return mesh_object.tessellate()
+
+    @staticmethod
+    def make_bezier_cube():
+        x, y, z = 1.0, 1.0, 1.0 # pylint: disable=invalid-name
+
+        vertices = [
+            # Offset 0
+            np.array([  x,  y,  z]),
+            np.array([  x, -y,  z]),
+            np.array([ -x, -y,  z]),
+            np.array([ -x,  y,  z]),
+
+            # Offset 4
+            np.array([  x,  y, -z]),
+            np.array([  x, -y, -z]),
+            np.array([ -x, -y, -z]),
+            np.array([ -x,  y, -z]),
+        ]
+        edges = [
+            # Top
+            [0, 1, 2, 3, 0],
+            # Bottom
+            [4, 5, 6, 7, 4],
+            # Sides
+            [0, 4], [1, 5], [2, 6], [3, 7]
+        ]
+        faces = [
+            # Top
+            [3, 2, 1, 0],
+            # Bottom
+            [4, 5, 6, 7],
+            # Sides
+            [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=5,
+            line_resolution=3
+        )
+        return mesh_object.tessellate()
+
+    @staticmethod
+    def make_bezier_pyramid():
+        # pylint: disable=invalid-name
+        r, z = 1.0, 1.0
+        a0, a1, a2 = 0.0, 2.0 * math.pi / 3.0, 4.0 * math.pi / 3.0
+        # pylint: enable=invalid-name
+
+        vertices = [
+            np.array([             0.0,              0.0,   z]),
+            np.array([math.cos(a0) * r, math.sin(a0) * r, 0.0]),
+            np.array([math.cos(a1) * r, math.sin(a1) * r, 0.0]),
+            np.array([math.cos(a2) * r, math.sin(a2) * r, 0.0])
+        ]
+        edges = [
+            # Bottom
+            [1, 2, 3, 1],
+            # Sides
+            [0, 1], [0, 2], [0, 3]
+        ]
+        faces = [
+            [0, 1, 2], [0, 2, 3], [0, 3, 1], [3, 2, 1]
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=5,
+            line_resolution=3
+        )
+        return mesh_object.tessellate()
+
+    @staticmethod
+    def make_bezier_pyramid_2():
+        # pylint: disable=invalid-name
+        r, z = 1.0, 1.0
+        # pylint: enable=invalid-name
+
+        vertices = [
+            np.array([0.0, 0.0,   z]),
+            np.array([  r, 0.0, 0.0]),
+            np.array([0.0,   r, 0.0]),
+            np.array([ -r, 0.0, 0.0]),
+            np.array([0.0,  -r, 0.0])
+        ]
+        edges = [
+            # Bottom
+            [1, 2, 3, 4, 1],
+            # Sides
+            [0, 1], [0, 2], [0, 3], [0, 4]
+        ]
+        faces = [
+            [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
+        ]
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=5,
+            line_resolution=3
+        )
+        return mesh_object.tessellate()
+
+    def test_bezier_box_1(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_BOX_1
+        model.reset_allocator()
+
+        mesh = TestBezierObject.make_bezier_box_1()
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_box_2_fine(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_BOX_2_FINE
+        model.reset_allocator()
+
+        mesh = TestBezierObject.make_bezier_box_2(math.pi)
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_box_2_flat(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_BOX_2_FLAT
+        model.reset_allocator()
+
+        mesh = TestBezierObject.make_bezier_box_2(math.pi * (5.0 / 6.0))
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_box_3(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_BOX_3
+        model.reset_allocator()
+
+        mesh = mesh = TestBezierObject.make_bezier_box_3()
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_corner(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_CORNER
+        model.reset_allocator()
+        
+        mesh = mesh = TestBezierObject.make_bezier_corner()
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_cube(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_CUBE
+        model.reset_allocator()
+
+        mesh = TestBezierObject.make_bezier_cube()
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_pyramid(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_PYRAMID
+        model.reset_allocator()
+
+        mesh = TestBezierObject.make_bezier_pyramid()
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True
+
+    def test_bezier_pyramid_2(self, tmp_path):
+        name = TestBezierObject.FILE_BEZIER_PYRAMID_2
+        model.reset_allocator()
+
+        mesh = TestBezierObject.make_bezier_pyramid_2()
+        serialized = serialize_models([mesh], tmp_path, name)
+        assert compare_models(name, serialized) is True

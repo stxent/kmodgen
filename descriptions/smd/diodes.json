@@ -74,9 +74,9 @@
       "title": "SOD-323",
       "body": {"size": [1.8, 1.35, 0.9]},
       "pins": {},
-      "pads": {"pitch": 1.6, "size": [0.6, 0.6], "names": ["C", "A"]},
+      "pads": {"pitch": 1.7, "size": [0.8, 0.6], "names": ["C", "A"]},
       "mark": {"dot": true},
-      "source": "NXP specifications"
+      "source": "Infineon specifications for reflow soldering"
     }
   ]
 }

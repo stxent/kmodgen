@@ -18,14 +18,18 @@ class Chip(exporter.Footprint):
         self.pitch = descriptor['pads']['pitch']
         self.mapping = descriptor['pads']['names'] if 'names' in descriptor['pads'] else ['1', '2']
 
-        self.mark_arrow = descriptor['mark']['arrow'] if 'arrow' in descriptor['mark'] else False
-        self.mark_bar = descriptor['mark']['bar'] if 'bar' in descriptor['mark'] else False
-        self.mark_dot = descriptor['mark']['dot'] if 'dot' in descriptor['mark'] else False
-        self.mark_wrap = descriptor['mark']['wrap'] if 'wrap' in descriptor['mark'] else False
-
-        if 'vertical' in descriptor['mark']:
-            self.mark_vertical = descriptor['mark']['vertical']
-        else:
+        try:
+            group = descriptor['mark']
+            self.mark_arrow = group['arrow'] if 'arrow' in group else False
+            self.mark_bar = group['bar'] if 'bar' in group else False
+            self.mark_dot = group['dot'] if 'dot' in group else False
+            self.mark_wrap = group['wrap'] if 'wrap' in group else False
+            self.mark_vertical = group['vertical'] if 'vertical' in group else False
+        except KeyError:
+            self.mark_arrow = False
+            self.mark_bar = False
+            self.mark_dot = False
+            self.mark_wrap = False
             self.mark_vertical = False
 
         self.centered_arrow, self.filled_arrow, self.verification = True, False, True

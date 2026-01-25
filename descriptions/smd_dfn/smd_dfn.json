@@ -20,7 +20,7 @@
     }, {
       "package": {"type": "DFN", "spec": "thin"},
       "title": "LGA-8_2x2.5mm_P0.65mm",
-      "body": {"size": [2.5, 2.0, 0.95]},
+      "body": {"size": [2.5, 2.0, 0.95], "chamfer": 0.03},
       "mark": {"radius": 0.2},
       "pads": {"size": [0.35, 0.5]},
       "pins": {"count": 8, "pitch": 0.65, "length": 0.35, "width": 0.35, "margin": -0.200},

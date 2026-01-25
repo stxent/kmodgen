@@ -298,13 +298,13 @@ class RadialCapacitor:
         slices = curves.rotate(curve=curve, axis=np.array([0.0, 0.0, 1.0]), edges=edges)
         meshes = []
 
-        bottom_cap = primitives.make_rotation_cap_mesh(slices=slices, inverse=True)
+        bottom_cap = primitives.make_rotation_cap_mesh(slices=slices, inversion=True)
         bottom_cap.appearance().material = RadialCapacitor.mat(materials, 'Bottom')
         bottom_cap.ident = name + 'BottomCap'
         meshes.append(bottom_cap)
 
         if cap_sections == 1:
-            top_cap = primitives.make_rotation_cap_mesh(slices=slices, inverse=False)
+            top_cap = primitives.make_rotation_cap_mesh(slices=slices, inversion=False)
         else:
             top_cap = RadialCapacitor.build_bumped_cap(
                 slices=slices,
@@ -318,18 +318,18 @@ class RadialCapacitor:
         meshes.append(top_cap)
 
         if polarized:
-            body = geometry.build_rotation_mesh(slices=slices[1:], wrap=False, inverse=True)
+            body = geometry.build_rotation_mesh(slices=slices[1:], wrap=False, invert=True)
             body.appearance().material = RadialCapacitor.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
 
             mark = geometry.build_rotation_mesh(slices=[slices[-1]] + slices[0:2], wrap=False,
-                                                inverse=True)
+                                                invert=True)
             mark.appearance().material = RadialCapacitor.mat(materials, 'Mark')
             mark.ident = name + 'Mark'
             meshes.append(mark)
         else:
-            body = geometry.build_rotation_mesh(slices=slices, wrap=True, inverse=True)
+            body = geometry.build_rotation_mesh(slices=slices, wrap=True, invert=True)
             body.appearance().material = RadialCapacitor.mat(materials, 'Body')
             body.ident = name + 'Body'
             meshes.append(body)
@@ -340,8 +340,8 @@ class RadialCapacitor:
     def build_capacitor_pin(curve, edges):
         slices = curves.rotate(curve=curve, axis=(0.0, 0.0, 1.0), edges=edges)
 
-        pin = geometry.build_rotation_mesh(slices=slices, wrap=True, inverse=True)
-        pin.append(primitives.make_rotation_cap_mesh(slices=slices, inverse=True))
+        pin = geometry.build_rotation_mesh(slices=slices, wrap=True, invert=True)
+        pin.append(primitives.make_rotation_cap_mesh(slices=slices, inversion=True))
         pin.optimize()
 
         return pin

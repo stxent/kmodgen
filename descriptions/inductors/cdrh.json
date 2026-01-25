@@ -6,23 +6,20 @@
       "body": {"size": [8.9, 9.8, 5.0]},
       "pins": {},
       "pads": {"pitch": 5.4, "size": [2.1, 2.4]},
-      "mark": {"wrap": false},
       "source": "Sumida specifications"
     }, {
       "package": {"type": "CDRH", "spec": "thick"},
       "title": "CDRH104R",
       "body": {"size": [10.0, 10.2, 3.8]},
       "pins": {},
-      "pads": {"pitch": 7.3, "size": [1.6, 3.2]},
-      "mark": {"wrap": false},
-      "source": "Sumida specifications"
+      "pads": {"pitch": 7.3, "size": [2.0, 3.2]},
+      "source": "JY Electronics and Sumida specifications"
     }, {
       "package": {"type": "CDRH", "spec": "thick"},
       "title": "CDRH127",
       "body": {"size": [12.0, 12.0, 8.0]},
       "pins": {},
       "pads": {"pitch": 7.0, "size": [2.9, 5.4]},
-      "mark": {"wrap": false},
       "source": "Sumida specifications"
     }
   ]
