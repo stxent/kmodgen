@@ -192,8 +192,9 @@ def make_rotation_cap_mesh(slices, inversion):
     mesh.geo_polygons = geo_polygons
     return mesh
 
-def make_box(size, chamfer, edge_resolution, line_resolution, band_size=None, band_offset=0.0,
-             mark_radius=None, mark_offset=np.zeros(2), mark_resolution=24):
+def make_box_with_mark(size, chamfer, edge_resolution, line_resolution,
+                       band_size=None, band_offset=0.0,
+                       mark_radius=None, mark_offset=np.zeros(2), mark_resolution=24):
     def top_face_functor(points, _1, resolution, _2):
         return make_body_cap(points, mark_radius, mark_offset, mark_resolution, resolution)
 
@@ -337,6 +338,107 @@ def make_box(size, chamfer, edge_resolution, line_resolution, band_size=None, ba
 
     return body.tessellate()
 
+def make_box_with_plinth(size, band_size, band_offset, cutout_length, cutout_height, chamfer,
+                         edge_resolution, line_resolution):
+    # pylint: disable=invalid-name
+    x, y = np.array(size[0:2]) / 2.0
+    z = size[2]
+    r = chamfer * 2.0
+    # pylint: enable=invalid-name
+
+    top_resolution = 2 # Fixed resolution for strip generation
+    band_xy = np.array(size[0:2]) / 2.0 + band_size
+    band = np.array([*band_xy, band_offset])
+    bottom_slope = band_size / band_offset if band_size > 0.0 else 1.0
+    xy_offset = cutout_height * bottom_slope
+
+    vertices = [
+        # Offset 0
+        np.array([ x,  y, z]),
+        np.array([ x, -y, z]),
+        np.array([-x, -y, z]),
+        np.array([-x,  y, z]),
+
+        # Offset 4
+        np.array([ x + band_size,  y + band_size, band_offset]),
+        np.array([ x + band_size, -y - band_size, band_offset]),
+        np.array([-x - band_size, -y - band_size, band_offset]),
+        np.array([-x - band_size,  y + band_size, band_offset]),
+
+        # Offset 8
+        np.array([ x - cutout_length,  y + xy_offset, cutout_height]),
+        np.array([                 x,  y + xy_offset, cutout_height]),
+        np.array([                 x, -y - xy_offset, cutout_height]),
+        np.array([ x - cutout_length, -y - xy_offset, cutout_height]),
+        np.array([-x + cutout_length, -y - xy_offset, cutout_height]),
+        np.array([                -x, -y - xy_offset, cutout_height]),
+        np.array([                -x,  y + xy_offset, cutout_height]),
+        np.array([-x + cutout_length,  y + xy_offset, cutout_height]),
+
+        # Offset 16
+        np.array([ x - cutout_length,  y, 0.0]),
+        np.array([ x - cutout_length, -y, 0.0]),
+        np.array([-x + cutout_length, -y, 0.0]),
+        np.array([-x + cutout_length,  y, 0.0])
+    ]
+    vertex_attributes = {
+    }
+    edges = [
+        # Top
+        [0, 1, 2, 3, 0],
+        # Medium
+        [4, 5, 6, 7, 4],
+        [8, 9, 10, 11, 12, 13, 14, 15, 8],
+        [8, 11], [12, 15],
+        # Bottom
+        [16, 17, 18, 19, 16],
+        # Sides
+        [0, 4], [1, 5], [2, 6], [3, 7],
+        [4, 8], [4, 9], [5, 10], [5, 11], [6, 12], [6, 13], [7, 14], [7, 15],
+        [8, 16], [11, 17], [12, 18], [15, 19]
+    ]
+    edge_attributes = {
+        ( 8, 11): {'inversion': True},
+        (12, 15): {'inversion': True},
+
+        ( 0,  3): {'resolution': top_resolution},
+        ( 1,  2): {'resolution': top_resolution},
+        ( 4,  7): {'resolution': top_resolution},
+        ( 5,  6): {'resolution': top_resolution},
+        ( 8, 15): {'resolution': top_resolution},
+        (11, 12): {'resolution': top_resolution},
+        (16, 19): {'resolution': top_resolution},
+        (17, 18): {'resolution': top_resolution}
+    }
+    faces = [
+        # Top
+        [3, 2, 1, 0],
+        # Medium
+        [8, 9, 10, 11], [12, 13, 14, 15],
+        # Bottom
+        [16, 17, 18, 19],
+        # Sides
+        [5, 4, 0, 1], [6, 5, 1, 2], [7, 6, 2, 3], [4, 7, 3, 0],
+        [9, 8, 4], [11, 10, 5], [13, 12, 6], [15, 14, 7],
+        [4, 5, 10, 9], [5, 6, 12, 11], [6, 7, 14, 13], [7, 4, 8, 15],
+        # Bottom sides
+        [8, 11, 17, 16], [12, 15, 19, 18],
+        [16, 19, 15, 8], [18, 17, 11, 12]
+    ]
+
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes
+    )
+    return body.tessellate()
+
 def make_chip_body(size, chamfer, edge_resolution):
     x_half = size[0] / 2.0
     y, z = size[1], size[2] # pylint: disable=invalid-name
@@ -413,7 +515,7 @@ def make_chip_lead_cap(size, chamfer, inversion, edge_resolution, line_resolutio
 
 def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, inversion,
                          edge_resolution, line_resolution):
-    roundness = lead_chamfer / math.sqrt(2.0)
+    roundness = lead_chamfer
     x_lead_half = lead_size[0] / 2.0
     y_case, z_case = case_size[1], case_size[2]
     y_lead, z_lead = lead_size[1], lead_size[2]
@@ -493,6 +595,124 @@ def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resol
     mesh.optimize()
     return mesh
 
+def make_carved_box(size, niche_size, chamfer, roundness, edge_resolution, line_resolution):
+    # pylint: disable=invalid-name
+    x, y, z = np.array(size) / 2.0
+    r = roundness
+    # pylint: enable=invalid-name
+
+    niche_depth = niche_size[0]
+    niche_width_half = niche_size[1] / 2.0
+    niche_height = niche_size[2]
+
+    vertices = [
+        # Offset 0
+        np.array([ x,  y, z]),
+        np.array([ x, -y, z]),
+        np.array([-x, -y, z]),
+        np.array([-x,  y, z]),
+
+        # Offset 4
+        np.array([               x,  niche_width_half, -z + niche_height]),
+        np.array([ x - niche_depth,  niche_width_half, -z + niche_height]),
+        np.array([ x - niche_depth, -niche_width_half, -z + niche_height]),
+        np.array([               x, -niche_width_half, -z + niche_height]),
+        # Offset 8
+        np.array([              -x, -niche_width_half, -z + niche_height]),
+        np.array([-x + niche_depth, -niche_width_half, -z + niche_height]),
+        np.array([-x + niche_depth,  niche_width_half, -z + niche_height]),
+        np.array([              -x,  niche_width_half, -z + niche_height]),
+
+        # Offset 12
+        np.array([               x,                 y, -z]),
+        np.array([               x,  niche_width_half, -z]),
+        np.array([ x - niche_depth,  niche_width_half, -z]),
+        np.array([ x - niche_depth, -niche_width_half, -z]),
+        # Offset 16
+        np.array([               x, -niche_width_half, -z]),
+        np.array([               x,                -y, -z]),
+        np.array([              -x,                -y, -z]),
+        np.array([              -x, -niche_width_half, -z]),
+        # Offset 20
+        np.array([-x + niche_depth, -niche_width_half, -z]),
+        np.array([-x + niche_depth,  niche_width_half, -z]),
+        np.array([              -x,  niche_width_half, -z]),
+        np.array([              -x,                 y, -z])
+    ]
+    vertex_attributes = {
+        0:  {'chamfer': { 1: r,  3: r}},
+        1:  {'chamfer': { 2: r,  0: r}},
+        2:  {'chamfer': { 3: r,  1: r}},
+        3:  {'chamfer': { 0: r,  2: r}},
+        12: {'chamfer': {13: r, 23: r}},
+        17: {'chamfer': {18: r, 16: r}},
+        18: {'chamfer': {19: r, 17: r}},
+        23: {'chamfer': {12: r, 22: r}},
+
+        5:  {'inversion': True},
+        6:  {'inversion': True},
+        9:  {'inversion': True},
+        10: {'inversion': True}
+    }
+    edges = [
+        # Top
+        [0, 1, 2, 3, 0],
+        # Medium
+        [4, 5, 6, 7, 4], [8, 9, 10, 11, 8],
+        # Bottom
+        [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12],
+        [12, 14], [15, 17], [18, 20], [21, 23],
+        [14, 21], [15, 20],
+        # Top sides
+        [0, 4], [0, 12], [1, 7], [1, 17],
+        [2, 8], [2, 18], [3, 11], [3, 23],
+        # Bottom sides
+        [4, 13], [5, 14], [6, 15], [7, 16],
+        [8, 19], [9, 20], [10, 21], [11, 22]
+    ]
+    edge_attributes = {
+        ( 4,  5): {'inversion': True},
+        ( 5,  6): {'inversion': True},
+        ( 6,  7): {'inversion': True},
+        ( 8,  9): {'inversion': True},
+        ( 9, 10): {'inversion': True},
+        (10, 11): {'inversion': True},
+        ( 5, 14): {'inversion': True},
+        ( 6, 15): {'inversion': True},
+        ( 9, 20): {'inversion': True},
+        (10, 21): {'inversion': True}
+    }
+    faces = [
+        # Top
+        [3, 2, 1, 0],
+        # Bottom
+        [14, 15, 20, 21],
+        [12, 13, 14], [12, 14, 21, 23], [21, 22, 23],
+        [15, 16, 17], [15, 17, 18, 20], [18, 19, 20],
+        # Sides
+        [1, 2, 18, 17], [3, 0, 12, 23],
+        [4, 13, 12, 0], [1, 17, 16, 7], [0, 1, 7, 4],
+        [3, 23, 22, 11], [8, 19, 18, 2], [11, 8, 2, 3],
+        # Niches
+        [7, 6, 5, 4],
+        [4, 5, 14, 13], [16, 15, 6, 7], [5, 6, 15, 14],
+        [11, 10, 9, 8],
+        [21, 20, 9, 10], [8, 9, 20, 19], [10, 11, 22, 21]
+    ]
+
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes
+    )
+    return body.tessellate()
+
 def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution, band_size=None,
                      band_offset=0.0, mark_radius=None, mark_offset=np.zeros(2),
                      mark_resolution=24):
@@ -551,23 +771,9 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         [16, 17, 18, 19, 20, 21, 22, 23, 16],
         [16, 19], [20, 23],
         # Sides, upper half
-        [0, 8],
-        [1, 9],
-        [2, 10],
-        [3, 11],
-        [4, 12],
-        [5, 13],
-        [6, 14],
-        [7, 15],
+        [0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15],
         # Sides, lower half
-        [8, 16],
-        [9, 17],
-        [10, 18],
-        [11, 19],
-        [12, 20],
-        [13, 21],
-        [14, 22],
-        [15, 23]
+        [8, 16], [9, 17], [10, 18], [11, 19], [12, 20], [13, 21], [14, 22], [15, 23]
     ]
     faces = [
         # Top
@@ -675,7 +881,6 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
         [9, 12, 11], [10, 13, 8],
         [5, 6, 12, 9], [8, 13, 7, 4]
     ]
-    # return [bezier.debug_face_polygons(vertices, faces), bezier.debug_face_normals(vertices, faces)] # XXX
 
     body = bezier.BezierObject(
         vertices=vertices,
@@ -737,6 +942,340 @@ def make_rounded_rect_half(size, rotate, roundness, segments):
         shape.append(curves.Line((dx, dy - r, 0.0), (dx, 0.0, 0.0), 1))
 
     return shape
+
+def make_bent_fork_pin_mesh(width, height, length, thickness, roundness,
+                            cutout_width, cutout_height, end_slope, chamfer,
+                            edge_resolution, line_resolution, slope_resolution):
+    if chamfer * 2.0 >= thickness:
+        raise ValueError()
+    if roundness <= thickness:
+        raise ValueError()
+
+    # pylint: disable=invalid-name
+    r, t = roundness, thickness
+    x = length + t * 2.0
+    y = width / 2.0
+    z = height
+    # pylint: enable=invalid-name
+
+    weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
+    end_offset = t * np.array([math.sin(end_slope), math.cos(end_slope)])
+
+    vertices = [
+        # Offset 0
+        np.array([0.0,  y,   t]),
+        np.array([0.0,  y, 0.0]),
+        np.array([0.0, -y, 0.0]),
+        np.array([0.0, -y,   t]),
+
+        # Offset 4
+        np.array([x - r,  y,   t]),
+        np.array([x - r,  y, 0.0]),
+        np.array([x - r, -y, 0.0]),
+        np.array([x - r, -y,   t]),
+
+        # Offset 8
+        np.array([x - t,  y, r]),
+        np.array([    x,  y, r]),
+        np.array([    x, -y, r]),
+        np.array([x - t, -y, r]),
+
+        # Offset 12
+        np.array([x - t,  cutout_width / 2.0, z - cutout_height]),
+        np.array([    x,  cutout_width / 2.0, z - cutout_height]),
+        np.array([    x, -cutout_width / 2.0, z - cutout_height]),
+        np.array([x - t, -cutout_width / 2.0, z - cutout_height]),
+
+        # Offset 16
+        np.array([x - t,  cutout_width / 2.0, z - t * 2.0]),
+        np.array([x - t,                   y, z - t * 2.0]),
+        np.array([    x,                   y, z - t * 2.0]),
+        np.array([    x,  cutout_width / 2.0, z - t * 2.0]),
+        np.array([    x, -cutout_width / 2.0, z - t * 2.0]),
+        np.array([    x,                  -y, z - t * 2.0]),
+        np.array([x - t,                  -y, z - t * 2.0]),
+        np.array([x - t, -cutout_width / 2.0, z - t * 2.0]),
+
+        # Offset 24
+        np.array([x - t * 2.0 - end_offset[0],  cutout_width / 2.0, z - end_offset[1]]),
+        np.array([x - t * 2.0 - end_offset[0],                   y, z - end_offset[1]]),
+        np.array([                x - t * 2.0,                   y,                 z]),
+        np.array([                x - t * 2.0,  cutout_width / 2.0,                 z]),
+        np.array([                x - t * 2.0, -cutout_width / 2.0,                 z]),
+        np.array([                x - t * 2.0,                  -y,                 z]),
+        np.array([x - t * 2.0 - end_offset[0],                  -y, z - end_offset[1]]),
+        np.array([x - t * 2.0 - end_offset[0], -cutout_width / 2.0, z - end_offset[1]]),
+
+        # Offset 32
+        np.array([0.0,  cutout_width / 2.0, z - t]),
+        np.array([0.0,                   y, z - t]),
+        np.array([0.0,                   y,     z]),
+        np.array([0.0,  cutout_width / 2.0,     z]),
+        np.array([0.0, -cutout_width / 2.0,     z]),
+        np.array([0.0,                  -y,     z]),
+        np.array([0.0,                  -y, z - t]),
+        np.array([0.0, -cutout_width / 2.0, z - t])
+    ]
+    vertex_attributes = {
+        # Bottom Bezier corner
+        4:  {'bezier': { 8: np.array([(r - t) * weight, 0.0, 0.0])}},
+        5:  {'bezier': { 9: np.array([      r * weight, 0.0, 0.0])}},
+        6:  {'bezier': {10: np.array([      r * weight, 0.0, 0.0])}},
+        7:  {'bezier': {11: np.array([(r - t) * weight, 0.0, 0.0])}},
+        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r - t) * weight])}},
+        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r * weight])}},
+        10: {'bezier': { 6: np.array([0.0, 0.0,       -r * weight])}},
+        11: {'bezier': { 7: np.array([0.0, 0.0, -(r - t) * weight])}},
+
+        # Top right Bezier corner
+        16: {'bezier': {24: np.array([0.0, 0.0, 1.0 * t * weight])}},
+        17: {'bezier': {25: np.array([0.0, 0.0, 1.0 * t * weight])}},
+        18: {'bezier': {26: np.array([0.0, 0.0, 2.0 * t * weight])}},
+        19: {'bezier': {27: np.array([0.0, 0.0, 2.0 * t * weight])}},
+        24: {'bezier': {16: np.array([1.0 * t * weight, 0.0, 0.0])}},
+        25: {'bezier': {17: np.array([1.0 * t * weight, 0.0, 0.0])}},
+        26: {'bezier': {18: np.array([2.0 * t * weight, 0.0, 0.0])}},
+        27: {'bezier': {19: np.array([2.0 * t * weight, 0.0, 0.0])}},
+
+        # Top left Bezier corner
+        20: {'bezier': {28: np.array([0.0, 0.0, 2.0 * t * weight])}},
+        21: {'bezier': {29: np.array([0.0, 0.0, 2.0 * t * weight])}},
+        22: {'bezier': {30: np.array([0.0, 0.0, 1.0 * t * weight])}},
+        23: {'bezier': {31: np.array([0.0, 0.0, 1.0 * t * weight])}},
+        28: {'bezier': {20: np.array([2.0 * t * weight, 0.0, 0.0])}},
+        29: {'bezier': {21: np.array([2.0 * t * weight, 0.0, 0.0])}},
+        30: {'bezier': {22: np.array([1.0 * t * weight, 0.0, 0.0])}},
+        31: {'bezier': {23: np.array([1.0 * t * weight, 0.0, 0.0])}},
+
+        # Unconnected end
+        32: {'discard': True},
+        33: {'discard': True},
+        34: {'discard': True},
+        35: {'discard': True},
+        36: {'discard': True},
+        37: {'discard': True},
+        38: {'discard': True},
+        39: {'discard': True}
+    }
+    edges = [
+        # Bottom
+        [0, 1, 2, 3, 0],
+        [4, 5, 6, 7, 4],
+        # Medium
+        [8, 9, 10, 11, 8],
+        [12, 13, 14, 15, 12],
+        # Top
+        [16, 17, 18, 19, 16], [20, 21, 22, 23, 20],
+        [24, 25, 26, 27, 24], [28, 29, 30, 31, 28],
+        # Bottom sides
+        [0, 4], [1, 5], [2, 6], [3, 7],
+        # Corner sides
+        [4, 8], [5, 9], [6, 10], [7, 11],
+        # Medium sides
+        [8, 12], [8, 17], [9, 18], [9, 13], [10, 14], [10, 21], [11, 22], [11, 15],
+        # Top sides
+        [12, 16], [13, 19], [14, 20], [15, 23],
+        [16, 24], [17, 25], [18, 26], [19, 27], [20, 28], [21, 29], [22, 30], [23, 31],
+        # Unconnected ends
+        [32, 33, 34, 35, 32], [36, 37, 38, 39, 36],
+        [24, 32], [25, 33], [26, 34], [27, 35], [28, 36], [29, 37], [30, 38], [31, 39]
+    ]
+    edge_attributes = {
+        # Bottom corner
+        (4, 8):  {'resolution': slope_resolution},
+        (5, 9):  {'resolution': slope_resolution},
+        (6, 10): {'resolution': slope_resolution},
+        (7, 11): {'resolution': slope_resolution},
+
+        # Bottom part of cutout
+        (12, 13): {'inversion': True},
+        (14, 15): {'inversion': True},
+
+        # Top right corner
+        (16, 24): {'resolution': edge_resolution},
+        (17, 25): {'resolution': edge_resolution},
+        (18, 26): {'resolution': edge_resolution},
+        (19, 27): {'resolution': edge_resolution},
+
+        # Top left corner
+        (20, 28): {'resolution': edge_resolution},
+        (21, 29): {'resolution': edge_resolution},
+        (22, 30): {'resolution': edge_resolution},
+        (23, 31): {'resolution': edge_resolution}
+    }
+    faces = [
+        # Bottom side
+        [0, 1, 2, 3],
+        # Bottom
+        [4, 5, 1, 0], [5, 6, 2, 1], [6, 7, 3, 2], [7, 4, 0, 3],
+        # Bottom corner
+        [8, 9, 5, 4], [9, 10, 6, 5], [10, 11, 7, 6], [11, 8, 4, 7],
+        # Medium
+        [15, 14, 13, 12],
+        # Bottom to top transition - front and rear
+        [12, 16, 17, 8], [11, 22, 23, 15], [8, 11, 15, 12],
+        [9, 18, 19, 13], [14, 20, 21, 10], [13, 14, 10, 9],
+        # Bottom to top transition - sides
+        [12, 13, 19, 16], [14, 15, 23, 20],
+        [17, 18, 9, 8], [21, 22, 11, 10],
+        # Top corners
+        [24, 25, 17, 16], [25, 26, 18, 17], [26, 27, 19, 18], [27, 24, 16, 19],
+        [28, 29, 21, 20], [29, 30, 22, 21], [30, 31, 23, 22], [31, 28, 20, 23]
+    ]
+
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes
+    )
+    return body.tessellate()
+
+def make_bent_pin_mesh(width, height, length, thickness, roundness, end_slope, chamfer,
+                       edge_resolution, line_resolution, slope_resolution):
+    if chamfer * 2.0 >= thickness:
+        raise ValueError()
+    if roundness <= thickness:
+        raise ValueError()
+
+    # pylint: disable=invalid-name
+    r, t = roundness, thickness
+    x = length + t * 2.0
+    y = width / 2.0
+    z = height
+    # pylint: enable=invalid-name
+
+    weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
+    end_offset = t * np.array([math.sin(end_slope), math.cos(end_slope)])
+
+    vertices = [
+        # Offset 0
+        np.array([0.0,  y,   t]),
+        np.array([0.0,  y, 0.0]),
+        np.array([0.0, -y, 0.0]),
+        np.array([0.0, -y,   t]),
+
+        # Offset 4
+        np.array([x - r,  y,   t]),
+        np.array([x - r,  y, 0.0]),
+        np.array([x - r, -y, 0.0]),
+        np.array([x - r, -y,   t]),
+
+        # Offset 8
+        np.array([x - t,  y, r]),
+        np.array([    x,  y, r]),
+        np.array([    x, -y, r]),
+        np.array([x - t, -y, r]),
+
+        # Offset 12
+        np.array([x - t,  y, z - t * 2.0]),
+        np.array([    x,  y, z - t * 2.0]),
+        np.array([    x, -y, z - t * 2.0]),
+        np.array([x - t, -y, z - t * 2.0]),
+
+        # Offset 16
+        np.array([x - t * 2.0 - end_offset[0],  y, z - end_offset[1]]),
+        np.array([                x - t * 2.0,  y,                 z]),
+        np.array([                x - t * 2.0, -y,                 z]),
+        np.array([x - t * 2.0 - end_offset[0], -y, z - end_offset[1]]),
+
+        # Offset 20
+        np.array([0.0,  y, z - t]),
+        np.array([0.0,  y,     z]),
+        np.array([0.0, -y,     z]),
+        np.array([0.0, -y, z - t])
+    ]
+    vertex_attributes = {
+        # Bottom Bezier corner
+        4:  {'bezier': { 8: np.array([(r - t) * weight, 0.0, 0.0])}},
+        5:  {'bezier': { 9: np.array([      r * weight, 0.0, 0.0])}},
+        6:  {'bezier': {10: np.array([      r * weight, 0.0, 0.0])}},
+        7:  {'bezier': {11: np.array([(r - t) * weight, 0.0, 0.0])}},
+        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r - t) * weight])}},
+        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r * weight])}},
+        10: {'bezier': { 6: np.array([0.0, 0.0,       -r * weight])}},
+        11: {'bezier': { 7: np.array([0.0, 0.0, -(r - t) * weight])}},
+
+        # Top Bezier corner
+        12: {'bezier': {16: np.array([0.0, 0.0, 1.0 * t * weight])}},
+        13: {'bezier': {17: np.array([0.0, 0.0, 2.0 * t * weight])}},
+        14: {'bezier': {18: np.array([0.0, 0.0, 2.0 * t * weight])}},
+        15: {'bezier': {19: np.array([0.0, 0.0, 1.0 * t * weight])}},
+        16: {'bezier': {12: np.array([1.0 * t * weight, 0.0, 0.0])}},
+        17: {'bezier': {13: np.array([2.0 * t * weight, 0.0, 0.0])}},
+        18: {'bezier': {14: np.array([2.0 * t * weight, 0.0, 0.0])}},
+        19: {'bezier': {15: np.array([1.0 * t * weight, 0.0, 0.0])}},
+
+        # Unconnected end
+        20: {'discard': True},
+        21: {'discard': True},
+        22: {'discard': True},
+        23: {'discard': True}
+    }
+    edges = [
+        # Bottom
+        [0, 1, 2, 3, 0],
+        [4, 5, 6, 7, 4],
+        # Medium
+        [8, 9, 10, 11, 8],
+        # Top
+        [12, 13, 14, 15, 12],
+        [16, 17, 18, 19, 16],
+        # Bottom sides
+        [0, 4], [1, 5], [2, 6], [3, 7],
+        # Corner sides
+        [4, 8], [5, 9], [6, 10], [7, 11],
+        # Medium sides
+        [8, 12], [9, 13], [10, 14], [11, 15],
+        # Top sides
+        [12, 16], [13, 17], [14, 18], [15, 19],
+        # Unconnected end
+        [20, 21, 22, 23, 20],
+        [16, 20], [17, 21], [18, 22], [19, 23]
+    ]
+    edge_attributes = {
+        # Bottom corner
+        (4, 8):  {'resolution': slope_resolution},
+        (5, 9):  {'resolution': slope_resolution},
+        (6, 10): {'resolution': slope_resolution},
+        (7, 11): {'resolution': slope_resolution},
+
+        # Top corner
+        (12, 16): {'resolution': slope_resolution},
+        (13, 17): {'resolution': slope_resolution},
+        (14, 18): {'resolution': slope_resolution},
+        (15, 19): {'resolution': slope_resolution}
+    }
+    faces = [
+        # Bottom side
+        [0, 1, 2, 3],
+        # Bottom
+        [4, 5, 1, 0], [5, 6, 2, 1], [6, 7, 3, 2], [7, 4, 0, 3],
+        # Bottom corner
+        [8, 9, 5, 4], [9, 10, 6, 5], [10, 11, 7, 6], [11, 8, 4, 7],
+        # Medium
+        [12, 13, 9, 8], [13, 14, 10, 9], [14, 15, 11, 10], [15, 12, 8, 11],
+        # Top
+        [16, 17, 13, 12], [17, 18, 14, 13], [18, 19, 15, 14], [19, 16, 12, 15]
+    ]
+
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes
+    )
+    return body.tessellate()
 
 def make_flat_pin_curve(pin_shape_size, pin_length, pin_offset, chamfer, chamfer_resolution=2,
                         line_resolution=1):
@@ -867,7 +1406,7 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
 
     def mesh_rotation_func(number):
         if number == len(path_points) - 1:
-            return np.array([end_slope, 0.0, 0.0])
+            return np.array([0.0, -end_slope, 0.0])
         return np.zeros(3)
 
     def mesh_scaling_func(number):

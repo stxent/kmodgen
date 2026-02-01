@@ -484,29 +484,6 @@ class ChipOpenDrumInductor:
 
         return curves.loft(path=path_points, shape=shape_points)
 
-        # slices = curves.loft(path=path_points, shape=shape_points)
-
-        # slice_transform = model.Transform(matrix=model.rpy_to_matrix((0.0, math.pi / 2.0, 0.0)))
-        # slice_transform.translate(beg_point_a)
-        # first_slice = [slice_transform.apply(point) for point in shape_points]
-
-        # last_slice_center = model.calc_center_point(slices[-1])
-        # slice_transform = model.Transform()
-        # slice_transform.translate(-last_slice_center)
-        # last_slice = [slice_transform.apply(point) for point in slices[-1]]
-
-        # last_slice_box = model.calc_bounding_box(last_slice)
-        # angle = math.atan2((last_slice_box[1][0] - last_slice_box[0][0]),
-        #                    (last_slice_box[1][2] - last_slice_box[0][2]))
-
-        # slice_transform = model.Transform()
-        # slice_transform.rotate((0.0, 1.0, 0.0), -angle)
-        # slice_transform.translate(mirror(beg_point_a))
-        #     # + np.array([0.0, 0.0, chamfer / 4.0])) # XXX Fix z offset
-        # last_slice = [slice_transform.apply(point) for point in last_slice]
-
-        # return [first_slice] + slices[1:-1] + [last_slice]
-
     def generate(self, materials, resolutions, _, descriptor):
         body_size = primitives.hmils(np.array(descriptor['body']['size']))
         body_radius = max(body_size[0], body_size[1]) / 2.0

@@ -370,9 +370,9 @@ class QFN:
             size[2] / 4.0
         ])
 
-        source_mesh = primitives.make_box(size=size, chamfer=chamfer,
-                                          edge_resolution=edge_resolution,
-                                          line_resolution=(resolution[0], resolution[1], 2))
+        source_mesh = primitives.make_box_with_mark(size=size, chamfer=chamfer,
+                                                    edge_resolution=edge_resolution,
+                                                    line_resolution=(*resolution, 2))
         QFN.remove_unused_vertices(source_mesh, size, band)
 
         top_face_forming = QFN.blow_top_vertices(source_mesh, size, band, chamfer)

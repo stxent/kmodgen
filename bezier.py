@@ -16,43 +16,6 @@ from wrlconv import model
 
 DEBUG_ENABLED = False
 
-def closest_point_between_lines(first_point, first_vector, second_point, second_vector,
-                                epsilon=1e-6):
-    # Vector between origins
-    origin_vector = first_point - second_point
-
-    # Calculate dot products
-    dot1 = np.dot(first_vector, first_vector)
-    dot2 = np.dot(second_vector, second_vector)
-    dot12 = np.dot(first_vector, second_vector)
-    dot_first_to_origin = np.dot(origin_vector, first_vector)
-    dot_origin_to_second = np.dot(origin_vector, second_vector)
-
-    # Denominator
-    denom = dot1 * dot2 - math.pow(dot12, 2)
-
-    # Check if lines are parallel (denominator is close to zero)
-    if np.isclose(denom, 0):
-        # Lines are parallel or coincident
-        return None
-
-    # Calculate parameters t1 and t2 for the closest points
-    t1 = (dot_origin_to_second * dot12 - dot_first_to_origin * dot2) / denom
-    t2 = (dot_origin_to_second - dot_first_to_origin * dot12) / denom
-
-    # Calculate the closest points on each line
-    first_closest = first_point + t1 * first_vector
-    second_closest = second_point + t2 * second_vector
-
-    # The cross point is the midpoint of the shortest segment between the two lines
-    cross_point = (first_closest + second_closest) / 2.0
-
-    # Check for actual intersection (distance between closest points is near zero)
-    distance = np.linalg.norm(first_closest - second_closest)
-    if distance < epsilon:
-        return cross_point
-    return None
-
 def make_quad_lines(points, controls, tensions):
     control_points = (
         (
@@ -219,7 +182,7 @@ def make_orthogonal(v2, v1):
     # The orthogonal component is v1 - v1_parallel
     return v1 - v1_parallel
 
-def unroll_edges(edges):
+def unpack_edges(edges):
     output = []
     for edge in edges:
         if len(edge) <= 2:
@@ -418,7 +381,7 @@ class BezierObject:
 
     def __init__(self, vertices, edges, faces, chamfer, edge_resolution, line_resolution,
                  sharpness=math.pi, vertex_attributes={}, edge_attributes={}, face_attributes={}):
-        self.edges = unroll_edges(edges)
+        self.edges = unpack_edges(edges)
         self.graph = make_graph(self.edges)
         self.vertices = vertices
         self.faces = faces
@@ -480,12 +443,24 @@ class BezierObject:
         return debug_objects
 
     @staticmethod
+    def index_range(a_key, b_key, length):
+        output = []
+        while True:
+            a_key = (a_key + 1) % length
+            if a_key != b_key:
+                output.append(a_key)
+            else:
+                break
+        return output
+
+    @staticmethod
     def process_joint(center, neighbors, chamfers, sharpness, resolution, inversion, epsilon):
         vectors, keys = list(neighbors.values()), list(neighbors.keys())
         dirs = [model.normalize(vector - center) for vector in vectors]
-        mean = model.normalize(sum(dirs) / len(dirs))
+        mean = model.normalize(sum(dirs))
+        normal = model.normalize(sum(np.cross(dirs[i - 1], dirs[i]) for i in range(0, len(dirs))))
 
-        if np.dot(np.cross(dirs[0], dirs[1]), mean) < 0.0:
+        if np.dot(normal, mean) < 0.0:
             vectors.reverse()
             keys.reverse()
             chamfers.reverse()
@@ -496,72 +471,105 @@ class BezierObject:
             a_key, b_key, c_key = i - 1, i, (i + 1) % len(dirs)
             product = np.linalg.det(np.array([dirs[a_key], dirs[b_key], dirs[c_key]]))
             triple_products.append(product)
-        flattened = [bool(abs(value) <= epsilon) for value in triple_products]
-        flattened_diag = False
 
-        if len(dirs) == 4:
-            flattened_02 = np.dot(dirs[0], dirs[2]) < sharpness
-            flattened_13 = np.dot(dirs[1], dirs[3]) < sharpness
-            if flattened_02 or flattened_13:
-                flattened = [False] * len(dirs)
-                flattened_diag = True
-            if flattened_02:
-                flattened[0], flattened[2] = True, True
-            if flattened_13:
-                flattened[1], flattened[3] = True, True
+        flattened = [bool(abs(value) <= epsilon) for value in triple_products]
+        if all(flattened):
+            # Special case without patch and edges
+            output_corners = {key: center for key in keys}
+            return (output_corners, {}, None, None)
 
         if flattened.count(False) > 4:
             print(f'Patch has too many corners: {flattened.count(False)}')
             raise ValueError()
 
+        folded_pair = None
+        if len(dirs) > 3:
+            allowed_points = [i for i, value in enumerate(flattened) if not value]
+            pairs = list(itertools.combinations(allowed_points, 2))
+            pairs_folded = [bool(np.dot(dirs[i], dirs[j]) < sharpness) for i, j in pairs]
+            folded_count = pairs_folded.count(True)
+            if folded_count:
+                if folded_count > 1:
+                    print(f'Patch has too many folding diagonals: {folded_count}')
+                    raise ValueError()
+                folded_pair = pairs[pairs_folded.index(True)]
+
         corner_pos = []
         corner_control = []
         skipped_corner_map = {}
 
-        for i in range(0, len(dirs)):
-            key, a_key, b_key = None, i, (i + 1) % len(dirs)
+        if folded_pair is None:
+            for i in range(0, len(dirs)):
+                key, a_key, b_key = None, i, (i + 1) % len(dirs)
+                average = np.zeros(3)
 
-            if flattened[a_key]:
-                continue
-            if flattened[b_key]:
-                key = b_key
+                if flattened[a_key]:
+                    continue
+                if flattened[b_key]:
+                    key = b_key
 
-            while b_key != a_key and flattened[b_key]:
-                b_key = (b_key + 1) % len(dirs)
-            skipped_corner_map.update({i: len(corner_pos) for i in range(a_key + 1, b_key)})
+                while b_key != a_key and flattened[b_key]:
+                    average += dirs[b_key]
+                    b_key = (b_key + 1) % len(dirs)
+                average = model.normalize(average)
 
-            if key is None or not flattened_diag:
+                if a_key == b_key:
+                    print('Incorrect edge configuration')
+                    raise ValueError()
+
                 a_ortho = model.normalize(make_orthogonal(dirs[a_key], dirs[b_key]))
                 a_ortho *= chamfers[b_key]
                 b_ortho = model.normalize(make_orthogonal(dirs[b_key], dirs[a_key]))
                 b_ortho *= chamfers[a_key]
-                ab_cross_point = closest_point_between_lines(center + b_ortho, dirs[b_key],
-                                                             center + a_ortho, dirs[a_key])
+                ab_cross_point = curves.get_closest_point(center + b_ortho, dirs[b_key],
+                                                          center + a_ortho, dirs[a_key])
 
                 ab_vector = ab_cross_point - center
-                if key is not None and np.dot(ab_vector, dirs[key]) < 0.0:
+                if key is not None and np.dot(ab_vector, average) < 0.0:
                     ab_vector = -ab_vector
                     ab_cross_point = ab_vector + center
 
-                a_control_point = closest_point_between_lines(ab_cross_point, dirs[a_key],
-                                                              center, dirs[b_key])
-                b_control_point = closest_point_between_lines(ab_cross_point, dirs[b_key],
-                                                              center, dirs[a_key])
+                a_control_point = curves.get_closest_point(ab_cross_point, dirs[a_key],
+                                                           center, dirs[b_key])
+                b_control_point = curves.get_closest_point(ab_cross_point, dirs[b_key],
+                                                           center, dirs[a_key])
                 a_control = center - a_control_point
                 b_control = center - b_control_point
 
                 if key is not None and np.dot(np.cross(dirs[a_key], dirs[b_key]), mean) < 0.0:
                     a_control, b_control = b_control, a_control
                 corner_control.append((a_control, b_control))
+
+                skipped_corner_map.update({i: len(corner_pos)
+                    for i in BezierObject.index_range(a_key, b_key, len(dirs))})
+                corner_pos.append(((a_key, b_key, key), center + ab_vector, key is not None))
+        else:
+            a_key, b_key = folded_pair
+            # Side left to the folding diagonal
+            l_side = BezierObject.index_range(a_key, b_key, len(dirs))
+            # Side right to the folding diagonal
+            r_side = BezierObject.index_range(b_key, a_key, len(dirs))
+
+            # if True:
+            if False:
+                l_average = model.normalize(sum(dirs[i] for i in l_side))
+                r_average = model.normalize(sum(dirs[i] for i in r_side))
+                l_chamfer = sum(chamfers[i] for i in l_side) / len(l_side)
+                r_chamfer = sum(chamfers[i] for i in r_side) / len(r_side)
+                l_control = l_average * l_chamfer
+                r_control = r_average * r_chamfer
             else:
-                ab_vector = np.zeros(3)
-                a_control = dirs[a_key] * chamfers[a_key]
-                b_control = dirs[b_key] * chamfers[b_key]
-                corner_control.append((a_control, b_control))
+                l_control = sum(dirs[i] * chamfers[i] for i in l_side) / len(l_side)
+                r_control = sum(dirs[i] * chamfers[i] for i in r_side) / len(r_side)
 
-            corner_pos.append(((a_key, b_key, key), center + ab_vector, key is not None))
+            for i in l_side:
+                for j in r_side:
+                    corner_control.append((r_control, l_control))
+                    corner_pos.append(((j, i, a_key), center, True))
+                    corner_control.append((l_control, r_control))
+                    corner_pos.append(((i, j, b_key), center, True))
 
-        if flattened_diag:
+        if folded_pair is not None:
             corner_tension = []
             for corner in corner_pos:
                 a_key, b_key, _ = corner[0]
@@ -578,7 +586,7 @@ class BezierObject:
             output_corners, output_vectors = {}, {}
             for key in keys:
                 for i, corner in enumerate(corner_pos):
-                    if key == keys[corner[0][2]]:
+                    if corner[0][2] is not None and key == keys[corner[0][2]]:
                         tangents = (
                             (corner_control[i][0], corner_tension[i][0]),
                             (corner_control[i][1], corner_tension[i][1])
@@ -729,13 +737,24 @@ class BezierObject:
 
         if len(numbers) == 4:
             if resolutions[0] != resolutions[2] or resolutions[1] != resolutions[3]:
+                print(f'Face {numbers} resolutions not matched: {resolutions}')
                 raise ValueError()
             return (resolutions[0], resolutions[1])
         if len(numbers) == 3:
             if resolutions[0] != resolutions[1] or resolutions[1] != resolutions[2]:
+                print(f'Face {numbers} resolutions not matched: {resolutions}')
                 raise ValueError()
             return resolutions[0]
         raise ValueError()
+
+    def get_vertex_chamfer(self, source, destination):
+        try:
+            chamfer_info = self.vertex_attributes[source]['chamfer']
+            if isinstance(chamfer_info, dict):
+                return chamfer_info[destination]
+            return chamfer_info
+        except KeyError:
+            return self.chamfer
 
     def get_vertex_inversion(self, key):
         try:
@@ -767,6 +786,12 @@ class BezierObject:
         except KeyError:
             return None
 
+    def is_vertex_discarded(self, key):
+        try:
+            return self.vertex_attributes[key]['discard']
+        except KeyError:
+            return False
+
     def build(self):
         self.debug_objects = None
         self.joint_corners = {}
@@ -793,16 +818,20 @@ class BezierObject:
 
         # Calculate corner positions and tangent vectors, calculate corner patches
         for number, sequence in joint_points.items():
-            custom_inversion = self.get_vertex_inversion(number)
-            custom_chamfers = [self.chamfer] * len(sequence) # TODO
+            if self.is_vertex_discarded(number):
+                continue
+
+            joint_chamfers = [self.get_vertex_chamfer(number, i) for i in sequence]
+            joint_inversion = self.get_vertex_inversion(number)
+            joint_neighbors = {i: self.get_joint_neighbor_position(number, i) for i in sequence}
 
             corners, edges, patch, debug = BezierObject.process_joint(
                 self.vertices[number],
-                {i: self.get_joint_neighbor_position(number, i) for i in sequence},
-                custom_chamfers,
+                joint_neighbors,
+                joint_chamfers,
                 self.sharpness,
                 self.edge_resolution,
-                custom_inversion,
+                joint_inversion,
                 self.epsilon
             )
 
@@ -832,17 +861,17 @@ class BezierObject:
                     b = self.joint_vectors[end][start]
                     if not a.singular and not b.singular:
                         key = tuple(sorted((start, end)))
-                        custom_inversion = self.get_edge_inversion(key)
-                        custom_resolution = self.get_edge_resolution(key)
+                        edge_inversion = self.get_edge_inversion(key)
+                        edge_resolution = self.get_edge_resolution(key)
 
-                        custom_a_tension = self.get_joint_neighbor_tension(start, end)
-                        custom_b_tension = self.get_joint_neighbor_tension(end, start)
+                        edge_a_tension = self.get_joint_neighbor_tension(start, end)
+                        edge_b_tension = self.get_joint_neighbor_tension(end, start)
 
                         self.output_edges[key] = BezierObject.JointEdge(
                             a, b,
-                            self.edge_resolution, custom_resolution,
-                            custom_inversion,
-                            custom_a_tension, custom_b_tension
+                            self.edge_resolution, edge_resolution,
+                            edge_inversion,
+                            edge_a_tension, edge_b_tension
                         )
 
         for face in self.faces:
@@ -878,14 +907,14 @@ class BezierObject:
                 raise KeyError()
 
             face_key = tuple(sorted(indices))
-            custom_inversion = self.get_face_inversion(key)
-            custom_resolution = self.get_face_resolution(indices)
+            patch_inversion = self.get_face_inversion(key)
+            patch_resolution = self.get_face_resolution(indices)
 
             self.output_faces[face_key] = BezierObject.JointPatch(
                 points,
                 tensions,
-                custom_resolution,
-                custom_inversion
+                patch_resolution,
+                patch_inversion
             )
 
     def tessellate(self):
@@ -912,10 +941,33 @@ class BezierObject:
 
         return mesh
 
+
+def debug_vertex_controls(vertices, vertex_attributes):
+    mesh = model.LineArray()
+    for i, vertex in enumerate(vertices):
+        try:
+            controls = vertex_attributes[i]['bezier']
+        except:
+            continue
+
+        if not controls:
+            print(f'Empty description for vertex {i}')
+            raise KeyError()
+
+        last = len(mesh.geo_vertices)
+        mesh.geo_vertices.append(vertices[i])
+        for key, value in controls.items():
+            if key >= len(vertices):
+                print(f'Incorrect vertex number {key}')
+                raise ValueError()
+            mesh.geo_polygons.append([last, len(mesh.geo_vertices)])
+            mesh.geo_vertices.append(vertices[i] + value)
+    return mesh
+
 def debug_edges(vertices, edges):
     mesh = model.LineArray()
     mesh.geo_vertices.extend(vertices)
-    mesh.geo_polygons.extend(unroll_edges(edges))
+    mesh.geo_polygons.extend(unpack_edges(edges))
     return mesh
 
 def debug_face_polygons(vertices, faces):

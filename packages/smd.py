@@ -304,7 +304,7 @@ class SOT:
         if not flat_pin:
             body_offset_z += SOT.BODY_OFFSET_Z
 
-        body_mesh = primitives.make_box(
+        body_mesh = primitives.make_box_with_mark(
             size=body_size,
             chamfer=SOT.BODY_CHAMFER,
             edge_resolution=resolutions['edge'],
