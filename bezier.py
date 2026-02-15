@@ -762,6 +762,22 @@ class BezierObject:
         except KeyError:
             return False
 
+    def get_vertex_resolution(self, *args):
+        try:
+            if len(args) > 1:
+                resolutions = [self.vertex_attributes[key]['resolution'] for key in args]
+                for i, value in enumerate(resolutions):
+                    if i > 0:
+                        pair = resolutions[i - 1:i + 1]
+                    if i > 0 and pair[0] != pair[1]:
+                        print(f'Vertex pair {args} resolutions not matched: {pair}')
+                        raise ValueError()
+                return resolutions[0]
+            else:
+                return self.vertex_attributes[args[0]]['resolution']
+        except KeyError:
+            return self.edge_resolution
+
     def get_debug_output(self):
         if self.debug_objects is not None:
             return self.debug_objects
@@ -786,9 +802,21 @@ class BezierObject:
         except KeyError:
             return None
 
+    def is_edge_hidden(self, key):
+        try:
+            return self.edge_attributes[key]['hidden']
+        except KeyError:
+            return False
+
     def is_vertex_discarded(self, key):
         try:
             return self.vertex_attributes[key]['discard']
+        except KeyError:
+            return False
+
+    def is_vertex_hidden(self, key):
+        try:
+            return self.vertex_attributes[key]['hidden']
         except KeyError:
             return False
 
@@ -824,13 +852,14 @@ class BezierObject:
             joint_chamfers = [self.get_vertex_chamfer(number, i) for i in sequence]
             joint_inversion = self.get_vertex_inversion(number)
             joint_neighbors = {i: self.get_joint_neighbor_position(number, i) for i in sequence}
+            joint_resolution = self.get_vertex_resolution(number)
 
             corners, edges, patch, debug = BezierObject.process_joint(
                 self.vertices[number],
                 joint_neighbors,
                 joint_chamfers,
                 self.sharpness,
-                self.edge_resolution,
+                joint_resolution,
                 joint_inversion,
                 self.epsilon
             )
@@ -847,7 +876,7 @@ class BezierObject:
                 self.joint_corners[number] = corners
             if edges:
                 self.joint_vectors[number] = edges
-            if patch is not None:
+            if patch is not None and not self.is_vertex_hidden(number):
                 self.output_vertices[number] = patch
 
     def build_objects(self):
@@ -861,15 +890,19 @@ class BezierObject:
                     b = self.joint_vectors[end][start]
                     if not a.singular and not b.singular:
                         key = tuple(sorted((start, end)))
+                        if self.is_edge_hidden(key):
+                            continue
+
                         edge_inversion = self.get_edge_inversion(key)
-                        edge_resolution = self.get_edge_resolution(key)
+                        joint_resolution = self.get_vertex_resolution(*key)
+                        line_resolution = self.get_edge_resolution(key)
 
                         edge_a_tension = self.get_joint_neighbor_tension(start, end)
                         edge_b_tension = self.get_joint_neighbor_tension(end, start)
 
                         self.output_edges[key] = BezierObject.JointEdge(
                             a, b,
-                            self.edge_resolution, edge_resolution,
+                            joint_resolution, line_resolution,
                             edge_inversion,
                             edge_a_tension, edge_b_tension
                         )
@@ -964,10 +997,28 @@ def debug_vertex_controls(vertices, vertex_attributes):
             mesh.geo_vertices.append(vertices[i] + value)
     return mesh
 
-def debug_edges(vertices, edges):
+def debug_edges(vertices, edges, vertex_attributes={}):
     mesh = model.LineArray()
     mesh.geo_vertices.extend(vertices)
-    mesh.geo_polygons.extend(unpack_edges(edges))
+    edges = unpack_edges(edges)
+    for edge in edges:
+        try:
+            control_beg = vertex_attributes[edge[0]]['bezier'][edge[1]]
+            control_end = vertex_attributes[edge[1]]['bezier'][edge[0]]
+            curve = curves.Bezier(vertices[edge[0]], control_beg,
+                                  vertices[edge[1]], control_end, 10)
+            curve_points = curve.tessellate()
+            start_index = len(mesh.geo_vertices)
+            mesh.geo_vertices.extend(curve_points[1:-1])
+            for i in range(0, len(curve_points) - 1):
+                edge_start, edge_end = start_index + i - 1, start_index + i
+                if i == 0:
+                    edge_start = edge[0]
+                elif i == len(curve_points) - 2:
+                    edge_end = edge[1]
+                mesh.geo_polygons.append([edge_start, edge_end])
+        except KeyError:
+            mesh.geo_polygons.append(edge)
     return mesh
 
 def debug_face_polygons(vertices, faces):

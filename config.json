@@ -60,12 +60,26 @@
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Eerie black"
     },
+    "DarkYellowPlastic": {
+      "shininess": 0.05,
+      "diffuse": [1.0, 0.647, 0.0],
+      "specular": [0.3, 0.3, 0.3],
+      "ambient": [0.333, 0.333, 0.333],
+      "prototype": "Orange"
+    },
     "GrayPlastic": {
       "shininess": 0.05,
       "diffuse": [0.549, 0.549, 0.549],
       "specular": [0.3, 0.3, 0.3],
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Philippine gray"
+    },
+    "YellowPlastic": {
+      "shininess": 0.05,
+      "diffuse": [1.0, 0.808, 0.106],
+      "specular": [0.3, 0.3, 0.3],
+      "ambient": [0.333, 0.333, 0.333],
+      "prototype": "Mustard yellow"
     },
     "BlackGlass": {
       "shininess": 0.95,

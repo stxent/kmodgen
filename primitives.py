@@ -443,17 +443,13 @@ def make_chip_body(size, chamfer, edge_resolution):
     x_half = size[0] / 2.0
     y, z = size[1], size[2] # pylint: disable=invalid-name
 
-    path_points = [
-        np.array([x_half, 0.0, 0.0]),
-        np.array([-x_half, 0.0, 0.0])]
-
-    shape = make_rounded_rect(size=np.array([z, y]), roundness=chamfer,
-                              segments=edge_resolution)
+    shape = make_rounded_rect(size=np.array([z, y]), roundness=chamfer, segments=edge_resolution)
     shape_points = []
     for element in shape:
         shape_points.extend(element.tessellate())
     shape_points = curves.optimize(shape_points)
 
+    path_points = [np.array([x_half, 0.0, 0.0]), np.array([-x_half, 0.0, 0.0])]
     slices = curves.loft(path=path_points, shape=shape_points)
     return geometry.build_loft_mesh(slices, False, False)
 
@@ -594,6 +590,124 @@ def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resol
     mesh.append(slope_b)
     mesh.optimize()
     return mesh
+
+def make_chip(body_size, lead_size, body_chamfer, lead_chamfer,
+              chamfer_resolution, edge_resolution, line_resolution):
+    lead = make_chip_leads(
+        case_size=body_size,
+        lead_size=lead_size,
+        case_chamfer=body_chamfer,
+        lead_chamfer=lead_chamfer,
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution
+    )
+    body = make_chip_body(
+        size=body_size,
+        chamfer=body_chamfer,
+        edge_resolution=edge_resolution
+    )
+    return (body, lead)
+
+def make_chip_shunt(length, width, thickness, clearance, lead_length, active_width, chamfer,
+                    edge_resolution, line_resolution, slope_resolution):
+    slope = np.deg2rad(30.0)
+    slope_length = clearance / math.sin(slope)
+    weight = curves.calc_bezier_weight(angle=slope * 2.0)
+    slope_tension = np.array([slope_length, 0.0, 0.0]) * weight
+
+    y_lead = width / 2.0
+    y_body = active_width / 2.0 # Unused
+    x_lead_start = length / 2.0
+    z_lead_start = thickness / 2.0
+    x_slope_start = length / 2.0 - lead_length
+    z_slope_start = thickness / 2.0
+    x_slope_end = length / 2.0 - lead_length - slope_length
+    z_slope_end = thickness / 2.0 + clearance
+    x_body = length / 2.0 - lead_length - slope_length - thickness
+    z_body = thickness / 2.0 + clearance
+
+    def make_vertex_group(x, y, z, t): # pylint: disable=invalid-name
+        return [
+            np.array([ x,  y, z + t]),
+            np.array([ x,  y, z - t]),
+            np.array([ x, -y, z - t]),
+            np.array([ x, -y, z + t])
+        ]
+
+    vertices = \
+        make_vertex_group(x_lead_start, y_lead, z_lead_start, thickness / 2.0) + \
+        make_vertex_group(x_slope_start, y_lead, z_slope_start, thickness / 2.0) + \
+        make_vertex_group(x_slope_end, y_lead, z_slope_end, thickness / 2.0) + \
+        make_vertex_group(x_body, y_lead, z_body, thickness / 2.0) + \
+        make_vertex_group(-x_body, y_lead, z_body, thickness / 2.0) + \
+        make_vertex_group(-x_slope_end, y_lead, z_slope_end, thickness / 2.0) + \
+        make_vertex_group(-x_slope_start, y_lead, z_slope_start, thickness / 2.0) + \
+        make_vertex_group(-x_lead_start, y_lead, z_lead_start, thickness / 2.0)
+
+    body_vertex_attributes = {}
+    for i in list(range(0, 3)) + list(range(5, 8)):
+        for j in range(0, 4):
+            body_vertex_attributes[i * 4 + j] = {'discard': True}
+
+    lead_vertex_attributes = {}
+    for i in range(0, 4):
+        lead_vertex_attributes[4 + i] = {'bezier': {8 + i: -slope_tension}}
+        lead_vertex_attributes[8 + i] = {'bezier': {4 + i: slope_tension}}
+        lead_vertex_attributes[20 + i] = {'bezier': {24 + i: -slope_tension}}
+        lead_vertex_attributes[24 + i] = {'bezier': {20 + i: slope_tension}}
+
+    edges = []
+    for i in range(0, len(vertices) // 4):
+        edges.extend(bezier.unpack_edges([list(range(i * 4, (i + 1) * 4)) + [i * 4]]))
+        if i > 0:
+            edges.extend([[(i - 1) * 4 + j, i * 4 + j] for j in range(0, 4)])
+
+    edge_attributes = {
+        (4 + i, 8 + i): {'resolution': slope_resolution} for i in range(0, 4)
+    } | {
+        (20 + i, 24 + i): {'resolution': slope_resolution} for i in range(0, 4)
+    }
+    lead_edge_attributes = edge_attributes | {
+        (12 + i, 16 + i): {'hidden': True} for i in range(0, 4)
+    }
+
+    lead_faces = [[3, 2, 1, 0], [28, 29, 30, 31]]
+    body_faces = []
+    for i in range(0, len(vertices) // 4 - 1):
+        section = [
+            [i * 4 + 0, i * 4 + 1, (i + 1) * 4 + 1, (i + 1) * 4 + 0],
+            [i * 4 + 1, i * 4 + 2, (i + 1) * 4 + 2, (i + 1) * 4 + 1],
+            [i * 4 + 2, i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 2],
+            [i * 4 + 3, i * 4 + 0, (i + 1) * 4 + 0, (i + 1) * 4 + 3]
+        ]
+        if i == 3:
+            body_faces.extend(section)
+        else:
+            lead_faces.extend(section)
+
+    body_object = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=body_faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=body_vertex_attributes,
+        edge_attributes=edge_attributes
+    )
+    lead_object = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=lead_faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=lead_vertex_attributes,
+        edge_attributes=lead_edge_attributes
+    )
+    return (body_object.tessellate(), lead_object.tessellate())
 
 def make_carved_box(size, niche_size, chamfer, roundness, edge_resolution, line_resolution):
     # pylint: disable=invalid-name
@@ -943,21 +1057,22 @@ def make_rounded_rect_half(size, rotate, roundness, segments):
 
     return shape
 
-def make_bent_fork_pin_mesh(width, height, length, thickness, roundness,
+def make_bent_fork_pin_mesh(width, height, length, thickness, top_roundness, bottom_roundness,
                             cutout_width, cutout_height, end_slope, chamfer,
                             edge_resolution, line_resolution, slope_resolution):
     if chamfer * 2.0 >= thickness:
         raise ValueError()
-    if roundness <= thickness:
+    if top_roundness <= thickness or bottom_roundness <= thickness:
         raise ValueError()
 
     # pylint: disable=invalid-name
-    r, t = roundness, thickness
-    x = length + t * 2.0
+    t = thickness
+    x = length + top_roundness
     y = width / 2.0
     z = height
     # pylint: enable=invalid-name
 
+    r_top, r_bot = top_roundness, bottom_roundness
     weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
     end_offset = t * np.array([math.sin(end_slope), math.cos(end_slope)])
 
@@ -969,16 +1084,16 @@ def make_bent_fork_pin_mesh(width, height, length, thickness, roundness,
         np.array([0.0, -y,   t]),
 
         # Offset 4
-        np.array([x - r,  y,   t]),
-        np.array([x - r,  y, 0.0]),
-        np.array([x - r, -y, 0.0]),
-        np.array([x - r, -y,   t]),
+        np.array([x - r_bot,  y,   t]),
+        np.array([x - r_bot,  y, 0.0]),
+        np.array([x - r_bot, -y, 0.0]),
+        np.array([x - r_bot, -y,   t]),
 
         # Offset 8
-        np.array([x - t,  y, r]),
-        np.array([    x,  y, r]),
-        np.array([    x, -y, r]),
-        np.array([x - t, -y, r]),
+        np.array([x - t,  y, r_bot]),
+        np.array([    x,  y, r_bot]),
+        np.array([    x, -y, r_bot]),
+        np.array([x - t, -y, r_bot]),
 
         # Offset 12
         np.array([x - t,  cutout_width / 2.0, z - cutout_height]),
@@ -987,24 +1102,24 @@ def make_bent_fork_pin_mesh(width, height, length, thickness, roundness,
         np.array([x - t, -cutout_width / 2.0, z - cutout_height]),
 
         # Offset 16
-        np.array([x - t,  cutout_width / 2.0, z - t * 2.0]),
-        np.array([x - t,                   y, z - t * 2.0]),
-        np.array([    x,                   y, z - t * 2.0]),
-        np.array([    x,  cutout_width / 2.0, z - t * 2.0]),
-        np.array([    x, -cutout_width / 2.0, z - t * 2.0]),
-        np.array([    x,                  -y, z - t * 2.0]),
-        np.array([x - t,                  -y, z - t * 2.0]),
-        np.array([x - t, -cutout_width / 2.0, z - t * 2.0]),
+        np.array([x - t,  cutout_width / 2.0, z - r_top]),
+        np.array([x - t,                   y, z - r_top]),
+        np.array([    x,                   y, z - r_top]),
+        np.array([    x,  cutout_width / 2.0, z - r_top]),
+        np.array([    x, -cutout_width / 2.0, z - r_top]),
+        np.array([    x,                  -y, z - r_top]),
+        np.array([x - t,                  -y, z - r_top]),
+        np.array([x - t, -cutout_width / 2.0, z - r_top]),
 
         # Offset 24
-        np.array([x - t * 2.0 - end_offset[0],  cutout_width / 2.0, z - end_offset[1]]),
-        np.array([x - t * 2.0 - end_offset[0],                   y, z - end_offset[1]]),
-        np.array([                x - t * 2.0,                   y,                 z]),
-        np.array([                x - t * 2.0,  cutout_width / 2.0,                 z]),
-        np.array([                x - t * 2.0, -cutout_width / 2.0,                 z]),
-        np.array([                x - t * 2.0,                  -y,                 z]),
-        np.array([x - t * 2.0 - end_offset[0],                  -y, z - end_offset[1]]),
-        np.array([x - t * 2.0 - end_offset[0], -cutout_width / 2.0, z - end_offset[1]]),
+        np.array([x - r_top - end_offset[0],  cutout_width / 2.0, z - end_offset[1]]),
+        np.array([x - r_top - end_offset[0],                   y, z - end_offset[1]]),
+        np.array([                x - r_top,                   y,                 z]),
+        np.array([                x - r_top,  cutout_width / 2.0,                 z]),
+        np.array([                x - r_top, -cutout_width / 2.0,                 z]),
+        np.array([                x - r_top,                  -y,                 z]),
+        np.array([x - r_top - end_offset[0],                  -y, z - end_offset[1]]),
+        np.array([x - r_top - end_offset[0], -cutout_width / 2.0, z - end_offset[1]]),
 
         # Offset 32
         np.array([0.0,  cutout_width / 2.0, z - t]),
@@ -1018,34 +1133,34 @@ def make_bent_fork_pin_mesh(width, height, length, thickness, roundness,
     ]
     vertex_attributes = {
         # Bottom Bezier corner
-        4:  {'bezier': { 8: np.array([(r - t) * weight, 0.0, 0.0])}},
-        5:  {'bezier': { 9: np.array([      r * weight, 0.0, 0.0])}},
-        6:  {'bezier': {10: np.array([      r * weight, 0.0, 0.0])}},
-        7:  {'bezier': {11: np.array([(r - t) * weight, 0.0, 0.0])}},
-        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r - t) * weight])}},
-        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r * weight])}},
-        10: {'bezier': { 6: np.array([0.0, 0.0,       -r * weight])}},
-        11: {'bezier': { 7: np.array([0.0, 0.0, -(r - t) * weight])}},
+        4:  {'bezier': { 8: np.array([(r_bot - t) * weight, 0.0, 0.0])}},
+        5:  {'bezier': { 9: np.array([      r_bot * weight, 0.0, 0.0])}},
+        6:  {'bezier': {10: np.array([      r_bot * weight, 0.0, 0.0])}},
+        7:  {'bezier': {11: np.array([(r_bot - t) * weight, 0.0, 0.0])}},
+        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r_bot - t) * weight])}},
+        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r_bot * weight])}},
+        10: {'bezier': { 6: np.array([0.0, 0.0,       -r_bot * weight])}},
+        11: {'bezier': { 7: np.array([0.0, 0.0, -(r_bot - t) * weight])}},
 
         # Top right Bezier corner
-        16: {'bezier': {24: np.array([0.0, 0.0, 1.0 * t * weight])}},
-        17: {'bezier': {25: np.array([0.0, 0.0, 1.0 * t * weight])}},
-        18: {'bezier': {26: np.array([0.0, 0.0, 2.0 * t * weight])}},
-        19: {'bezier': {27: np.array([0.0, 0.0, 2.0 * t * weight])}},
-        24: {'bezier': {16: np.array([1.0 * t * weight, 0.0, 0.0])}},
-        25: {'bezier': {17: np.array([1.0 * t * weight, 0.0, 0.0])}},
-        26: {'bezier': {18: np.array([2.0 * t * weight, 0.0, 0.0])}},
-        27: {'bezier': {19: np.array([2.0 * t * weight, 0.0, 0.0])}},
+        16: {'bezier': {24: np.array([0.0, 0.0, (r_top - t) * weight])}},
+        17: {'bezier': {25: np.array([0.0, 0.0, (r_top - t) * weight])}},
+        18: {'bezier': {26: np.array([0.0, 0.0,       r_top * weight])}},
+        19: {'bezier': {27: np.array([0.0, 0.0,       r_top * weight])}},
+        24: {'bezier': {16: np.array([(r_top - t) * weight, 0.0, 0.0])}},
+        25: {'bezier': {17: np.array([(r_top - t) * weight, 0.0, 0.0])}},
+        26: {'bezier': {18: np.array([      r_top * weight, 0.0, 0.0])}},
+        27: {'bezier': {19: np.array([      r_top * weight, 0.0, 0.0])}},
 
-        # Top left Bezier corner
-        20: {'bezier': {28: np.array([0.0, 0.0, 2.0 * t * weight])}},
-        21: {'bezier': {29: np.array([0.0, 0.0, 2.0 * t * weight])}},
-        22: {'bezier': {30: np.array([0.0, 0.0, 1.0 * t * weight])}},
-        23: {'bezier': {31: np.array([0.0, 0.0, 1.0 * t * weight])}},
-        28: {'bezier': {20: np.array([2.0 * t * weight, 0.0, 0.0])}},
-        29: {'bezier': {21: np.array([2.0 * t * weight, 0.0, 0.0])}},
-        30: {'bezier': {22: np.array([1.0 * t * weight, 0.0, 0.0])}},
-        31: {'bezier': {23: np.array([1.0 * t * weight, 0.0, 0.0])}},
+        # # Top left Bezier corner
+        20: {'bezier': {28: np.array([0.0, 0.0,       r_top * weight])}},
+        21: {'bezier': {29: np.array([0.0, 0.0,       r_top * weight])}},
+        22: {'bezier': {30: np.array([0.0, 0.0, (r_top - t) * weight])}},
+        23: {'bezier': {31: np.array([0.0, 0.0, (r_top - t) * weight])}},
+        28: {'bezier': {20: np.array([      r_top * weight, 0.0, 0.0])}},
+        29: {'bezier': {21: np.array([      r_top * weight, 0.0, 0.0])}},
+        30: {'bezier': {22: np.array([(r_top - t) * weight, 0.0, 0.0])}},
+        31: {'bezier': {23: np.array([(r_top - t) * weight, 0.0, 0.0])}},
 
         # Unconnected end
         32: {'discard': True},
@@ -1136,20 +1251,21 @@ def make_bent_fork_pin_mesh(width, height, length, thickness, roundness,
     )
     return body.tessellate()
 
-def make_bent_pin_mesh(width, height, length, thickness, roundness, end_slope, chamfer,
-                       edge_resolution, line_resolution, slope_resolution):
+def make_bent_pin_mesh(width, height, length, thickness, top_roundness, bottom_roundness,
+                       end_slope, chamfer, edge_resolution, line_resolution, slope_resolution):
     if chamfer * 2.0 >= thickness:
         raise ValueError()
-    if roundness <= thickness:
+    if top_roundness <= thickness or bottom_roundness <= thickness:
         raise ValueError()
 
     # pylint: disable=invalid-name
-    r, t = roundness, thickness
-    x = length + t * 2.0
+    t = thickness
+    x = length + top_roundness
     y = width / 2.0
     z = height
     # pylint: enable=invalid-name
 
+    r_top, r_bot = top_roundness, bottom_roundness
     weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
     end_offset = t * np.array([math.sin(end_slope), math.cos(end_slope)])
 
@@ -1161,28 +1277,28 @@ def make_bent_pin_mesh(width, height, length, thickness, roundness, end_slope, c
         np.array([0.0, -y,   t]),
 
         # Offset 4
-        np.array([x - r,  y,   t]),
-        np.array([x - r,  y, 0.0]),
-        np.array([x - r, -y, 0.0]),
-        np.array([x - r, -y,   t]),
+        np.array([x - r_bot,  y,   t]),
+        np.array([x - r_bot,  y, 0.0]),
+        np.array([x - r_bot, -y, 0.0]),
+        np.array([x - r_bot, -y,   t]),
 
         # Offset 8
-        np.array([x - t,  y, r]),
-        np.array([    x,  y, r]),
-        np.array([    x, -y, r]),
-        np.array([x - t, -y, r]),
+        np.array([x - t,  y, r_bot]),
+        np.array([    x,  y, r_bot]),
+        np.array([    x, -y, r_bot]),
+        np.array([x - t, -y, r_bot]),
 
         # Offset 12
-        np.array([x - t,  y, z - t * 2.0]),
-        np.array([    x,  y, z - t * 2.0]),
-        np.array([    x, -y, z - t * 2.0]),
-        np.array([x - t, -y, z - t * 2.0]),
+        np.array([x - t,  y, z - r_top]),
+        np.array([    x,  y, z - r_top]),
+        np.array([    x, -y, z - r_top]),
+        np.array([x - t, -y, z - r_top]),
 
         # Offset 16
-        np.array([x - t * 2.0 - end_offset[0],  y, z - end_offset[1]]),
-        np.array([                x - t * 2.0,  y,                 z]),
-        np.array([                x - t * 2.0, -y,                 z]),
-        np.array([x - t * 2.0 - end_offset[0], -y, z - end_offset[1]]),
+        np.array([x - r_top - end_offset[0],  y, z - end_offset[1]]),
+        np.array([                x - r_top,  y,                 z]),
+        np.array([                x - r_top, -y,                 z]),
+        np.array([x - r_top - end_offset[0], -y, z - end_offset[1]]),
 
         # Offset 20
         np.array([0.0,  y, z - t]),
@@ -1192,24 +1308,24 @@ def make_bent_pin_mesh(width, height, length, thickness, roundness, end_slope, c
     ]
     vertex_attributes = {
         # Bottom Bezier corner
-        4:  {'bezier': { 8: np.array([(r - t) * weight, 0.0, 0.0])}},
-        5:  {'bezier': { 9: np.array([      r * weight, 0.0, 0.0])}},
-        6:  {'bezier': {10: np.array([      r * weight, 0.0, 0.0])}},
-        7:  {'bezier': {11: np.array([(r - t) * weight, 0.0, 0.0])}},
-        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r - t) * weight])}},
-        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r * weight])}},
-        10: {'bezier': { 6: np.array([0.0, 0.0,       -r * weight])}},
-        11: {'bezier': { 7: np.array([0.0, 0.0, -(r - t) * weight])}},
+        4:  {'bezier': { 8: np.array([(r_bot - t) * weight, 0.0, 0.0])}},
+        5:  {'bezier': { 9: np.array([      r_bot * weight, 0.0, 0.0])}},
+        6:  {'bezier': {10: np.array([      r_bot * weight, 0.0, 0.0])}},
+        7:  {'bezier': {11: np.array([(r_bot - t) * weight, 0.0, 0.0])}},
+        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r_bot - t) * weight])}},
+        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r_bot * weight])}},
+        10: {'bezier': { 6: np.array([0.0, 0.0,       -r_bot * weight])}},
+        11: {'bezier': { 7: np.array([0.0, 0.0, -(r_bot - t) * weight])}},
 
         # Top Bezier corner
-        12: {'bezier': {16: np.array([0.0, 0.0, 1.0 * t * weight])}},
-        13: {'bezier': {17: np.array([0.0, 0.0, 2.0 * t * weight])}},
-        14: {'bezier': {18: np.array([0.0, 0.0, 2.0 * t * weight])}},
-        15: {'bezier': {19: np.array([0.0, 0.0, 1.0 * t * weight])}},
-        16: {'bezier': {12: np.array([1.0 * t * weight, 0.0, 0.0])}},
-        17: {'bezier': {13: np.array([2.0 * t * weight, 0.0, 0.0])}},
-        18: {'bezier': {14: np.array([2.0 * t * weight, 0.0, 0.0])}},
-        19: {'bezier': {15: np.array([1.0 * t * weight, 0.0, 0.0])}},
+        12: {'bezier': {16: np.array([0.0, 0.0, (r_top - t) * weight])}},
+        13: {'bezier': {17: np.array([0.0, 0.0,       r_top * weight])}},
+        14: {'bezier': {18: np.array([0.0, 0.0,       r_top * weight])}},
+        15: {'bezier': {19: np.array([0.0, 0.0, (r_top - t) * weight])}},
+        16: {'bezier': {12: np.array([(r_top - t) * weight, 0.0, 0.0])}},
+        17: {'bezier': {13: np.array([      r_top * weight, 0.0, 0.0])}},
+        18: {'bezier': {14: np.array([      r_top * weight, 0.0, 0.0])}},
+        19: {'bezier': {15: np.array([(r_top - t) * weight, 0.0, 0.0])}},
 
         # Unconnected end
         20: {'discard': True},
@@ -1277,152 +1393,198 @@ def make_bent_pin_mesh(width, height, length, thickness, roundness, end_slope, c
     )
     return body.tessellate()
 
-def make_flat_pin_curve(pin_shape_size, pin_length, pin_offset, chamfer, chamfer_resolution=2,
-                        line_resolution=1):
-    curve = []
+def make_flat_pin_mesh(pin_shape_size, pin_length, end_slope, edge_resolution, line_resolution):
+    chamfer = min(pin_shape_size) / 10.0
+    t_half = pin_shape_size[1] / 2.0
+    width = pin_shape_size[0] / 2.0
 
-    y_pos = [pin_shape_size[1] / 2.0] * 3
+    x_pos = []
+    x_pos.append(pin_length)
+    x_pos.append(0.0)
+    x_pos.append(-pin_length)
 
-    x_pos = [pin_offset] * 3
-    x_pos[0] += pin_length
-    x_pos[1] += pin_length - chamfer
+    xz_off = [np.array([0.0, t_half])] * 3
+    xz_off[1] = t_half * np.array([-math.sin(end_slope), 1.0])
 
-    points = [
-        np.array([x_pos[0], 0.0, y_pos[0]]),
-        np.array([x_pos[1], 0.0, y_pos[1]]),
-        np.array([x_pos[2], 0.0, y_pos[2]])
-    ]
+    vertices = []
+    for i in range(0, len(x_pos)):
+        vertices.append(np.array([x_pos[i] - xz_off[i][0],  width, t_half - xz_off[i][1]]))
+        vertices.append(np.array([x_pos[i] + xz_off[i][0],  width, t_half + xz_off[i][1]]))
+        vertices.append(np.array([x_pos[i] + xz_off[i][0], -width, t_half + xz_off[i][1]]))
+        vertices.append(np.array([x_pos[i] - xz_off[i][0], -width, t_half - xz_off[i][1]]))
 
-    # Control points of segment 0
-    p0t1 = (points[1] - points[0]) / 3.0
-    p1t0 = (points[0] - points[1]) / 3.0
+    vertex_attributes = {
+         8: {'discard': True},
+         9: {'discard': True},
+        10: {'discard': True},
+        11: {'discard': True}
+    }
 
-    curve.append(curves.Bezier(points[0], p0t1, points[1], p1t0, chamfer_resolution))
-    curve.append(curves.Line(points[1], points[2], line_resolution))
+    edges = []
+    for i in range(0, len(x_pos)):
+        edges.append(list(range(i * 4, (i + 1) * 4)) + [i * 4])
+        if i > 0:
+            edges.extend([(i - 1) * 4 + j, i * 4 + j] for j in range(0, 4))
 
-    return curve
+    faces = [[0, 1, 2, 3]]
+    for i in range(0, len(x_pos) - 2):
+        faces.append([i * 4 + 1, i * 4 + 0, (i + 1) * 4 + 0, (i + 1) * 4 + 1])
+        faces.append([i * 4 + 2, i * 4 + 1, (i + 1) * 4 + 1, (i + 1) * 4 + 2])
+        faces.append([i * 4 + 3, i * 4 + 2, (i + 1) * 4 + 2, (i + 1) * 4 + 3])
+        faces.append([i * 4 + 0, i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 0])
 
-def make_pin_curve(pin_shape_size, pin_height, pin_length, pin_slope, chamfer, roundness,
-                   pivot=0.5, outer_radius_k=0.35, inner_radius_k=0.3, chamfer_resolution=2,
-                   edge_resolution=3, line_resolution=1):
-    curve = []
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (2.0 / 3.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes
+    )
+    return body.tessellate()
 
-    y_mean = pin_height / 2.0
+def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
+                  edge_resolution, line_resolution, slope_resolution):
+    outer_radius_k = 0.35
+    inner_radius_k = 0.3
+    x_mean = pin_length * 0.45
+    z_mean = pin_height * 0.5
+
+    chamfer = min(pin_shape_size) / 10.0
+    slope_cos = math.cos(pin_slope)
+    slope_sin = math.sin(pin_slope)
+    slope_tan = math.tan(pin_slope)
+    t_half = pin_shape_size[1] / 2.0
+    weight = curves.calc_bezier_weight(angle=math.pi / 2.0 - pin_slope)
+    width = pin_shape_size[0] / 2.0
+
     rad_limit = min(pin_height, pin_length)
     outer_rad = outer_radius_k * rad_limit
     inner_rad = inner_radius_k * rad_limit
 
-    outer_off = y_mean - pin_shape_size[1] / 2.0 - outer_rad * (1.0 - math.sin(pin_slope))
-    inner_off = y_mean - inner_rad * (1.0 - math.sin(pin_slope))
+    slope_off_xz = t_half * np.array([slope_cos, slope_sin])
+    end_off_xz = t_half * np.array([-math.sin(end_slope), math.cos(end_slope)])
+    outer_off = z_mean - t_half - outer_rad * (1.0 - slope_sin)
+    inner_off = z_mean - inner_rad * (1.0 - slope_sin)
 
-    y_pos = [None] * 7
-    y_pos[0] = pin_shape_size[1] / 2.0
-    y_pos[1] = y_pos[0]
-    y_pos[2] = y_pos[1]
-    y_pos[3] = y_mean - outer_off
-    y_pos[4] = y_mean + inner_off
-    y_pos[5] = pin_height
-    y_pos[6] = y_pos[5]
+    z_pos = [None] * 7
+    z_pos[0] = t_half
+    z_pos[1] = z_pos[0]
+    z_pos[2] = z_mean - outer_off
+    z_pos[3] = z_mean + inner_off
+    z_pos[4] = pin_height
+    z_pos[5] = z_pos[4]
+    z_pos[6] = z_pos[5]
 
     x_pos = [None] * 7
     x_pos[0] = pin_length
-    x_pos[1] = pin_length - chamfer
-    x_pos[2] = (pin_length * pivot + outer_off * math.tan(pin_slope)
-        + outer_rad * math.cos(pin_slope))
-    x_pos[3] = pin_length * pivot + outer_off * math.tan(pin_slope)
-    x_pos[4] = pin_length * pivot - inner_off * math.tan(pin_slope)
-    x_pos[5] = (pin_length * pivot - inner_off * math.tan(pin_slope)
-        - inner_rad * math.cos(pin_slope))
-    x_pos[6] = 0.0
+    x_pos[1] = x_mean + outer_off * slope_tan + outer_rad * slope_cos
+    x_pos[2] = x_mean + outer_off * slope_tan
+    x_pos[3] = x_mean - inner_off * slope_tan
+    x_pos[4] = x_mean - inner_off * slope_tan - inner_rad * slope_cos
+    x_pos[5] = 0.0
+    x_pos[6] = -pin_length
 
-    points = [
-        np.array([x_pos[0], 0.0, y_pos[0]]),
-        np.array([x_pos[1], 0.0, y_pos[1]]),
-        np.array([x_pos[2], 0.0, y_pos[2]]),
-        np.array([x_pos[3], 0.0, y_pos[3]]),
-        np.array([x_pos[4], 0.0, y_pos[4]]),
-        np.array([x_pos[5], 0.0, y_pos[5]]),
-        np.array([x_pos[6], 0.0, y_pos[6]])
-    ]
+    if x_pos[1] >= x_pos[0]:
+        raise ValueError()
+    if x_pos[4] <= -end_off_xz[0]:
+        raise ValueError()
 
-    # Control points of segment 0
-    p0t1 = (points[1] - points[0]) / 3.0
-    p1t0 = (points[0] - points[1]) / 3.0
+    xz_off = [np.array([0.0, t_half])] * 7
+    xz_off[2] = slope_off_xz
+    xz_off[3] = slope_off_xz
+    xz_off[5] = end_off_xz
 
-    # Control points of segment 3
-    lp2p3 = math.sin((math.pi / 2.0 - pin_slope) / 2.0) * np.linalg.norm(points[2] - points[3])
-    p2t3 = np.array([-lp2p3, 0.0, 0.0]) * roundness
-    p3t2 = lp2p3 * model.normalize(points[3] - points[4]) * roundness
+    vertices = []
+    for i in range(0, len(x_pos)):
+        vertices.append(np.array([x_pos[i] - xz_off[i][0],  width, z_pos[i] - xz_off[i][1]]))
+        vertices.append(np.array([x_pos[i] + xz_off[i][0],  width, z_pos[i] + xz_off[i][1]]))
+        vertices.append(np.array([x_pos[i] + xz_off[i][0], -width, z_pos[i] + xz_off[i][1]]))
+        vertices.append(np.array([x_pos[i] - xz_off[i][0], -width, z_pos[i] - xz_off[i][1]]))
 
-    # Control points of segment 5
-    lp4p5 = math.sin((math.pi / 2.0 - pin_slope) / 2.0) * np.linalg.norm(points[4] - points[5])
-    p4t5 = lp4p5 * model.normalize(points[4] - points[3]) * roundness
-    p5t4 = np.array([lp4p5, 0.0, 0.0]) * roundness
+    slope_vec = np.array([x_pos[3] - x_pos[2], 0.0, z_pos[3] - z_pos[2]])
+    dir_vec = np.array([1.0, 0.0, 0.0])
 
-    curve.append(curves.Bezier(points[0], p0t1, points[1], p1t0, chamfer_resolution))
-    curve.append(curves.Line(points[1], points[2], line_resolution))
-    curve.append(curves.Bezier(points[2], p2t3, points[3], p3t2, edge_resolution))
-    curve.append(curves.Line(points[3], points[4], line_resolution))
-    curve.append(curves.Bezier(points[4], p4t5, points[5], p5t4, edge_resolution))
-    curve.append(curves.Line(points[5], points[6], line_resolution))
+    cross = curves.get_closest_point(vertices[4], dir_vec, vertices[8], slope_vec)
+    bot_beg_outer = np.array([cross[0] - vertices[4][0], 0.0, cross[2] - vertices[4][2]])
+    bot_end_outer = np.array([cross[0] - vertices[8][0], 0.0, cross[2] - vertices[8][2]])
 
-    return curve
+    cross = curves.get_closest_point(vertices[5], dir_vec, vertices[9], slope_vec)
+    bot_beg_inner = np.array([cross[0] - vertices[5][0], 0.0, cross[2] - vertices[5][2]])
+    bot_end_inner = np.array([cross[0] - vertices[9][0], 0.0, cross[2] - vertices[9][2]])
 
-def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
-                  chamfer_resolution, edge_resolution, line_resolution, flat=False):
-    chamfer = min(pin_shape_size) / 10.0
-    curve_roundness = curves.calc_bezier_weight(angle=math.pi / 2.0 + pin_slope)
+    cross = curves.get_closest_point(vertices[16], dir_vec, vertices[12], slope_vec)
+    top_beg_outer = np.array([cross[0] - vertices[12][0], 0.0, cross[2] - vertices[12][2]])
+    top_end_outer = np.array([cross[0] - vertices[16][0], 0.0, cross[2] - vertices[16][2]])
 
-    if flat:
-        shape_correction = pin_shape_size[1] * math.cos(math.atan(end_slope))
-        shape_scaling = np.array([1.0, pin_shape_size[1] / shape_correction, 1.0])
-    else:
-        shape_scaling = np.ones(3)
+    cross = curves.get_closest_point(vertices[17], dir_vec, vertices[13], slope_vec)
+    top_beg_inner = np.array([cross[0] - vertices[13][0], 0.0, cross[2] - vertices[13][2]])
+    top_end_inner = np.array([cross[0] - vertices[17][0], 0.0, cross[2] - vertices[17][2]])
 
-    shape = make_rounded_rect(size=np.array([pin_shape_size[1], pin_shape_size[0]]),
-                              roundness=chamfer, segments=chamfer_resolution)
-    shape_points = []
-    for element in shape:
-        shape_points.extend(element.tessellate())
-    shape_points = curves.optimize(shape_points)
+    vertex_attributes = {
+         4: {'bezier': { 8: bot_beg_outer * weight}},
+         5: {'bezier': { 9: bot_beg_inner * weight}},
+         6: {'bezier': {10: bot_beg_inner * weight}},
+         7: {'bezier': {11: bot_beg_outer * weight}},
+         8: {'bezier': { 4: bot_end_outer * weight}},
+         9: {'bezier': { 5: bot_end_inner * weight}},
+        10: {'bezier': { 6: bot_end_inner * weight}},
+        11: {'bezier': { 7: bot_end_outer * weight}},
 
-    if flat:
-        length_correction = (pin_height - pin_shape_size[1] / 2.0) * end_slope
-        path = make_flat_pin_curve(pin_shape_size=pin_shape_size, pin_length=pin_length,
-                                   pin_offset=length_correction, chamfer=chamfer,
-                                   chamfer_resolution=chamfer_resolution,
-                                   line_resolution=line_resolution)
-    else:
-        path = make_pin_curve(pin_shape_size=pin_shape_size, pin_height=pin_height,
-                              pin_length=pin_length, pin_slope=pin_slope,
-                              chamfer=chamfer, roundness=curve_roundness, pivot=0.45,
-                              chamfer_resolution=chamfer_resolution,
-                              edge_resolution=edge_resolution, line_resolution=line_resolution)
+        12: {'bezier': {16: top_beg_outer * weight}},
+        13: {'bezier': {17: top_beg_inner * weight}},
+        14: {'bezier': {18: top_beg_inner * weight}},
+        15: {'bezier': {19: top_beg_outer * weight}},
+        16: {'bezier': {12: top_end_outer * weight}},
+        17: {'bezier': {13: top_end_inner * weight}},
+        18: {'bezier': {14: top_end_inner * weight}},
+        19: {'bezier': {15: top_end_outer * weight}},
 
-    path_points = []
-    for element in path:
-        path_points.extend(element.tessellate())
-    path_points = curves.optimize(path_points)
+        24: {'discard': True},
+        25: {'discard': True},
+        26: {'discard': True},
+        27: {'discard': True}
+    }
 
-    def mesh_rotation_func(number):
-        if number == len(path_points) - 1:
-            return np.array([0.0, -end_slope, 0.0])
-        return np.zeros(3)
+    edges = []
+    for i in range(0, len(x_pos)):
+        edges.append(list(range(i * 4, (i + 1) * 4)) + [i * 4])
+        if i > 0:
+            edges.extend([(i - 1) * 4 + j, i * 4 + j] for j in range(0, 4))
 
-    def mesh_scaling_func(number):
-        if number == len(path_points) - 1:
-            return shape_scaling
-        if chamfer_resolution >= 1 and number < chamfer_resolution:
-            shape = np.array(pin_shape_size)
-            scale = (shape - chamfer * 2.0) / shape
-            t_pos = math.sin((math.pi / 2.0) * (number / chamfer_resolution))
-            t_scale = scale + (np.ones(2) - scale) * t_pos
-            return np.array([*t_scale, 1.0])
-        return np.ones(3)
+    edge_attributes = {
+        ( 4,  8): {'resolution': slope_resolution},
+        ( 5,  9): {'resolution': slope_resolution},
+        ( 6, 10): {'resolution': slope_resolution},
+        ( 7, 11): {'resolution': slope_resolution},
 
-    slices = curves.loft(path=path_points, shape=shape_points, rotation=mesh_rotation_func,
-                         scaling=mesh_scaling_func)
-    return geometry.build_loft_mesh(slices, True, False)
+        (12, 16): {'resolution': slope_resolution},
+        (13, 17): {'resolution': slope_resolution},
+        (14, 18): {'resolution': slope_resolution},
+        (15, 19): {'resolution': slope_resolution}
+    }
+
+    faces = [[0, 1, 2, 3]]
+    for i in range(0, len(x_pos) - 2):
+        faces.append([i * 4 + 1, i * 4 + 0, (i + 1) * 4 + 0, (i + 1) * 4 + 1])
+        faces.append([i * 4 + 2, i * 4 + 1, (i + 1) * 4 + 1, (i + 1) * 4 + 2])
+        faces.append([i * 4 + 3, i * 4 + 2, (i + 1) * 4 + 2, (i + 1) * 4 + 3])
+        faces.append([i * 4 + 0, i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 0])
+
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (2.0 / 3.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes
+    )
+    return body.tessellate()
 
 def slice_connect_direct(slices, inversion):
     mesh = model.Mesh()

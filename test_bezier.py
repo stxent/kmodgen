@@ -23,6 +23,10 @@ def serialize_models(models, path, name):
         data = file.read().decode('utf-8')
     return data
 
+def verify_models(meshes, destination_path, source_name):
+    serialized = serialize_models(meshes, destination_path, source_name)
+    assert compare_models(source_name, serialized) is True
+
 
 class TestBezierObject:
     FILE_BEZIER_BOX_1 = 'test_bezier_box_1.x3d'
@@ -443,76 +447,49 @@ class TestBezierObject:
         return mesh_object.tessellate()
 
     def test_bezier_box_1(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_BOX_1
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_box_1()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_BOX_1)
 
     def test_bezier_box_2_fine(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_BOX_2_FINE
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_box_2(math.pi)
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_BOX_2_FINE)
 
     def test_bezier_box_2_flat(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_BOX_2_FLAT
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_box_2(math.pi * (5.0 / 6.0))
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_BOX_2_FLAT)
 
     def test_bezier_box_3(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_BOX_3
         model.reset_allocator()
-
-        mesh = mesh = TestBezierObject.make_bezier_box_3()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        mesh = TestBezierObject.make_bezier_box_3()
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_BOX_3)
 
     def test_bezier_box_4(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_BOX_4
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_box_4()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_BOX_4)
 
     def test_bezier_cube(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_CUBE
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_cube()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_CUBE)
 
     def test_bezier_cube_part(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_CUBE_PART
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_cube_part()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_CUBE_PART)
 
     def test_bezier_pyramid_3c(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_PYRAMID_3C
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_pyramid_3c()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_PYRAMID_3C)
 
     def test_bezier_pyramid_4c(self, tmp_path):
-        name = TestBezierObject.FILE_BEZIER_PYRAMID_4C
         model.reset_allocator()
-
         mesh = TestBezierObject.make_bezier_pyramid_4c()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_PYRAMID_4C)
 
 
 class TestBezierObjectCurves:
@@ -674,17 +651,11 @@ class TestBezierObjectCurves:
         return mesh_object.tessellate()
 
     def test_bezier_corner(self, tmp_path):
-        name = TestBezierObjectCurves.FILE_BEZIER_CORNER
         model.reset_allocator()
-        
-        mesh = mesh = TestBezierObjectCurves.make_bezier_corner()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        mesh = TestBezierObjectCurves.make_bezier_corner()
+        verify_models([mesh], tmp_path, TestBezierObjectCurves.FILE_BEZIER_CORNER)
 
     def test_bezier_drum(self, tmp_path):
-        name = TestBezierObjectCurves.FILE_BEZIER_DRUM
         model.reset_allocator()
-
         mesh = TestBezierObjectCurves.make_bezier_drum()
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestBezierObjectCurves.FILE_BEZIER_DRUM)

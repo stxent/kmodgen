@@ -17,28 +17,34 @@ from wrlconv import model
 
 
 class ChipBase:
-    DEFAULT_CHAMFER = primitives.hmils(0.1)
+    CHAMFER_DETAILS = 1
+    DEFAULT_CHAMFER = primitives.hmils(0.05)
 
     def __init__(self, material):
         self.material = material
 
     @staticmethod
-    def make_chip(body_size, lead_width, chamfer, edge_resolution, line_resolution):
-        case_chamfer = chamfer / (2.0 * math.sqrt(2.0))
+    def make_chip(body_size, lead_width, lead_chamfer, edge_resolution, line_resolution):
+        body_chamfer = lead_chamfer / 2.0
 
         lead_size = np.array([lead_width, body_size[1], body_size[2]])
         ceramic_size = np.array([
             body_size[0] - 2.0 * lead_width,
-            body_size[1] - 2.0 * case_chamfer,
-            body_size[2] - 2.0 * case_chamfer])
+            body_size[1] - 2.0 * body_chamfer,
+            body_size[2] - 2.0 * body_chamfer
+        ])
 
-        leads = primitives.make_chip_leads(case_size=ceramic_size, lead_size=lead_size,
-            case_chamfer=case_chamfer, lead_chamfer=chamfer,
-            edge_resolution=edge_resolution, line_resolution=line_resolution)
-        leads.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
-        body = primitives.make_chip_body(size=ceramic_size, chamfer=case_chamfer,
-            edge_resolution=edge_resolution)
+        body, leads = primitives.make_chip(
+            body_size=ceramic_size,
+            lead_size=lead_size,
+            body_chamfer=body_chamfer,
+            lead_chamfer=lead_chamfer,
+            chamfer_resolution=ChipBase.CHAMFER_DETAILS,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution
+        )
         body.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
+        leads.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
 
         return [body, leads]
 
@@ -50,7 +56,7 @@ class ChipBase:
         meshes = ChipBase.make_chip(
             body_size=body_size,
             lead_width=lead_width,
-            chamfer=max(chamfer_from_size, ChipBase.DEFAULT_CHAMFER),
+            lead_chamfer=max(chamfer_from_size, ChipBase.DEFAULT_CHAMFER),
             edge_resolution=resolutions['edge'],
             line_resolution=resolutions['line']
         )
@@ -648,135 +654,11 @@ class ChipResistor:
         return meshes
 
 
-class ChipShunt(ChipResistor):
+class ChipShunt:
     DEFAULT_CHAMFER = primitives.hmils(0.1)
 
     def __init__(self):
         self.material = 'ChipShunt'
-
-    @staticmethod
-    def make_resistor_element_curve(length, thickness, clearance, lead_length, line_resolution):
-        parts = []
-
-        slope = np.deg2rad(30.0)
-        slope_length = clearance / math.sin(slope)
-
-        x_offset = length / 2.0 - (lead_length + slope_length + thickness)
-        z_offset = thickness / 2.0 + clearance
-
-        parts.append(curves.Line(
-            (-x_offset, 0.0, z_offset),
-            ( x_offset, 0.0, z_offset),
-            line_resolution
-        ))
-        return parts
-
-    @staticmethod
-    def make_resistor_contact_curve(length, thickness, clearance, lead_length, chamfer,
-                                    slope_resolution, edge_resolution, line_resolution):
-        weight = curves.calc_bezier_weight(angle=math.pi / 2.0)
-        parts = []
-
-        x_offset, z_offset = length / 2.0, thickness / 2.0
-        slope = np.deg2rad(30.0)
-        slope_length = clearance / math.sin(slope)
-
-        parts.append(curves.Line(
-            (-x_offset, 0.0, z_offset),
-            (-x_offset + chamfer, 0.0, z_offset),
-            edge_resolution
-        ))
-
-        parts.append(curves.Line(
-            (-x_offset + chamfer, 0.0, z_offset),
-            (-x_offset + lead_length, 0.0, z_offset),
-            line_resolution
-        ))
-
-        parts.append(curves.Bezier(
-            (-x_offset + lead_length, 0.0, z_offset),
-            (thickness * weight, 0.0, 0.0),
-            (-x_offset + lead_length + slope_length, 0.0, z_offset + clearance),
-            (-thickness * weight, 0.0, 0.0),
-            slope_resolution
-        ))
-
-        parts.append(curves.Line(
-            (-x_offset + lead_length + slope_length, 0.0, z_offset + clearance),
-            (-x_offset + lead_length + slope_length + thickness, 0.0, z_offset + clearance),
-            line_resolution
-        ))
-
-        return parts
-
-    @staticmethod
-    def make_resistor_contact(length, width, thickness, clearance, lead_length, chamfer,
-                              slope_resolution, edge_resolution, line_resolution):
-        roundness = chamfer / math.sqrt(2.0)
-
-        pin_path = ChipShunt.make_resistor_contact_curve(length, thickness, clearance,
-            lead_length, chamfer, slope_resolution, edge_resolution, line_resolution)
-
-        points = []
-        [points.extend(element.tessellate()) for element in pin_path]
-        path_points = curves.optimize(points)
-
-        pin_shape_size = [thickness, width]
-        pin_shape = primitives.make_rounded_rect(pin_shape_size, roundness, edge_resolution)
-
-        points = []
-        [points.extend(element.tessellate()) for element in pin_shape]
-        shape_transform = model.Transform(matrix=model.rpy_to_matrix((0.0, 0.0, math.pi)))
-        shape_points = [shape_transform.apply(point) for point in points]
-
-        def mesh_scaling_func(number):
-            chamfer_step = None
-            slope_step = None
-
-            if number < edge_resolution:
-                chamfer_step = number
-
-            if chamfer_step is not None:
-                t_seg = math.sin((math.pi / 2.0) * (chamfer_step / (edge_resolution - 1)))
-                t_offset = chamfer * (1.0 - t_seg)
-
-                t_scale = np.array([
-                    (pin_shape_size[0] - t_offset) / pin_shape_size[0],
-                    (pin_shape_size[1] - t_offset * 2.0) / pin_shape_size[1]
-                ])
-                return np.array([*t_scale, 1.0])
-
-            return np.ones(3)
-
-        pin_slices = curves.loft(path_points, shape_points, scaling=mesh_scaling_func)
-        pin_mesh = geometry.build_loft_mesh(pin_slices, True, False)
-
-        return pin_mesh
-
-    @staticmethod
-    def make_resistor_element(length, width, thickness, clearance, lead_length, chamfer,
-                              edge_resolution, line_resolution):
-        roundness = chamfer / math.sqrt(2.0)
-
-        pin_path = ChipShunt.make_resistor_element_curve(length, thickness, clearance,
-            lead_length, line_resolution)
-
-        points = []
-        [points.extend(element.tessellate()) for element in pin_path]
-        path_points = curves.optimize(points)
-
-        pin_shape_size = [thickness, width]
-        pin_shape = primitives.make_rounded_rect(pin_shape_size, roundness, edge_resolution)
-
-        points = []
-        [points.extend(element.tessellate()) for element in pin_shape]
-        shape_transform = model.Transform(matrix=model.rpy_to_matrix((0.0, 0.0, math.pi)))
-        shape_points = [shape_transform.apply(point) for point in points]
-
-        pin_slices = curves.loft(path_points, shape_points)
-        pin_mesh = geometry.build_loft_mesh(pin_slices, False, False)
-
-        return pin_mesh
 
     def generate(self, materials, resolutions, _, descriptor):
         body_size = primitives.hmils(np.array(descriptor['body']['size']))
@@ -785,52 +667,167 @@ class ChipShunt(ChipResistor):
         pin_width = primitives.hmils(descriptor['pins']['width'])
         chamfer_from_size = body_size[2] * 0.05
 
-        meshes = []
-
-        mesh_contact0 = ChipShunt.make_resistor_contact(
+        body, lead = primitives.make_chip_shunt(
             length=body_size[0],
             width=body_size[1],
             thickness=thickness,
             clearance=clearance,
             lead_length=pin_width,
+            active_width=body_size[1],
             chamfer=chamfer_from_size,
-            slope_resolution=resolutions['body'],
             edge_resolution=resolutions['edge'],
-            line_resolution=resolutions['line']
+            line_resolution=resolutions['line'],
+            slope_resolution=resolutions['body']
         )
-        if f'{self.material}.Lead' in materials:
-            mesh_contact0.appearance().material = materials[f'{self.material}.Lead']
-        mesh_contact1 = copy.deepcopy(mesh_contact0)
-        mesh_contact1.rotate((0.0, 0.0, 1.0), math.pi)
-        mesh_contact1.rename()
-        meshes.append(mesh_contact0)
-        meshes.append(mesh_contact1)
 
-        mesh_body = ChipShunt.make_resistor_element(
-            length=body_size[0],
-            width=body_size[1],
-            thickness=thickness,
-            clearance=clearance,
-            lead_length=pin_width,
-            chamfer=chamfer_from_size,
-            edge_resolution=resolutions['edge'],
-            line_resolution=resolutions['line']
-        )
         if f'{self.material}.Alloy' in materials:
-            mesh_body.appearance().material = materials[f'{self.material}.Alloy']
-        meshes.append(mesh_body)
+            body.appearance().material = materials[f'{self.material}.Alloy']
+        if f'{self.material}.Lead' in materials:
+            lead.appearance().material = materials[f'{self.material}.Lead']
 
-        return meshes
+        return [body, lead]
 
 
-class ChipCapacitor(ChipBase):
+class BentLeadsChip:
+    DEFAULT_CHAMFER = primitives.hmils(0.1)
+    BAND_SIZE = primitives.hmils(0.1)
+
+    def __init__(self, material, pin_size_added=False):
+        self.material = material
+        self.pin_size_added = pin_size_added
+
+    @staticmethod
+    def detach_body_strip(mesh, size, chamfer, strip_width, epsilon=1e-6):
+        detach_region = (
+            (
+                size[0] / 2.0 - chamfer - strip_width - epsilon,
+                -size[1] / 2.0 + chamfer - epsilon,
+                size[2] - epsilon
+            ), (
+                size[0] / 2.0 - chamfer + epsilon,
+                size[1] / 2.0 - chamfer + epsilon,
+                size[2] + epsilon
+            )
+        )
+
+        return mesh.detach_faces([detach_region])
+
+    @staticmethod
+    def move_body_strip(mesh, size, chamfer, strip_width, epsilon=1e-6):
+        region = (
+            (-epsilon, -size[1] / 2.0 - chamfer - epsilon, size[2] - chamfer - epsilon),
+            ( epsilon,  size[1] / 2.0 + chamfer + epsilon, size[2] + epsilon),
+            1
+        )
+
+        transform = model.Transform()
+        transform.translate(np.array([size[0] / 2.0 - chamfer - strip_width, 0.0, 0.0]))
+
+        result = model.AttributedMesh(name='Body', regions=[region])
+        result.append(mesh)
+        result.apply_transform({1: transform})
+        return result
+
+    def generate(self, materials, resolutions, _, descriptor):
+        try:
+            pin_forked = descriptor['pins']['fork']
+        except KeyError:
+            pin_forked = False
+
+        try:
+            pin_added_length = primitives.hmils(np.array(descriptor['pins']['extension']))
+        except KeyError:
+            pin_added_length = 0.0
+
+        pin_size = primitives.hmils(np.array(descriptor['pins']['size']))
+        pin_thickness = primitives.hmils(np.array(descriptor['pins']['thickness']))
+        body_size = primitives.hmils(np.array(descriptor['body']['size']))
+        if self.pin_size_added:
+            body_size[0] -= pin_thickness * 3.0
+
+        band_size = BentLeadsChip.BAND_SIZE
+        body_chamfer = min(BentLeadsChip.DEFAULT_CHAMFER, pin_thickness * 2.0 / 3.0)
+        body_slope = math.atan(band_size / (pin_size[2] - pin_thickness * 1.5))
+        strip_width = body_size[0] / 10.0
+
+        pin_offset = body_size[0] / 2.0 + band_size - pin_size[0]
+        pin_chamfer = min(BentLeadsChip.DEFAULT_CHAMFER, pin_thickness / 3.0)
+
+        body_mesh = primitives.make_box_with_plinth(
+            size=body_size,
+            band_size=band_size,
+            band_offset=pin_size[2],
+            cutout_length=pin_size[0] + body_chamfer * 2.0,
+            cutout_height=pin_thickness * 1.5,
+            chamfer=body_chamfer,
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
+        )
+        body_mesh = BentLeadsChip.move_body_strip(body_mesh, body_size, body_chamfer,
+                                                  strip_width)
+        strip_mesh = BentLeadsChip.detach_body_strip(body_mesh, body_size, body_chamfer,
+                                                     strip_width)
+
+        if f'{self.material}.Plastic' in materials:
+            body_mesh.appearance().material = materials[f'{self.material}.Plastic']
+        if f'{self.material}.Strip' in materials:
+            strip_mesh.appearance().material = materials[f'{self.material}.Strip']
+
+        top_roundness = pin_thickness * 1.5 + pin_added_length
+        bottom_roundness = pin_thickness * 3.0 + pin_added_length
+        if top_roundness + bottom_roundness + pin_chamfer * 2.0 >= pin_size[2]:
+            raise ValueError()
+
+        if pin_forked:
+            left_contact = primitives.make_bent_fork_pin_mesh(
+                width=pin_size[1],
+                height=pin_size[2],
+                length=pin_size[0],
+                thickness=pin_thickness,
+                top_roundness=top_roundness,
+                bottom_roundness=bottom_roundness,
+                end_slope=body_slope,
+                cutout_width=pin_size[1] / 2.0,
+                cutout_height=max(pin_size[2] / 3.0, top_roundness + pin_chamfer * 2.0),
+                chamfer=pin_chamfer,
+                edge_resolution=resolutions['edge'],
+                line_resolution=resolutions['line'],
+                slope_resolution=resolutions['arc']
+            )
+        else:
+            left_contact = primitives.make_bent_pin_mesh(
+                width=pin_size[1],
+                height=pin_size[2],
+                length=pin_size[0],
+                thickness=pin_thickness,
+                top_roundness=top_roundness,
+                bottom_roundness=bottom_roundness,
+                end_slope=body_slope,
+                chamfer=pin_chamfer,
+                edge_resolution=resolutions['edge'],
+                line_resolution=resolutions['line'],
+                slope_resolution=resolutions['arc']
+            )
+        if f'{self.material}.Lead' in materials:
+            left_contact.appearance().material = materials[f'{self.material}.Lead']
+
+        right_contact = copy.deepcopy(left_contact)
+        right_contact.rotate(np.array([0.0, 0.0, 1.0]), math.pi)
+        right_contact.translate(np.array([-pin_offset, 0.0, 0.0]))
+        right_contact.rename()
+        left_contact.translate(np.array([pin_offset, 0.0, 0.0]))
+
+        return [body_mesh, strip_mesh, left_contact, right_contact]
+
+
+class BentLeadsCapacitor(BentLeadsChip):
     def __init__(self):
-        super().__init__('ChipCapacitor')
+        super().__init__('BentLeadsCapacitor', pin_size_added=True)
 
 
-class ChipFerrite(ChipBase):
+class BentLeadsDiode(BentLeadsChip):
     def __init__(self):
-        super().__init__('ChipInductor')
+        super().__init__('BentLeadsDiode')
 
 
 class ChipInductor(ChipBase):
@@ -838,9 +835,15 @@ class ChipInductor(ChipBase):
         super().__init__('ChipInductor')
 
 
+class ChipCapacitor(ChipBase):
+    def __init__(self):
+        super().__init__('ChipCapacitor')
+
+
 types = [
+    BentLeadsCapacitor,
+    BentLeadsDiode,
     ChipCapacitor,
-    ChipFerrite,
     ChipInductor,
     ChipResistor,
     ChipShunt

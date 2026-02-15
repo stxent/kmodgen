@@ -28,9 +28,6 @@ class ChipOpenDrumInductor:
             return primitives.slice_connect_nearest(self.layers, self.inverse)
 
 
-    def __init__(self):
-        self.material = 'ChipOpenDrumInductor'
-
     @staticmethod
     def make_inductor_cap_shape(body_radius, bevel_height, hole_radius, hole_depth,
                                 line_segments, arc_segments, corner_segments):
@@ -537,4 +534,69 @@ class ChipOpenDrumInductor:
         return [body, left_contact, right_contact, wire_mesh]
 
 
-types = [ChipOpenDrumInductor]
+class ChipShieldedInductor:
+    BODY_CHAMFER = primitives.hmils(0.05)
+
+    def generate(self, materials, resolutions, _, descriptor):
+        body_size = primitives.hmils(np.array(descriptor['body']['size']))
+        pin_size = primitives.hmils(np.array(descriptor['pins']['size']))
+        pin_thickness = primitives.hmils(np.array(descriptor['pins']['thickness']))
+
+        try:
+            niche_size = primitives.hmils(np.array(descriptor['niche']['size']))
+            niche_size[2] = max(niche_size[2], ChipShieldedInductor.BODY_CHAMFER * 3.0)
+        except KeyError:
+            niche_size = np.array([
+                pin_size[0] + ChipShieldedInductor.BODY_CHAMFER * 2.0,
+                pin_size[1] + ChipShieldedInductor.BODY_CHAMFER * 2.0,
+                max(pin_thickness * 1.5, ChipShieldedInductor.BODY_CHAMFER * 3.0)
+            ])
+
+        body_roundness = ChipShieldedInductor.BODY_CHAMFER * 4.0
+        body_chamfer = ChipShieldedInductor.BODY_CHAMFER
+
+        pin_offset = body_size[0] / 2.0 - pin_size[0]
+        pin_chamfer = min(ChipShieldedInductor.BODY_CHAMFER, pin_thickness / 3.0)
+        pin_roundness = pin_thickness * 2.0
+
+        body = primitives.make_carved_box(
+            size=body_size,
+            niche_size=niche_size,
+            chamfer=body_chamfer,
+            roundness=body_roundness,
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
+        )
+        body.appearance().material = materials['Inductor.Alloy']
+        body.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
+
+        left_contact = primitives.make_bent_fork_pin_mesh(
+            width=pin_size[1],
+            height=pin_size[2],
+            length=pin_size[0],
+            thickness=pin_thickness,
+            top_roundness=pin_thickness * 1.5,
+            bottom_roundness=pin_roundness,
+            end_slope=0.0,
+            cutout_width=pin_size[1] / 2.0,
+            cutout_height=pin_size[2] / 3.0,
+            chamfer=pin_chamfer,
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line'],
+            slope_resolution=resolutions['arc']
+        )
+        left_contact.appearance().material = materials['Inductor.Lead']
+
+        right_contact = copy.deepcopy(left_contact)
+        right_contact.rotate(np.array([0.0, 0.0, 1.0]), math.pi)
+        right_contact.translate(np.array([-pin_offset, 0.0, 0.0]))
+        right_contact.rename()
+        left_contact.translate(np.array([pin_offset, 0.0, 0.0]))
+
+        return [body, left_contact, right_contact]
+
+
+types = [
+    ChipOpenDrumInductor,
+    ChipShieldedInductor
+]

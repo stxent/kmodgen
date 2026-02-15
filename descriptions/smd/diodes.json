@@ -1,8 +1,14 @@
 {
   "materials": {
+    "BentLeadsDiode.Lead": "Lead",
+    "BentLeadsDiode.Plastic": "BlackPlastic",
+    "BentLeadsDiode.Strip": "GrayPlastic",
     "MELF.Band": "BlackGlass",
     "MELF.Glass": "RedGlass",
-    "MELF.Lead": "Lead"
+    "MELF.Lead": "Lead",
+    "SOD.Mark": "GrayPlastic",
+    "SOD.Plastic": "BlackPlastic",
+    "SOD.Lead": "Lead"
   },
   "templates": [
     "smd_tantalum.x3d"
@@ -29,26 +35,26 @@
       "description": "MELF",
       "source": "Vishay specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "BentLeadsDiode", "spec": "thick"},
       "title": "DO-214AA",
-      "body": {"size": [4.3, 3.6, 2.25]},
-      "pins": {},
+      "body": {"size": [4.3, 3.6, 2.2]},
+      "pins": {"size": [1.14, 2.03, 1.1], "extension": 0.0, "thickness": 0.2},
       "pads": {"pitch": 1.8, "size": [2.5, 2.3], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Diodes Incorporated specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "BentLeadsDiode", "spec": "thick"},
       "title": "DO-214AB",
       "body": {"size": [6.9, 5.9, 2.25]},
-      "pins": {},
+      "pins": {"size": [1.14, 2.97, 1.1], "extension": 0.0, "thickness": 0.2},
       "pads": {"pitch": 4.4, "size": [2.5, 3.3], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Diodes Incorporated specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thick"},
+      "package": {"type": "BentLeadsDiode", "spec": "thick"},
       "title": "DO-214AC",
       "body": {"size": [4.3, 2.6, 2.2]},
-      "pins": {},
+      "pins": {"size": [1.08, 1.42, 1.1], "extension": 0.0, "thickness": 0.2},
       "pads": {"pitch": 1.5, "size": [2.5, 1.7], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Diodes Incorporated specifications"
@@ -70,12 +76,17 @@
       "mark": {"bar": true, "dot": true, "wrap": true},
       "source": "NXP specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thin"},
+      "package": {"type": "SOD", "spec": "thin"},
       "title": "SOD-323",
-      "body": {"size": [1.8, 1.35, 0.9]},
-      "pins": {},
+      "band": {"offset": 0.12},
+      "body": {"size": [1.8, 1.35, 1.0]},
       "pads": {"pitch": 1.7, "size": [0.8, 0.6], "names": ["C", "A"]},
-      "mark": {"dot": true},
+      "pins": {
+          "count": 2,
+          "slope": 5.0,
+          "default": {"shape": [0.33, 0.18], "length": 0.45}
+      },
+      "mark": {"dot": true, "strip": true},
       "source": "Infineon specifications for reflow soldering"
     }
   ]

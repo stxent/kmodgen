@@ -11,8 +11,7 @@
     "ChipShunt.Lead": "Lead"
   },
   "templates": [
-    "smd_led.x3d",
-    "smd_tantalum.x3d"
+    "smd_led.x3d"
   ],
   "parts": [
     {
@@ -349,38 +348,6 @@
       "mark": {"wrap": true},
       "description": "2220 ceramic capacitor, 5.7x5.0x2.5 mm body",
       "source": "Murata specifications"
-    }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "CP3216",
-      "body": {"size": [3.2, 1.6]},
-      "pins": {},
-      "pads": {"pitch": 1.2, "size": [1.65, 1.4], "names": ["A", "C"]},
-      "mark": {"dot": true},
-      "source": "AVX specifications"
-    }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "CP3528",
-      "body": {"size": [3.5, 2.8]},
-      "pins": {},
-      "pads": {"pitch": 1.5, "size": [1.65, 2.4], "names": ["A", "C"]},
-      "mark": {"dot": true},
-      "source": "AVX specifications"
-    }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "CP6032",
-      "body": {"size": [6.0, 3.2]},
-      "pins": {},
-      "pads": {"pitch": 2.9, "size": [2.4, 2.4], "names": ["A", "C"]},
-      "mark": {"dot": true},
-      "source": "AVX specifications"
-    }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "CP7343",
-      "body": {"size": [7.3, 4.3]},
-      "pins": {},
-      "pads": {"pitch": 4.2, "size": [2.4, 2.5], "names": ["A", "C"]},
-      "mark": {"dot": true},
-      "source": "AVX specifications"
     }, {
       "package": {"type": "ChipInductor", "spec": "thin"},
       "title": "L0402",

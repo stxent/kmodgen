@@ -277,11 +277,50 @@ class SOT:
             return cls(None, slope, descriptor)
 
 
-    def __init__(self):
-        pass
+    def __init__(self, material='SOT'):
+        self.material = material
 
     @staticmethod
-    def generate_body(materials, resolutions, descriptor):
+    def detach_body_strip(mesh, size, chamfer, strip_width, epsilon=1e-6):
+        detach_region = (
+            (
+                -size[0] / 2.0 + chamfer - epsilon,
+                -size[1] / 2.0 + chamfer - epsilon,
+                size[2] / 2.0 - epsilon
+            ), (
+                size[0] / 2.0 - chamfer + epsilon,
+                -size[1] / 2.0 + chamfer + strip_width + epsilon,
+                size[2] / 2.0 + epsilon
+            )
+        )
+
+        return mesh.detach_faces([detach_region])
+
+    @staticmethod
+    def move_body_strip(mesh, size, chamfer, strip_width, epsilon=1e-6):
+        region = (
+            (-size[0] / 2.0 - chamfer - epsilon, -epsilon, size[2] / 2.0 - chamfer - epsilon),
+            ( size[0] / 2.0 + chamfer + epsilon,  epsilon, size[2] / 2.0 + epsilon),
+            1
+        )
+
+        transform = model.Transform()
+        transform.translate(np.array([0.0, -(size[1] / 2.0 - chamfer - strip_width), 0.0]))
+
+        result = model.AttributedMesh(name='Body', regions=[region])
+        result.append(mesh)
+        result.apply_transform({1: transform})
+        return result
+
+    def generate_body(self, materials, resolutions, descriptor):
+        body_chamfer = SOT.BODY_CHAMFER
+        body_size = primitives.hmils(descriptor['body']['size'])
+
+        # Special case for packages with two pins: match orientation for Chip footprints
+        swap_xy = descriptor['pins']['count'] == 2
+        if swap_xy:
+            body_size[0], body_size[1] = body_size[1], body_size[0]
+
         try:
             band_offset = primitives.hmils(descriptor['band']['offset'])
         except KeyError:
@@ -293,56 +332,78 @@ class SOT:
             flat_pin = False
 
         try:
-            dot_radius = SOT.MARK_RADIUS if primitives.hmils(descriptor['mark']['dot']) else None
+            strip_width = body_size[1] / 10.0 if descriptor['mark']['strip'] else None
         except KeyError:
+            strip_width = None
+
+        if strip_width is None:
+            try:
+                dot_radius = SOT.MARK_RADIUS if descriptor['mark']['dot'] else None
+            except KeyError:
+                dot_radius = None
+            body_resolutions = resolutions['line']
+        else:
+            body_resolutions = (resolutions['line'], 2, resolutions['line'])
             dot_radius = None
 
-        body_size = primitives.hmils(descriptor['body']['size'])
         dot_offset = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
-
         body_offset_z = body_size[2] / 2.0
         if not flat_pin:
             body_offset_z += SOT.BODY_OFFSET_Z
 
+        meshes = []
+
         body_mesh = primitives.make_box_with_mark(
             size=body_size,
-            chamfer=SOT.BODY_CHAMFER,
+            chamfer=body_chamfer,
             edge_resolution=resolutions['edge'],
-            line_resolution=resolutions['line'],
+            line_resolution=body_resolutions,
             band_size=SOT.BAND_WIDTH,
             band_offset=band_offset,
             mark_radius=dot_radius,
             mark_offset=dot_offset,
             mark_resolution=resolutions['circle']
         )
+
+        if strip_width is not None:
+            body_mesh = SOT.move_body_strip(body_mesh, body_size, body_chamfer, strip_width)
+            strip_mesh = SOT.detach_body_strip(body_mesh, body_size, body_chamfer, strip_width)
+
+            if f'{self.material}.Mark' in materials:
+                strip_mesh.appearance().material = materials[f'{self.material}.Mark']
+            strip_mesh.rename('Mark')
+            strip_mesh.translate(np.array([0.0, 0.0, body_offset_z]))
+            meshes.append(strip_mesh)
+
+        if f'{self.material}.Plastic' in materials:
+            body_mesh.appearance().material = materials[f'{self.material}.Plastic']
+        body_mesh.rename('Body')
+        body_mesh.translate(np.array([0.0, 0.0, body_offset_z]))
+        meshes.append(body_mesh)
+
         if dot_radius is not None:
             dot_mesh = geometry.Circle(dot_radius, resolutions['circle'])
             dot_mesh.translate(np.array([*dot_offset, body_offset_z + body_size[2] / 2.0]))
-        else:
-            dot_mesh = None
 
-        meshes = []
-
-        if 'SOT.Plastic' in materials:
-            body_mesh.appearance().material = materials['SOT.Plastic']
-        body_mesh.translate(np.array([0.0, 0.0, body_offset_z]))
-        body_mesh.rename('Body')
-        meshes.append(body_mesh)
-
-        if dot_mesh is not None:
-            if 'SOT.Dot' in materials:
-                dot_mesh.appearance().material = materials['SOT.Dot']
-            dot_mesh.rename('Dot')
+            if f'{self.material}.Mark' in materials:
+                dot_mesh.appearance().material = materials[f'{self.material}.Mark']
+            dot_mesh.rename('Mark')
             meshes.append(dot_mesh)
 
+        if swap_xy:
+            for mesh in meshes:
+                mesh.rotate((0.0, 0.0, 1.0), -math.pi / 2.0)
         return meshes
 
-    @staticmethod
-    def generate_pins(materials, resolutions, descriptor):
+    def generate_pins(self, materials, resolutions, descriptor):
         try:
             flat_pin = descriptor['pins']['flat']
         except KeyError:
             flat_pin = False
+        try:
+            pin_pitch = primitives.hmils(descriptor['pins']['pitch'])
+        except KeyError:
+            pin_pitch = 0.0
         try:
             pin_slope = np.deg2rad(descriptor['pins']['slope'])
         except KeyError:
@@ -358,6 +419,10 @@ class SOT:
             band_inversion = flat_pin
 
         body_size = primitives.hmils(descriptor['body']['size'])
+        if descriptor['pins']['count'] == 2:
+            # Special case for packages with two pins: match orientation for Chip footprints
+            body_size[0], body_size[1] = body_size[1], body_size[0]
+
         band_width_proj = SOT.BAND_WIDTH * math.sqrt(0.5)
         if band_inversion:
             body_slope = -math.atan(band_width_proj / (body_size[2] / 2.0 + band_offset))
@@ -385,40 +450,53 @@ class SOT:
         pin_group_meshes = {}
 
         for group in pin_groups:
-            mesh = primitives.make_pin_mesh(
-                pin_shape_size=group.shape,
-                pin_height=pin_height + group.vertical_offset,
-                pin_length=group.length,
-                pin_slope=pin_slope,
-                end_slope=body_slope,
-                chamfer_resolution=resolutions['chamfer'],
-                edge_resolution=resolutions['edge'],
-                line_resolution=resolutions['line'],
-                flat=flat_pin
-            )
+            if flat_pin:
+                mesh = primitives.make_flat_pin_mesh(
+                    pin_shape_size=group.shape,
+                    pin_length=group.length,
+                    end_slope=body_slope,
+                    edge_resolution=resolutions['chamfer'],
+                    line_resolution=resolutions['line']
+                )
+            else:
+                mesh = primitives.make_pin_mesh(
+                    pin_shape_size=group.shape,
+                    pin_height=pin_height + group.vertical_offset,
+                    pin_length=group.length,
+                    pin_slope=pin_slope,
+                    end_slope=body_slope,
+                    edge_resolution=resolutions['chamfer'],
+                    line_resolution=resolutions['line'],
+                    slope_resolution=resolutions['edge']
+                )
 
-            if 'SOT.Lead' in materials:
-                mesh.appearance().material = materials['SOT.Lead']
+            if f'{self.material}.Lead' in materials:
+                mesh.appearance().material = materials[f'{self.material}.Lead']
 
             pin_group_meshes[hash(group)] = mesh
 
         return SOT.generate_pin_rows(
             count=descriptor['pins']['count'],
             size=body_size[0:2] + band_width_proj * 2.0,
-            pitch=primitives.hmils(descriptor['pins']['pitch']),
+            pitch=pin_pitch,
             patterns=pin_group_meshes,
             entries=pin_entries
         )
 
     @staticmethod
     def generate_pin_rows(count, size, pitch, patterns, entries):
-        def make_pin(mesh, position, angle, number):
+        def make_pin(mesh, position, angle, number, swap_xy):
             pin = model.Mesh(parent=mesh, name='Pin{:d}'.format(number))
-            pin.translate([*position, 0.0])
-            pin.rotate([0.0, 0.0, 1.0], angle - math.pi / 2.0)
+            if swap_xy:
+                pin.translate([position[1], position[0], 0.0])
+                pin.rotate([0.0, 0.0, 1.0], angle - math.pi)
+            else:
+                pin.translate([position[0], position[1], 0.0])
+                pin.rotate([0.0, 0.0, 1.0], angle - math.pi / 2.0)
             return pin
 
-        columns = int(count / 2)
+        columns = count // 2
+        swap_xy = count == 2
         first_pin_offset = pitch * (columns - 1) / 2.0
         y_offset = size[1] / 2.0
 
@@ -429,26 +507,34 @@ class SOT:
             if i + columns in entries:
                 entry = entries[i + columns]
                 mesh = patterns[hash(entry)]
-                meshes.append(make_pin(
-                    mesh, [x_offset, y_offset + entry.planar_offset], math.pi, i + columns
-                ))
+                meshes.append(make_pin(mesh,
+                                       np.array([x_offset, y_offset + entry.planar_offset]),
+                                       math.pi, i + columns, swap_xy))
 
             if i in entries:
                 entry = entries[i]
                 mesh = patterns[hash(entry)]
-                meshes.append(make_pin(
-                    mesh, [-x_offset, -(y_offset + entry.planar_offset)], 0.0, i
-                ))
+                meshes.append(make_pin(mesh,
+                                       np.array([-x_offset, -(y_offset + entry.planar_offset)]),
+                                       0.0, i, swap_xy))
 
         return meshes
 
     def generate(self, materials, resolutions, _, descriptor):
-        return SOT.generate_body(materials, resolutions, descriptor) \
-            + SOT.generate_pins(materials, resolutions, descriptor)
+        meshes = []
+        meshes.extend(self.generate_body(materials, resolutions, descriptor))
+        meshes.extend(self.generate_pins(materials, resolutions, descriptor))
+        return meshes
+
+
+class SOD(SOT):
+    def __init__(self):
+        super().__init__('SOD')
 
 
 types = [
     Chip,
     MELF,
+    SOD,
     SOT
 ]

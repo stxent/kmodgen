@@ -95,9 +95,9 @@ class QFP:
             pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
             pin_slope=np.deg2rad(10.0),
             end_slope=body_slope,
-            chamfer_resolution=resolutions['chamfer'],
-            edge_resolution=resolutions['edge'],
-            line_resolution=resolutions['line']
+            edge_resolution=resolutions['chamfer'],
+            line_resolution=resolutions['line'],
+            slope_resolution=resolutions['edge']
         )
         if 'QFP.Lead' in materials:
             pin_mesh.appearance().material = materials['QFP.Lead']

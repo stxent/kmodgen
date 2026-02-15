@@ -1,6 +1,6 @@
 {
   "materials": {
-    "SOT.Dot": "GrayPlastic",
+    "SOT.Mark": "GrayPlastic",
     "SOT.Plastic": "BlackPlastic",
     "SOT.Lead": "Lead"
   },

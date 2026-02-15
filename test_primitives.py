@@ -23,6 +23,10 @@ def serialize_models(models, path, name):
         data = file.read().decode('utf-8')
     return data
 
+def verify_models(meshes, destination_path, source_name):
+    serialized = serialize_models(meshes, destination_path, source_name)
+    assert compare_models(source_name, serialized) is True
+
 
 class TestChips:
     FILE_CHIP_CAPS = 'test_chip_caps.x3d'
@@ -30,44 +34,34 @@ class TestChips:
     FILE_CHIP_LP = 'test_chip_lp.x3d'
 
     @staticmethod
-    def make_chip(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
+    def make_chip(chamfer_resolution, edge_resolution, line_resolution):
         body_size = np.array([2.0, 1.0, 0.5])
         lead_width = 0.5
-        body_chamfer = 0.1
-        case_chamfer = body_chamfer / (2.0 * math.sqrt(2.0))
+        lead_chamfer = 0.1
+        body_chamfer = lead_chamfer / (2.0 * math.sqrt(2.0))
 
         lead_size = np.array([lead_width, body_size[1], body_size[2]])
         ceramic_size = np.array([
             body_size[0] - 2.0 * lead_width,
-            body_size[1] - 2.0 * case_chamfer,
-            body_size[2] - 2.0 * case_chamfer])
+            body_size[1] - 2.0 * body_chamfer,
+            body_size[2] - 2.0 * body_chamfer
+        ])
 
-        leads = primitives.make_chip_leads(
-            case_size=ceramic_size,
+        body, lead = primitives.make_chip(
+            body_size=ceramic_size,
             lead_size=lead_size,
-            case_chamfer=case_chamfer,
-            lead_chamfer=body_chamfer,
+            body_chamfer=body_chamfer,
+            lead_chamfer=lead_chamfer,
+            chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
-        leads.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
-        body = primitives.make_chip_body(
-            size=ceramic_size,
-            chamfer=case_chamfer,
-            edge_resolution=edge_resolution
-        )
+        lead.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
         body.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
-
-        meshes = [body, leads]
-        serialized = serialize_models(meshes, path, name)
-        assert compare_models(name, serialized) is True
+        return [body, lead]
 
     @staticmethod
-    def make_chip_caps(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
+    def make_chip_caps(edge_resolution, line_resolution):
         box_size = (2.0, 1.5, 1.0)
         box_chamfer = 0.1
 
@@ -119,18 +113,59 @@ class TestChips:
             line_resolution=line_resolution[0],
             axis=2
         )
-        meshes = [cap_xp, cap_xn, cap_yp, cap_yn, cap_zp, cap_zn]
-        serialized = serialize_models(meshes, path, name)
-        assert compare_models(name, serialized) is True
+        return [cap_xp, cap_xn, cap_yp, cap_yn, cap_zp, cap_zn]
 
     def test_make_chip_caps(self, tmp_path):
-        TestChips.make_chip_caps(tmp_path, TestChips.FILE_CHIP_CAPS, (2, 3, 4), (1, 2, 3))
+        model.reset_allocator()
+        meshes = TestChips.make_chip_caps((2, 3, 4), (1, 2, 3))
+        verify_models(meshes, tmp_path, TestChips.FILE_CHIP_CAPS)
 
     def test_make_chip_hp(self, tmp_path):
-        TestChips.make_chip(tmp_path, TestChips.FILE_CHIP_HP, 3, 3)
+        model.reset_allocator()
+        meshes = TestChips.make_chip(2, 3, 3)
+        verify_models(meshes, tmp_path, TestChips.FILE_CHIP_HP)
 
     def test_make_chip_lp(self, tmp_path):
-        TestChips.make_chip(tmp_path, TestChips.FILE_CHIP_LP, 1, 1)
+        model.reset_allocator()
+        meshes = TestChips.make_chip(1, 1, 1)
+        verify_models(meshes, tmp_path, TestChips.FILE_CHIP_LP)
+
+
+class TestChip:
+    FILE_CHIP_HP = 'test_chip_hp.x3d'
+    FILE_CHIP_LP = 'test_chip_lp.x3d'
+    FILE_CHIP_SHUNT_HP = 'test_chip_shunt_hp.x3d'
+    FILE_CHIP_SHUNT_LP = 'test_chip_shunt_lp.x3d'
+
+    @staticmethod
+    def make_chip_shunt(edge_resolution, line_resolution, slope_resolution):
+        body, lead = primitives.make_chip_shunt(
+            length=3.0,
+            width=1.0,
+            thickness=0.2,
+            clearance=0.2,
+            lead_length=0.4,
+            active_width=0.8,
+            chamfer=0.05,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            slope_resolution=slope_resolution
+        )
+
+        body.appearance().material = helpers.make_dark_gray_material()
+        lead.appearance().material = helpers.make_light_gray_material()
+
+        return [body, lead]
+
+    def test_make_chip_shunt_hp(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestChip.make_chip_shunt(3, 3, 5)
+        verify_models(meshes, tmp_path, TestChip.FILE_CHIP_SHUNT_HP)
+
+    def test_make_chip_shunt_lp(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestChip.make_chip_shunt(1, 1, 1)
+        verify_models(meshes, tmp_path, TestChip.FILE_CHIP_SHUNT_LP)
 
 
 class TestHelpers:
@@ -205,15 +240,14 @@ class TestBentPins:
     FILE_BENT_FORK_PIN_LP = 'test_bent_fork_pin_lp.x3d'
 
     @staticmethod
-    def make_bent_pin(path, name, edge_resolution, line_resolution, slope_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_bent_pin_mesh(
+    def make_bent_pin(edge_resolution, line_resolution, slope_resolution):
+        return primitives.make_bent_pin_mesh(
             width=1.0,
             height=2.0,
             length=1.0,
             thickness=0.2,
-            roundness=0.3,
+            top_roundness=0.3,
+            bottom_roundness=0.4,
             end_slope=np.deg2rad(10.0),
             chamfer=0.05,
             edge_resolution=edge_resolution,
@@ -221,19 +255,15 @@ class TestBentPins:
             slope_resolution=slope_resolution
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     @staticmethod
-    def make_bent_fork_pin(path, name, edge_resolution, line_resolution, slope_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_bent_fork_pin_mesh(
+    def make_bent_fork_pin(edge_resolution, line_resolution, slope_resolution):
+        return primitives.make_bent_fork_pin_mesh(
             width=1.0,
             height=2.0,
             length=1.0,
             thickness=0.2,
-            roundness=0.3,
+            top_roundness=0.3,
+            bottom_roundness=0.4,
             end_slope=np.deg2rad(10.0),
             cutout_width=0.5,
             cutout_height=0.5,
@@ -243,20 +273,25 @@ class TestBentPins:
             slope_resolution=slope_resolution
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     def test_make_bent_pin_hp(self, tmp_path):
-        TestBentPins.make_bent_pin(tmp_path, TestBentPins.FILE_BENT_PIN_HP, 3, 3, 5)
+        model.reset_allocator()
+        mesh = TestBentPins.make_bent_pin(3, 3, 5)
+        verify_models([mesh], tmp_path, TestBentPins.FILE_BENT_PIN_HP)
 
     def test_make_bent_pin_lp(self, tmp_path):
-        TestBentPins.make_bent_pin(tmp_path, TestBentPins.FILE_BENT_PIN_LP, 1, 1, 1)
+        model.reset_allocator()
+        mesh = TestBentPins.make_bent_pin(1, 1, 1)
+        verify_models([mesh], tmp_path, TestBentPins.FILE_BENT_PIN_LP)
 
     def test_make_bent_fork_pin_hp(self, tmp_path):
-        TestBentPins.make_bent_fork_pin(tmp_path, TestBentPins.FILE_BENT_FORK_PIN_HP, 3, 3, 5)
+        model.reset_allocator()
+        mesh = TestBentPins.make_bent_fork_pin(3, 3, 5)
+        verify_models([mesh], tmp_path, TestBentPins.FILE_BENT_FORK_PIN_HP)
 
     def test_make_bent_fork_pin_lp(self, tmp_path):
-        TestBentPins.make_bent_fork_pin(tmp_path, TestBentPins.FILE_BENT_FORK_PIN_LP, 1, 1, 1)
+        model.reset_allocator()
+        mesh = TestBentPins.make_bent_fork_pin(1, 1, 1)
+        verify_models([mesh], tmp_path, TestBentPins.FILE_BENT_FORK_PIN_LP)
 
 
 class TestPins:
@@ -266,54 +301,47 @@ class TestPins:
     FILE_FLAT_PIN_LP = 'test_flat_pin_lp.x3d'
 
     @staticmethod
-    def make_curved_pin(path, name, chamfer_resolution, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_pin_mesh(
+    def make_curved_pin(edge_resolution, line_resolution, slope_resolution):
+        return primitives.make_pin_mesh(
             pin_shape_size=np.array([0.5, 0.3]),
             pin_height=2.0,
             pin_length=4.0,
             pin_slope=np.deg2rad(20.0),
             end_slope=np.deg2rad(10.0),
-            chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
-            flat=False
+            slope_resolution=slope_resolution
         )
-
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
 
     @staticmethod
-    def make_flat_pin(path, name, chamfer_resolution, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_pin_mesh(
+    def make_flat_pin(edge_resolution, line_resolution):
+        return primitives.make_flat_pin_mesh(
             pin_shape_size=np.array([0.5, 0.3]),
-            pin_height=2.0,
             pin_length=4.0,
-            pin_slope=np.deg2rad(20.0),
             end_slope=np.deg2rad(10.0),
-            chamfer_resolution=chamfer_resolution,
             edge_resolution=edge_resolution,
-            line_resolution=line_resolution,
-            flat=True
+            line_resolution=line_resolution
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     def test_make_curved_pin_hp(self, tmp_path):
-        TestPins.make_curved_pin(tmp_path, TestPins.FILE_CURVED_PIN_HP, 3, 3, 3)
+        model.reset_allocator()
+        mesh = TestPins.make_curved_pin(3, 3, 3)
+        verify_models([mesh], tmp_path, TestPins.FILE_CURVED_PIN_HP)
 
     def test_make_curved_pin_lp(self, tmp_path):
-        TestPins.make_curved_pin(tmp_path, TestPins.FILE_CURVED_PIN_LP, 1, 1, 1)
+        model.reset_allocator()
+        mesh = TestPins.make_curved_pin(1, 1, 1)
+        verify_models([mesh], tmp_path, TestPins.FILE_CURVED_PIN_LP)
 
     def test_make_flat_pin_hp(self, tmp_path):
-        TestPins.make_flat_pin(tmp_path, TestPins.FILE_FLAT_PIN_HP, 3, 3, 3)
+        model.reset_allocator()
+        mesh = TestPins.make_flat_pin(3, 3)
+        verify_models([mesh], tmp_path, TestPins.FILE_FLAT_PIN_HP)
 
     def test_make_flat_pin_lp(self, tmp_path):
-        TestPins.make_flat_pin(tmp_path, TestPins.FILE_FLAT_PIN_LP, 1, 1, 1)
+        model.reset_allocator()
+        mesh = TestPins.make_flat_pin(1, 1)
+        verify_models([mesh], tmp_path, TestPins.FILE_FLAT_PIN_LP)
 
 
 class TestPrimitives:
@@ -364,7 +392,6 @@ class TestPrimitives:
         return curve
 
     def test_make_body_cap(self, tmp_path):
-        name = TestPrimitives.FILE_BODY_CAP
         model.reset_allocator()
 
         corners = [
@@ -376,11 +403,9 @@ class TestPrimitives:
         offset = np.array([0.2, 0.2])
         mesh = primitives.make_body_cap(corners, 0.5, offset, 24)
 
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestPrimitives.FILE_BODY_CAP)
 
     def test_make_loft_mesh(self, tmp_path):
-        name = TestPrimitives.FILE_LOFT_MESH
         model.reset_allocator()
 
         path = [
@@ -398,11 +423,9 @@ class TestPrimitives:
         slices = curves.loft(path=path_points, shape=shape_points)
         mesh = geometry.build_loft_mesh(slices, True, True)
 
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestPrimitives.FILE_LOFT_MESH)
 
     def test_make_solid_cap(self, tmp_path):
-        name = TestPrimitives.FILE_SOLID_CAP
         model.reset_allocator()
 
         corners = [
@@ -419,11 +442,9 @@ class TestPrimitives:
         vertices_indexed = dict(zip(list(range(0, len(vertices))), vertices))
         primitives.append_solid_cap(mesh, vertices_indexed, origin=np.array([0.0, 0.0, -1.0]))
 
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestPrimitives.FILE_SOLID_CAP)
 
     def test_make_rect_half(self, tmp_path):
-        name = TestPrimitives.FILE_RECT_HALF
         model.reset_allocator()
 
         path_curve = curves.Line((-1.0, 0.0, 0.0), (1.0, 0.0, 0.0), 1)
@@ -449,11 +470,9 @@ class TestPrimitives:
         meshes[0].translate((0.0, 0.5, 0.0))
         meshes[1].translate((0.0, -0.5, 0.0))
 
-        serialized = serialize_models(meshes, tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models(meshes, tmp_path, TestPrimitives.FILE_RECT_HALF)
 
     def test_make_rotation_cap(self, tmp_path):
-        name = TestPrimitives.FILE_ROTATION_CAP
         model.reset_allocator()
 
         curve = TestPrimitives.make_barrel_curve(
@@ -480,11 +499,9 @@ class TestPrimitives:
         mesh.append(end_cap)
         mesh.optimize()
 
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestPrimitives.FILE_ROTATION_CAP)
 
     def test_make_rotation_mesh(self, tmp_path):
-        name = TestPrimitives.FILE_ROTATION_MESH
         model.reset_allocator()
 
         curve = TestPrimitives.make_barrel_curve(
@@ -503,8 +520,7 @@ class TestPrimitives:
             invert=True
         )
 
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        verify_models([mesh], tmp_path, TestPrimitives.FILE_ROTATION_MESH)
 
 
 class TestBox:
@@ -521,10 +537,8 @@ class TestBox:
     FILE_NONUNIFORM_BOX = 'test_nonuniform_box.x3d'
 
     @staticmethod
-    def make_barrel_box(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_box_with_mark(
+    def make_barrel_box(edge_resolution, line_resolution):
+        return primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 1.0]),
             chamfer=0.2,
             band_size=0.2,
@@ -533,27 +547,17 @@ class TestBox:
             line_resolution=line_resolution
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     @staticmethod
-    def make_box(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_box_with_mark(
+    def make_box(edge_resolution, line_resolution):
+        return primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     @staticmethod
-    def make_box_mark(path, name, edge_resolution, line_resolution, mark_resolution):
-        model.reset_allocator()
-
+    def make_box_mark(edge_resolution, line_resolution, mark_resolution):
         body = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
@@ -569,14 +573,11 @@ class TestBox:
         mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
-        serialized = serialize_models([body, mark], path, name)
-        assert compare_models(name, serialized) is True
+        return [body, mark]
 
     @staticmethod
-    def make_banded_box(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_box_with_mark(
+    def make_banded_box(edge_resolution, line_resolution):
+        return primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
@@ -585,13 +586,8 @@ class TestBox:
             band_offset=0.3
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     @staticmethod
-    def make_banded_box_mark(path, name, edge_resolution, line_resolution, mark_resolution):
-        model.reset_allocator()
-
+    def make_banded_box_mark(edge_resolution, line_resolution, mark_resolution):
         body = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
@@ -609,52 +605,71 @@ class TestBox:
         mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
-        serialized = serialize_models([body, mark], path, name)
-        assert compare_models(name, serialized) is True
+        return [body, mark]
 
-    def test_make_nonuniform_box(self, tmp_path):
-        name = TestBox.FILE_NONUNIFORM_BOX
-        model.reset_allocator()
-
-        mesh = primitives.make_box_with_mark(
+    @staticmethod
+    def make_nonuniform_box():
+        return primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=3,
             line_resolution=(3, 2, 1)
         )
 
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
-
     def test_make_barrel_box_hp(self, tmp_path):
-        TestBox.make_barrel_box(tmp_path, TestBox.FILE_BARREL_BOX_HP, 3, 3)
+        model.reset_allocator()
+        mesh = TestBox.make_barrel_box(3, 3)
+        verify_models([mesh], tmp_path, TestBox.FILE_BARREL_BOX_HP)
 
     def test_make_barrel_box_lp(self, tmp_path):
-        TestBox.make_barrel_box(tmp_path, TestBox.FILE_BARREL_BOX_LP, 1, 1)
+        model.reset_allocator()
+        mesh = TestBox.make_barrel_box(1, 1)
+        verify_models([mesh], tmp_path, TestBox.FILE_BARREL_BOX_LP)
 
     def test_make_box_hp(self, tmp_path):
-        TestBox.make_box(tmp_path, TestBox.FILE_BOX_HP, 3, 3)
+        model.reset_allocator()
+        mesh = TestBox.make_box(3, 3)
+        verify_models([mesh], tmp_path, TestBox.FILE_BOX_HP)
 
     def test_make_box_lp(self, tmp_path):
-        TestBox.make_box(tmp_path, TestBox.FILE_BOX_LP, 1, 1)
+        model.reset_allocator()
+        mesh = TestBox.make_box(1, 1)
+        verify_models([mesh], tmp_path, TestBox.FILE_BOX_LP)
 
     def test_make_box_mark_hp(self, tmp_path):
-        TestBox.make_box_mark(tmp_path, TestBox.FILE_BOX_MARK_HP, 3, 3, 24)
+        model.reset_allocator()
+        meshes = TestBox.make_box_mark(3, 3, 24)
+        verify_models(meshes, tmp_path, TestBox.FILE_BOX_MARK_HP)
 
     def test_make_box_mark_lp(self, tmp_path):
-        TestBox.make_box_mark(tmp_path, TestBox.FILE_BOX_MARK_LP, 1, 1, 12)
+        model.reset_allocator()
+        meshes = TestBox.make_box_mark(1, 1, 12)
+        verify_models(meshes, tmp_path, TestBox.FILE_BOX_MARK_LP)
 
     def test_make_banded_box_hp(self, tmp_path):
-        TestBox.make_banded_box(tmp_path, TestBox.FILE_BANDED_BOX_HP, 3, 3)
+        model.reset_allocator()
+        mesh = TestBox.make_banded_box(3, 3)
+        verify_models([mesh], tmp_path, TestBox.FILE_BANDED_BOX_HP)
 
     def test_make_banded_box_lp(self, tmp_path):
-        TestBox.make_banded_box(tmp_path, TestBox.FILE_BANDED_BOX_LP, 1, 1)
+        model.reset_allocator()
+        mesh = TestBox.make_banded_box(1, 1)
+        verify_models([mesh], tmp_path, TestBox.FILE_BANDED_BOX_LP)
 
     def test_make_banded_box_mark_hp(self, tmp_path):
-        TestBox.make_banded_box_mark(tmp_path, TestBox.FILE_BANDED_BOX_MARK_HP, 3, 3, 24)
+        model.reset_allocator()
+        meshes = TestBox.make_banded_box_mark(3, 3, 24)
+        verify_models(meshes, tmp_path, TestBox.FILE_BANDED_BOX_MARK_HP)
 
     def test_make_banded_box_mark_lp(self, tmp_path):
-        TestBox.make_banded_box_mark(tmp_path, TestBox.FILE_BANDED_BOX_MARK_LP, 1, 1, 12)
+        model.reset_allocator()
+        meshes = TestBox.make_banded_box_mark(1, 1, 12)
+        verify_models(meshes, tmp_path, TestBox.FILE_BANDED_BOX_MARK_LP)
+
+    def test_make_nonuniform_box(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestBox.make_nonuniform_box()
+        verify_models([mesh], tmp_path, TestBox.FILE_NONUNIFORM_BOX)
 
 
 class TestCarvedBox:
@@ -662,10 +677,8 @@ class TestCarvedBox:
     FILE_CARVED_BOX_LP = 'test_carved_box_lp.x3d'
 
     @staticmethod
-    def make_carved_box(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_carved_box(
+    def make_carved_box(edge_resolution, line_resolution):
+        return primitives.make_carved_box(
             size=np.array([2.0, 2.0, 2.0]),
             niche_size=np.array([0.6, 1.0, 0.6]),
             chamfer=0.2,
@@ -674,14 +687,15 @@ class TestCarvedBox:
             line_resolution=line_resolution
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     def test_make_carved_box_hp(self, tmp_path):
-        TestCarvedBox.make_carved_box(tmp_path, TestCarvedBox.FILE_CARVED_BOX_HP, 3, 3)
+        model.reset_allocator()
+        mesh = TestCarvedBox.make_carved_box(3, 3)
+        verify_models([mesh], tmp_path, TestCarvedBox.FILE_CARVED_BOX_HP)
 
     def test_make_carved_box_lp(self, tmp_path):
-        TestCarvedBox.make_carved_box(tmp_path, TestCarvedBox.FILE_CARVED_BOX_LP, 1, 1)
+        model.reset_allocator()
+        mesh = TestCarvedBox.make_carved_box(1, 1)
+        verify_models([mesh], tmp_path, TestCarvedBox.FILE_CARVED_BOX_LP)
 
 
 class TestRoundedBox:
@@ -691,10 +705,8 @@ class TestRoundedBox:
     FILE_ROUNDED_BOX_MARK_LP = 'test_rounded_box_mark_lp.x3d'
 
     @staticmethod
-    def make_rounded_box(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_rounded_box(
+    def make_rounded_box(edge_resolution, line_resolution):
+        return primitives.make_rounded_box(
             size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
             chamfer=0.2,
@@ -704,13 +716,8 @@ class TestRoundedBox:
             band_offset=0.3
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     @staticmethod
-    def make_rounded_box_mark(path, name, edge_resolution, line_resolution, mark_resolution):
-        model.reset_allocator()
-
+    def make_rounded_box_mark(edge_resolution, line_resolution, mark_resolution):
         body = primitives.make_rounded_box(
             size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
@@ -729,22 +736,27 @@ class TestRoundedBox:
         mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
 
-        serialized = serialize_models([body, mark], path, name)
-        assert compare_models(name, serialized) is True
+        return [body, mark]
 
     def test_make_rounded_box_hp(self, tmp_path):
-        TestRoundedBox.make_rounded_box(tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_HP, 3, 3)
+        model.reset_allocator()
+        mesh = TestRoundedBox.make_rounded_box(3, 3)
+        verify_models([mesh], tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_HP)
 
     def test_make_rounded_box_lp(self, tmp_path):
-        TestRoundedBox.make_rounded_box(tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_LP, 1, 1)
+        model.reset_allocator()
+        mesh = TestRoundedBox.make_rounded_box(1, 1)
+        verify_models([mesh], tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_LP)
 
     def test_make_rounded_box_mark_hp(self, tmp_path):
-        TestRoundedBox.make_rounded_box_mark(tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_MARK_HP,
-                                             3, 3, 24)
+        model.reset_allocator()
+        meshes = TestRoundedBox.make_rounded_box_mark(3, 3, 24)
+        verify_models(meshes, tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_MARK_HP)
 
     def test_make_rounded_box_mark_lp(self, tmp_path):
-        TestRoundedBox.make_rounded_box_mark(tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_MARK_LP,
-                                             1, 1, 12)
+        model.reset_allocator()
+        meshes = TestRoundedBox.make_rounded_box_mark(1, 1, 12)
+        verify_models(meshes, tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_MARK_LP)
 
 
 class TestSlopedBox:
@@ -752,10 +764,8 @@ class TestSlopedBox:
     FILE_SLOPED_BOX_LP = 'test_sloped_box_lp.x3d'
 
     @staticmethod
-    def make_sloped_box(path, name, edge_resolution, line_resolution):
-        model.reset_allocator()
-
-        mesh = primitives.make_sloped_box(
+    def make_sloped_box(edge_resolution, line_resolution):
+        return primitives.make_sloped_box(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             slope=math.pi / 4.0,
@@ -766,14 +776,15 @@ class TestSlopedBox:
             band_offset=0.0
         )
 
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
-
     def test_make_sloped_box_hp(self, tmp_path):
-        TestSlopedBox.make_sloped_box(tmp_path, TestSlopedBox.FILE_SLOPED_BOX_HP, 3, 3)
+        model.reset_allocator()
+        mesh = TestSlopedBox.make_sloped_box(3, 3)
+        verify_models([mesh], tmp_path, TestSlopedBox.FILE_SLOPED_BOX_HP)
 
     def test_make_sloped_box_lp(self, tmp_path):
-        TestSlopedBox.make_sloped_box(tmp_path, TestSlopedBox.FILE_SLOPED_BOX_LP, 1, 1)
+        model.reset_allocator()
+        mesh = TestSlopedBox.make_sloped_box(1, 1)
+        verify_models([mesh], tmp_path, TestSlopedBox.FILE_SLOPED_BOX_LP)
 
 
 class TestShapeScale:
@@ -784,15 +795,31 @@ class TestShapeScale:
     FILE_SHAPE_SCALE_SMART_INV = 'test_shape_scale_smart_inv.x3d'
 
     @staticmethod
-    def make_simple_scaled_rect(path, name, edge_resolution, line_resolution, inversion):
+    def make_equalized_rect():
+        elements = primitives.make_rounded_rect(
+            size=np.array([2.0, 1.0]),
+            roundness=0.1,
+            segments=3
+        )
+        shape = []
+        [shape.extend(element.tessellate()) for element in elements]
+        shape = curves.optimize(shape)
+
+        inner_circle = primitives.slice_equalize(shape, 0.3)
+        slices = [shape, inner_circle]
+        return primitives.slice_connect_direct(slices, False)
+
+    @staticmethod
+    def make_simple_scaled_rect(edge_resolution, line_resolution, inversion):
         def shift_slice(points, offset):
             return [point + np.array([0.0, 0.0, offset]) for point in points]
 
-        model.reset_allocator()
-
-        elements = primitives.make_rounded_rect(size=np.array([2.0, 1.0]), roundness=0.4,
-                                                segments=edge_resolution,
-                                                segments_line=line_resolution)
+        elements = primitives.make_rounded_rect(
+            size=np.array([2.0, 1.0]),
+            roundness=0.4,
+            segments=edge_resolution,
+            segments_line=line_resolution
+        )
         shape = []
         [shape.extend(element.tessellate()) for element in elements]
         shape = curves.optimize(shape)
@@ -801,20 +828,19 @@ class TestShapeScale:
         for i in range(-3, 4):
             points = primitives.simple_scale(shape, np.array([i * 0.07, i * 0.07, 0.0]))
             slices.append(shift_slice(points, 0.05 * (i + 3)))
-        mesh = primitives.slice_connect_direct(slices, inversion)
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
+        return primitives.slice_connect_direct(slices, inversion)
 
     @staticmethod
-    def make_smart_scaled_rect(path, name, edge_resolution, line_resolution, inversion):
+    def make_smart_scaled_rect(edge_resolution, line_resolution, inversion):
         def shift_slice(points, offset):
             return [point + np.array([0.0, 0.0, offset]) for point in points]
 
-        model.reset_allocator()
-
-        elements = primitives.make_rounded_rect(size=np.array([2.0, 1.0]), roundness=0.1,
-                                                segments=edge_resolution,
-                                                segments_line=line_resolution)
+        elements = primitives.make_rounded_rect(
+            size=np.array([2.0, 1.0]),
+            roundness=0.1,
+            segments=edge_resolution,
+            segments_line=line_resolution
+        )
         shape = []
         [shape.extend(element.tessellate()) for element in elements]
         shape = curves.optimize(shape)
@@ -824,39 +850,29 @@ class TestShapeScale:
             points = primitives.smart_scale(shape, i * 0.07)
             slices.append(shift_slice(points, 0.05 * (i + 3)))
         slices.append([np.array([0.0, 0.0, 6 * 0.05])])
-        mesh = primitives.slice_connect_nearest(slices, inversion)
-        serialized = serialize_models([mesh], path, name)
-        assert compare_models(name, serialized) is True
+        return primitives.slice_connect_nearest(slices, inversion)
 
     def test_equalized_rect(self, tmp_path):
-        name = TestShapeScale.FILE_SHAPE_EQUALIZED
         model.reset_allocator()
-
-        elements = primitives.make_rounded_rect(size=np.array([2.0, 1.0]), roundness=0.1,
-                                                segments=3)
-        shape = []
-        [shape.extend(element.tessellate()) for element in elements]
-        shape = curves.optimize(shape)
-
-        inner_circle = primitives.slice_equalize(shape, 0.3)
-        slices = [shape, inner_circle]
-
-        mesh = primitives.slice_connect_direct(slices, False)
-        serialized = serialize_models([mesh], tmp_path, name)
-        assert compare_models(name, serialized) is True
+        mesh = TestShapeScale.make_equalized_rect()
+        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_EQUALIZED)
 
     def test_simple_scale(self, tmp_path):
-        TestShapeScale.make_simple_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE,
-                                               5, 3, False)
+        model.reset_allocator()
+        mesh = TestShapeScale.make_simple_scaled_rect(5, 3, False)
+        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE)
 
     def test_smart_scale(self, tmp_path):
-        TestShapeScale.make_smart_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART,
-                                              5, 3, False)
+        model.reset_allocator()
+        mesh = TestShapeScale.make_smart_scaled_rect(5, 3, False)
+        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART)
 
     def test_simple_scale_inversion(self, tmp_path):
-        TestShapeScale.make_simple_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE_INV,
-                                               5, 3, True)
+        model.reset_allocator()
+        mesh = TestShapeScale.make_simple_scaled_rect(5, 3, True)
+        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE_INV)
 
     def test_smart_scale_inversion(self, tmp_path):
-        TestShapeScale.make_smart_scaled_rect(tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART_INV,
-                                              5, 3, True)
+        model.reset_allocator()
+        mesh = TestShapeScale.make_smart_scaled_rect(5, 3, True)
+        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART_INV)

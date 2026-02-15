@@ -377,9 +377,13 @@ class SOT(exporter.Footprint):
         super().__init__(name=descriptor['title'], description=SOT.describe(descriptor),
                          model=SOT.assign_model(descriptor), spec=spec)
 
-        self.count = descriptor['pins']['count']
-        self.pitch = descriptor['pins']['pitch']
         self.body_size = np.array(descriptor['body']['size'])
+        self.count = descriptor['pins']['count']
+
+        try:
+            self.pitch = descriptor['pins']['pitch']
+        except KeyError:
+            self.pitch = 0.0
 
         try:
             self.mark_dot = descriptor['mark']['dot']
@@ -455,9 +459,20 @@ class SOT(exporter.Footprint):
         if self.mark_dot:
             # Assume that it is at least one pin at lower side
             first_pad = self.pads[0]
-            dot_mark_offset = first_pad.position[0] \
-                - (first_pad.size[0] / 2.0 + self.gap + self.thickness)
-            silkscreen.append(exporter.Circle(np.array([dot_mark_offset, first_pad.position[1]]),
+
+            # Special case for footprint with two pins only
+            if self.count == 2:
+                dot_mark_offset = np.array([
+                    0.0,
+                    first_pad.size[1] / 2.0 + self.gap + self.thickness
+                ])
+            else:
+                dot_mark_offset = np.array([
+                    -(first_pad.size[0] / 2.0 + self.gap + self.thickness),
+                    0.0
+                ])
+
+            silkscreen.append(exporter.Circle(first_pad.position + dot_mark_offset,
                                               self.thickness / 2.0, self.thickness, True))
 
         # Inner polarity mark
@@ -487,11 +502,15 @@ class SOT(exporter.Footprint):
         return descriptor['body']['model'] if 'model' in descriptor['body'] else None
 
 
-class ChipCapacitor(Chip):
+class BentLeadsCapacitor(Chip):
     pass
 
 
-class ChipFerrite(Chip):
+class BentLeadsDiode(Chip):
+    pass
+
+
+class ChipCapacitor(Chip):
     pass
 
 
@@ -500,6 +519,10 @@ class ChipInductor(Chip):
 
 
 class ChipOpenDrumInductor(Chip):
+    pass
+
+
+class ChipShieldedInductor(Chip):
     pass
 
 
@@ -515,17 +538,24 @@ class CDRH(Chip):
     pass
 
 
+class SOD(Chip):
+    pass
+
+
 types = [
+    BentLeadsCapacitor,
+    BentLeadsDiode,
+    CDRH,
     Chip,
     ChipArray,
-    DPAK,
-    MELF,
-    SOT,
     ChipCapacitor,
-    ChipFerrite,
     ChipInductor,
     ChipOpenDrumInductor,
     ChipResistor,
+    ChipShieldedInductor,
     ChipShunt,
-    CDRH
+    DPAK,
+    MELF,
+    SOD,
+    SOT
 ]
