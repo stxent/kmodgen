@@ -20,28 +20,28 @@ def capitalize(name):
         return name
     return name[0].upper() + name[1:]
 
-def load_materials(settings, entries):
+def load_materials(config, extension={}):
     materials = {}
 
     # First pass to load complete descriptions
-    for key in settings['materials']:
-        entry = settings['materials'][key]
+    for key in config['materials']:
+        entry = config['materials'][key]
         if not isinstance(entry, str):
             materials.update({key: model.Material(entry, capitalize(key))})
     # Second pass to process aliases
-    for key in settings['materials']:
-        entry = settings['materials'][key]
+    for key in config['materials']:
+        entry = config['materials'][key]
         if isinstance(entry, str):
             materials[key] = materials[entry]
 
     # First pass to load complete descriptions
-    for key in entries:
-        entry = entries[key]
+    for key in extension:
+        entry = extension[key]
         if not isinstance(entry, str):
             materials.update({key: model.Material(entry, capitalize(key))})
     # Second pass to process aliases
-    for key in entries:
-        entry = entries[key]
+    for key in extension:
+        entry = extension[key]
         if isinstance(entry, str):
             materials[key] = materials[entry]
 
@@ -73,8 +73,8 @@ def load_models(config, files, pattern):
 
     return models
 
-def load_resolutions(settings, entries):
-    resolutions = settings['resolutions']
+def load_resolutions(config, entries):
+    resolutions = config['resolutions']
 
     for key in resolutions:
         if key in entries:

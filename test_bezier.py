@@ -38,6 +38,7 @@ class TestBezierObject:
     FILE_BEZIER_CUBE_PART = 'test_bezier_cube_part.x3d'
     FILE_BEZIER_PYRAMID_3C = 'test_bezier_pyramid_3c.x3d'
     FILE_BEZIER_PYRAMID_4C = 'test_bezier_pyramid_4c.x3d'
+    FILE_BEZIER_PYRAMID_CUT = 'test_bezier_pyramid_cut.x3d'
 
     @staticmethod
     def make_bezier_box_1():
@@ -108,7 +109,7 @@ class TestBezierObject:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_box_2(sharpness):
@@ -161,7 +162,7 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_box_3():
@@ -218,7 +219,7 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_box_4():
@@ -276,7 +277,7 @@ class TestBezierObject:
             line_resolution=3,
             vertex_attributes=vertex_attributes
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_cube():
@@ -320,7 +321,7 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_cube_part():
@@ -363,10 +364,13 @@ class TestBezierObject:
         ]
         faces = [
             # Top
-            [3, 2, 1, 0],
+            [0, 1, 2, 3],
             # Sides
             [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]
         ]
+        face_attributes = {
+            (0, 1, 2, 3): {'inversion': True}
+        }
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
@@ -376,9 +380,10 @@ class TestBezierObject:
             sharpness=math.pi * (5.0 / 6.0),
             edge_resolution=5,
             line_resolution=3,
-            vertex_attributes=vertex_attributes
+            vertex_attributes=vertex_attributes,
+            face_attributes=face_attributes
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_pyramid_3c():
@@ -411,7 +416,7 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_pyramid_4c():
@@ -444,7 +449,48 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
+
+    @staticmethod
+    def make_bezier_pyramid_cut():
+        # pylint: disable=invalid-name
+        r, z = 1.0, 1.0
+        # pylint: enable=invalid-name
+
+        vertices = [
+            np.array([0.0, 0.0,   z]),
+            np.array([  r, 0.0, 0.0]),
+            np.array([0.0,   r, 0.0]),
+            np.array([ -r, 0.0, 0.0]),
+            np.array([0.0,  -r, 0.0])
+        ]
+        vertex_attributes = {
+            0: {'hidden': True}
+        }
+        edges = [
+            # Bottom
+            [1, 2, 3, 4, 1],
+            # Sides
+            [0, 1], [0, 2], [0, 3], [0, 4]
+        ]
+        faces = [
+            [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
+        ]
+        face_attributes = {
+            (4, 3, 2, 1): {'hidden': True}
+        }
+
+        mesh_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=3,
+            line_resolution=1,
+            vertex_attributes=vertex_attributes,
+            face_attributes=face_attributes
+        )
+        return bezier.patch_to_mesh(mesh_object.build())
 
     def test_bezier_box_1(self, tmp_path):
         model.reset_allocator()
@@ -491,10 +537,16 @@ class TestBezierObject:
         mesh = TestBezierObject.make_bezier_pyramid_4c()
         verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_PYRAMID_4C)
 
+    def test_bezier_pyramid_cut(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestBezierObject.make_bezier_pyramid_cut()
+        verify_models([mesh], tmp_path, TestBezierObject.FILE_BEZIER_PYRAMID_CUT)
+
 
 class TestBezierObjectCurves:
     FILE_BEZIER_CORNER = 'test_bezier_corner.x3d'
     FILE_BEZIER_DRUM = 'test_bezier_drum.x3d'
+    FILE_BEZIER_DUMBBELL = 'test_bezier_dumbbell.x3d'
 
     @staticmethod
     def make_bezier_corner():
@@ -578,7 +630,7 @@ class TestBezierObjectCurves:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
 
     @staticmethod
     def make_bezier_drum():
@@ -630,9 +682,9 @@ class TestBezierObjectCurves:
         }
         faces = [
             # Top
-            [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1],
+            [(1, 0), (2, 0), (3, 0), (4, 0)],
             # Bottom
-            [7, 6, 5], [8, 7, 5], [9, 8, 5], [6, 9, 5],
+            [(9, 5), (8, 5), (7, 5), (6, 5)],
             # Sides
             [6, 7, 2, 1], [7, 8, 3, 2], [8, 9, 4, 3], [9, 6, 1, 4]
         ]
@@ -648,7 +700,103 @@ class TestBezierObjectCurves:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return mesh_object.tessellate()
+        return bezier.patch_to_mesh(mesh_object.build())
+
+    @staticmethod
+    def make_bezier_dumbbell(arc_resolution, edge_resolution, line_resolution):
+        def make_vertex_group(x, y, z): # pylint: disable=invalid-name
+            return [
+                np.array([x, 0.0,   z]),
+                np.array([x,   y, 0.0]),
+                np.array([x, 0.0,  -z]),
+                np.array([x,  -y, 0.0])
+            ]
+
+        def make_control_group(y, z, n): # pylint: disable=invalid-name
+            w = curves.calc_bezier_weight(angle=math.pi / 2.0)
+            return {
+                n + 0: {'bezier': {
+                    n + 3: np.array([0.0, -w * y,    0.0]),
+                    n + 1: np.array([0.0,  w * y,    0.0])
+                }},
+                n + 1: {'bezier': {
+                    n + 0: np.array([0.0,    0.0,  w * z]),
+                    n + 2: np.array([0.0,    0.0, -w * z])
+                }},
+                n + 2: {'bezier': {
+                    n + 1: np.array([0.0,  w * y,    0.0]),
+                    n + 3: np.array([0.0, -w * y,    0.0])
+                }},
+                n + 3: {'bezier': {
+                    n + 2: np.array([0.0,    0.0, -w * z]),
+                    n + 0: np.array([0.0,    0.0,  w * z])
+                }}
+            }
+
+        x, y, z = 3.0, 2.0, 2.0 # pylint: disable=invalid-name
+        y_in, z_in = y * 0.5, z * 0.5
+        chamfer = 0.4
+
+        vertices = []
+        vertex_attributes = {}
+
+        vertex_attributes |= make_control_group(y, z, len(vertices))
+        vertices.extend(make_vertex_group(x, y, z))
+        vertex_attributes |= make_control_group(y, z, len(vertices))
+        vertices.extend(make_vertex_group(x / 2.0, y, z))
+        vertex_attributes |= make_control_group(y_in, z_in, len(vertices))
+        vertices.extend(make_vertex_group(x / 2.0, y_in, z_in))
+        vertex_attributes |= make_control_group(y_in, z_in, len(vertices))
+        vertices.extend(make_vertex_group(-x / 2.0, y_in, z_in))
+        vertex_attributes |= make_control_group(y, z, len(vertices))
+        vertices.extend(make_vertex_group(-x / 2.0, y, z))
+        vertex_attributes |= make_control_group(y, z, len(vertices))
+        vertices.extend(make_vertex_group(-x, y, z))
+        vertices.append(np.array([x, 0.0, 0.0]))
+        vertices.append(np.array([-x, 0.0, 0.0]))
+
+        edges = []
+        edge_attributes = {}
+
+        for i in range(len(vertices) // 4):
+            circle = [list(range(i * 4, (i + 1) * 4)) + [i * 4]]
+            edges.extend(circle)
+            for edge in bezier.unpack_edges(circle):
+                key = tuple(sorted(edge))
+                edge_attributes[key] = {'resolution': arc_resolution}
+                if i in (2, 3):
+                    edge_attributes[key] |= {'inversion': True}
+        for i in range(4):
+            edges.append([i + j * 4 for j in range(len(vertices) // 4)])
+            edges.append([len(vertices) - 2, i])
+            edges.append([len(vertices) - 1, len(vertices) - 3 - i])
+
+        faces = []
+
+        for i in range(len(vertices) // 4 - 1):
+            faces.extend([
+                [i * 4 + 0, i * 4 + 1, (i + 1) * 4 + 1, (i + 1) * 4 + 0],
+                [i * 4 + 1, i * 4 + 2, (i + 1) * 4 + 2, (i + 1) * 4 + 1],
+                [i * 4 + 2, i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 2],
+                [i * 4 + 3, i * 4 + 0, (i + 1) * 4 + 0, (i + 1) * 4 + 3]
+            ])
+        start, center = 3, len(vertices) - 2
+        faces.append([(start - i, center) for i in range(4)])
+        start, center = len(vertices) - 6, len(vertices) - 1
+        faces.append([(start + i, center) for i in range(4)])
+
+        body = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=vertex_attributes,
+            edge_attributes=edge_attributes
+        )
+        return bezier.patch_to_mesh(body.build())
 
     def test_bezier_corner(self, tmp_path):
         model.reset_allocator()
@@ -659,3 +807,168 @@ class TestBezierObjectCurves:
         model.reset_allocator()
         mesh = TestBezierObjectCurves.make_bezier_drum()
         verify_models([mesh], tmp_path, TestBezierObjectCurves.FILE_BEZIER_DRUM)
+
+    def test_bezier_dumbbell(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestBezierObjectCurves.make_bezier_dumbbell(6, 3, 1)
+        verify_models([mesh], tmp_path, TestBezierObjectCurves.FILE_BEZIER_DUMBBELL)
+
+
+class TestBezierSurfaces:
+    FILE_SURFACE_QUAD = 'test_surface_quad.x3d'
+    FILE_SURFACE_QUAD_NONUNIFORM = 'test_surface_quad_nonuniform.x3d'
+
+    @staticmethod
+    def make_surface_quad(resolution):
+        # disable=invalid-name
+        x, y = 2.0, 1.0
+        wx, wy = x * 2.0 / 3.0, y * 2.0 / 3.0
+        # enable=invalid-name
+
+        points = (
+            np.array([ x,  y, 0.0]),
+            np.array([ x, -y, 0.0]),
+            np.array([-x, -y, 0.0]),
+            np.array([-x,  y, 0.0])
+        )
+        controls = (
+            (np.array([-wx, 0.0, 0.0]), np.array([0.0, -wy, 0.0])),
+            (np.array([0.0,  wy, 0.0]), np.array([-wx, 0.0, 0.0])),
+            (np.array([ wx, 0.0, 0.0]), np.array([0.0,  wy, 0.0])),
+            (np.array([0.0, -wy, 0.0]), np.array([ wx, 0.0, 0.0]))
+        )
+
+        lines = bezier.make_quad_lines(points, controls)
+        patch = curves.BezierQuad(*lines, resolution, False)
+        return patch.tessellate()
+
+    def test_surface_quad(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestBezierSurfaces.make_surface_quad(4)
+        verify_models([mesh], tmp_path, TestBezierSurfaces.FILE_SURFACE_QUAD)
+
+    def test_surface_quad_nonuniform(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestBezierSurfaces.make_surface_quad((4, 8))
+        verify_models([mesh], tmp_path, TestBezierSurfaces.FILE_SURFACE_QUAD_NONUNIFORM)
+
+
+class TestBezierDebug:
+    FILE_BEZIER_DEBUG = 'test_bezier_debug.x3d'
+
+    @staticmethod
+    def make_bezier_debug_pyramid():
+        # pylint: disable=invalid-name
+        r, z = 1.0, 1.0
+        # pylint: enable=invalid-name
+
+        vertices = [
+            np.array([0.0, 0.0,   z]),
+            np.array([  r, 0.0, 0.0]),
+            np.array([0.0,   r, 0.0]),
+            np.array([ -r, 0.0, 0.0]),
+            np.array([0.0,  -r, 0.0])
+        ]
+        edges = [
+            # Bottom
+            [1, 2, 3, 4, 1],
+            # Sides
+            [0, 1], [0, 2], [0, 3], [0, 4]
+        ]
+        faces = [
+            [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
+        ]
+
+        bezier_object = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=0.2,
+            edge_resolution=5,
+            line_resolution=3
+        )
+        patches = bezier_object.build()
+        debug = bezier_object.get_debug_output()
+
+        return (bezier.patch_to_mesh(patches), debug)
+
+    def test_bezier_debug(self, tmp_path):
+        model.reset_allocator()
+
+        bezier.DEBUG_ENABLED = True
+        mesh, debug = TestBezierDebug.make_bezier_debug_pyramid()
+        bezier.DEBUG_ENABLED = False
+
+        assert 'dir' in debug
+        assert debug['dir'].geo_polygons
+        assert 'control' in debug
+        assert debug['control'].geo_polygons
+        assert 'tension' in debug
+        assert debug['tension'].geo_polygons
+        verify_models([mesh], tmp_path, TestBezierDebug.FILE_BEZIER_DEBUG)
+
+    def test_bezier_debug_default(self, tmp_path):
+        model.reset_allocator()
+
+        mesh, debug = TestBezierDebug.make_bezier_debug_pyramid()
+        assert 'dir' in debug
+        assert not debug['dir'].geo_polygons
+        assert 'control' in debug
+        assert not debug['control'].geo_polygons
+        assert 'tension' in debug
+        assert not debug['tension'].geo_polygons
+
+    def test_bezier_debug_elements(self, tmp_path):
+        # pylint: disable=invalid-name
+        r, z, w = 1.0, 1.0, curves.calc_bezier_weight(angle=math.pi / 2.0)
+        # pylint: enable=invalid-name
+
+        vertices = [
+            np.array([0.0, 0.0,   z]),
+            np.array([  r, 0.0, 0.0]),
+            np.array([0.0,   r, 0.0]),
+            np.array([ -r, 0.0, 0.0]),
+            np.array([0.0,  -r, 0.0])
+        ]
+        vertex_attributes = {
+            1: {'bezier': {4: np.array([0.0,  -w, 0.0]), 2: np.array([0.0,   w, 0.0])}},
+            2: {'bezier': {1: np.array([  w, 0.0, 0.0]), 3: np.array([ -w, 0.0, 0.0])}},
+            3: {'bezier': {2: np.array([0.0,   w, 0.0]), 4: np.array([0.0,  -w, 0.0])}},
+            4: {'bezier': {1: np.array([  w, 0.0, 0.0]), 3: np.array([ -w, 0.0, 0.0])}}
+        }
+        edges = [
+            # Bottom
+            [1, 2, 3, 4, 1],
+            # Sides
+            [0, 1], [0, 2], [0, 3], [0, 4]
+        ]
+        faces = [
+            [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
+        ]
+
+        debug_edges = bezier.debug_edges(vertices, edges, vertex_attributes)
+        assert len(debug_edges.geo_polygons) == 44
+        debug_controls = bezier.debug_vertex_controls(vertices, vertex_attributes)
+        assert len(debug_controls.geo_polygons) == 8
+        debug_polygons = bezier.debug_face_polygons(vertices, faces)
+        assert len(debug_polygons.geo_polygons) == len(faces)
+        debug_normals = bezier.debug_face_normals(vertices, faces)
+        assert len(debug_normals.geo_polygons) == len(faces)
+
+
+class TestBezierHelpers:
+    def test_shortest_path(self, tmp_path):
+        packed_edges = [
+            [0, 1, 2, 3, 0], [1, 4], [4, 5, 6, 7], [8, 9]
+        ]
+        edges = bezier.unpack_edges(packed_edges)
+        graph = bezier.make_graph(edges)
+
+        path = bezier.find_shortest_path(graph, 0, 7)
+        assert path is not None
+        path = bezier.find_shortest_path(graph, 10, 0)
+        assert path is None
+        path = bezier.find_shortest_path(graph, 0, 10)
+        assert path is None
+        path = bezier.find_shortest_path(graph, 0, 9)
+        assert path is None

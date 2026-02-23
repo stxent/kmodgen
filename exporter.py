@@ -229,9 +229,9 @@ class Rect:
 
 
 class AbstractPad:
-    FAMILY_SMD, FAMILY_TH, FAMILY_NPTH, FAMILY_CONNECT = range(0, 4)
-    LAYERS_NONE, LAYERS_FRONT, LAYERS_BACK, LAYERS_BOTH = range(0, 4)
-    STYLE_CIRCLE, STYLE_RECT, STYLE_OVAL, STYLE_TRAPEZOID = range(0, 4)
+    FAMILY_SMD, FAMILY_TH, FAMILY_NPTH, FAMILY_CONNECT = range(4)
+    LAYERS_NONE, LAYERS_FRONT, LAYERS_BACK, LAYERS_BOTH = range(4)
+    STYLE_CIRCLE, STYLE_RECT, STYLE_OVAL, STYLE_TRAPEZOID = range(4)
 
     def __init__(self, text, size, position, diameter, style, family, copper, paste):
         if not isinstance(text, str):
@@ -314,7 +314,7 @@ class Cutout:
 
 
 class Poly:
-    LAYER_COPPER, LAYER_SILK = range(0, 2)
+    LAYER_COPPER, LAYER_SILK = range(2)
 
     def __init__(self, vertices, thickness, fill, layer):
         if not isinstance(vertices, (tuple, list)):
@@ -416,7 +416,7 @@ def collide_line(line, pads, thickness, gap):
 
     # Generate chunks
     chunks = []
-    for i in range(0, len(crosses) - 1):
+    for i in range(len(crosses) - 1):
         chunks.append((crosses[i], crosses[i + 1]))
 
     # Filter chunks by length

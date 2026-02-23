@@ -69,7 +69,7 @@ class FFC(exporter.Footprint):
                                           self.thickness, True))
 
         # Signal pads
-        for i in range(0, self.count):
+        for i in range(self.count):
             x_offset = (total_pads_width / 2.0 - i * self.pitch) * self.inversion
             pads.append(exporter.SmdPad(str(i + 1), self.signal_pad_size, (x_offset, 0.0)))
 
@@ -189,16 +189,16 @@ class MemoryCard(exporter.Footprint):
                                           self.thickness, True))
 
         # Mounting pads
-        for i in range(0, len(self.mount_pad_sizes)):
+        for i in range(len(self.mount_pad_sizes)):
             pads.append(exporter.SmdPad('', self.mount_pad_sizes[i], self.mount_pad_offsets[i]))
 
         # Mounting holes
-        for i in range(0, len(self.mount_hole_offsets)):
+        for i in range(len(self.mount_hole_offsets)):
             pads.append(MemoryCard.MountHole('', self.mount_hole_offsets[i],
                 self.mount_hole_diameter))
 
         # Signal pads
-        for i in range(0, self.signal_pad_count):
+        for i in range(self.signal_pad_count):
             x_offset = self.signal_pad_offset[0] + self.signal_pad_pitch * i
             y_offset = self.signal_pad_offset[1]
             pads.append(exporter.SmdPad(str(i + 1), self.signal_pad_size,
@@ -241,7 +241,7 @@ class AngularSmaFootprint(exporter.Footprint):
         if len(points) < 2:
             raise ValueError()
         lines = []
-        for seg in range(0, len(points) - 1):
+        for seg in range(len(points) - 1):
             lines.append(exporter.Line(points[seg], points[seg + 1], thickness, layer))
         return lines
 
@@ -337,7 +337,7 @@ class MiniUSB(exporter.Footprint):
                                           self.thickness, True))
 
         # Pads
-        for i in range(0, 5):
+        for i in range(5):
             y_offset = float(i - 2) * self.pad_pitch
             pads.append(exporter.SmdPad(str(i + 1), self.pad_size, (self.pad_offset, y_offset)))
 
@@ -411,13 +411,13 @@ class USBTypeC(exporter.Footprint):
 
         # Pads
         titles = ['B8', 'A5', 'B7', 'A6', 'A7', 'B6', 'A8', 'B5']
-        for i in range(0, 8):
+        for i in range(8):
             x_offset = (float(i - 4) + 0.5) * self.pad_pitch_a
             pads.append(exporter.SmdPad(titles[i], self.pad_size_a, (x_offset, -self.pad_offset)))
 
         titles_left = ['A1', 'A4']
         titles_right = ['B1', 'B4']
-        for i in range(0, 2):
+        for i in range(2):
             x_offset = self.pad_start_b - float(i) * self.pad_pitch_b
             pads.append(exporter.SmdPad(titles_left[i], self.pad_size_b,
                 (-x_offset, -self.pad_offset)))
@@ -518,7 +518,7 @@ class XT(exporter.Footprint):
         pads.append(XT.MountHole('', mount_holes[1], self.mount_diameter))
 
         # Signal pads
-        for i in range(0, self.pin_count):
+        for i in range(self.pin_count):
             offset = self.pad_offset - self.pin_pitch * i
             style = exporter.AbstractPad.STYLE_RECT if i == 0 else exporter.AbstractPad.STYLE_CIRCLE
             pads.append(exporter.HolePad(str(i + 1), self.pad_size, (offset, 0.0), self.pad_hole, style))
@@ -542,7 +542,7 @@ class XT(exporter.Footprint):
         polyline.append(np.array([-top_corner[0], mount_holes[1][1] + self.mount_diameter]))
         polyline.append(top_corner * np.array([-1.0, +1.0]) + body_offset)
 
-        for i in range(0, len(polyline) - 1):
+        for i in range(len(polyline) - 1):
             line = exporter.Line(polyline[i], polyline[i + 1], self.thickness)
             silkscreen.append(line)
 

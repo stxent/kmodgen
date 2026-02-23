@@ -32,7 +32,7 @@ class SOP:
 
         # Pins
         y_offset = size[1] / 2.0 + offset
-        for i in range(0, rows):
+        for i in range(rows):
             x_offset = pitch * (i - (rows - 1) / 2.0)
             pins.append(make_pin(x_offset, y_offset, math.pi, i + 1 + rows))
             pins.append(make_pin(-x_offset, -y_offset, 0.0, i + 1))

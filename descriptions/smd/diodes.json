@@ -38,7 +38,7 @@
       "package": {"type": "BentLeadsDiode", "spec": "thick"},
       "title": "DO-214AA",
       "body": {"size": [4.3, 3.6, 2.2]},
-      "pins": {"size": [1.14, 2.03, 1.1], "extension": 0.0, "thickness": 0.2},
+      "pins": {"size": [1.14, 2.03, 1.1], "length": 0.55, "thickness": 0.2},
       "pads": {"pitch": 1.8, "size": [2.5, 2.3], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Diodes Incorporated specifications"
@@ -46,7 +46,7 @@
       "package": {"type": "BentLeadsDiode", "spec": "thick"},
       "title": "DO-214AB",
       "body": {"size": [6.9, 5.9, 2.25]},
-      "pins": {"size": [1.14, 2.97, 1.1], "extension": 0.0, "thickness": 0.2},
+      "pins": {"size": [1.14, 2.97, 1.1], "length": 0.55, "thickness": 0.2},
       "pads": {"pitch": 4.4, "size": [2.5, 3.3], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Diodes Incorporated specifications"
@@ -54,7 +54,7 @@
       "package": {"type": "BentLeadsDiode", "spec": "thick"},
       "title": "DO-214AC",
       "body": {"size": [4.3, 2.6, 2.2]},
-      "pins": {"size": [1.08, 1.42, 1.1], "extension": 0.0, "thickness": 0.2},
+      "pins": {"size": [1.08, 1.42, 1.1], "length": 0.4, "thickness": 0.2},
       "pads": {"pitch": 1.5, "size": [2.5, 1.7], "names": ["C", "A"]},
       "mark": {"dot": true},
       "source": "Diodes Incorporated specifications"

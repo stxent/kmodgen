@@ -8,6 +8,7 @@
 import math
 import numpy as np
 
+import bezier
 import primitives
 from wrlconv import curves, geometry, helpers, model, x3d_export
 
@@ -136,6 +137,8 @@ class TestChip:
     FILE_CHIP_LP = 'test_chip_lp.x3d'
     FILE_CHIP_SHUNT_HP = 'test_chip_shunt_hp.x3d'
     FILE_CHIP_SHUNT_LP = 'test_chip_shunt_lp.x3d'
+    FILE_HOLLOW_PLANE = 'test_hollow_plane.x3d'
+    FILE_HOLLOW_PLANE_ASYMMETRIC = 'test_hollow_plane_asymmetric.x3d'
 
     @staticmethod
     def make_chip_shunt(edge_resolution, line_resolution, slope_resolution):
@@ -157,6 +160,42 @@ class TestChip:
 
         return [body, lead]
 
+    @staticmethod
+    def make_hollow_plane(circle_resolution, plane_resolution, side_resolutions, inversion):
+        # disable=invalid-name
+        x, y = 1.0, 1.0
+        w = 2.0 / 3.0
+        # enable=invalid-name
+
+        points = (
+            np.array([ x,  y, 0.0]),
+            np.array([ x, -y, 0.0]),
+            np.array([-x, -y, 0.0]),
+            np.array([-x,  y, 0.0])
+        )
+        controls = (
+            (np.array([ -w, 0.0, 0.0]), np.array([0.0,  -w, 0.0])),
+            (np.array([0.0,   w, 0.0]), np.array([ -w, 0.0, 0.0])),
+            (np.array([  w, 0.0, 0.0]), np.array([0.0,   w, 0.0])),
+            (np.array([0.0,  -w, 0.0]), np.array([  w, 0.0, 0.0]))
+        )
+
+        patches = primitives.make_hollow_plane(
+            points=points,
+            controls=controls,
+            hollow_offset=np.array([0.5, 0.5, 0.0]),
+            hollow_radius=0.2,
+            circle_resolution=circle_resolution,
+            plane_resolution=plane_resolution,
+            side_resolutions=side_resolutions,
+            inversion=inversion
+        )
+
+        plane, hole = bezier.patch_to_mesh(patches[0]), bezier.patch_to_mesh(patches[1])
+        plane.appearance().material = helpers.make_light_gray_material()
+        hole.appearance().material = helpers.make_dark_gray_material()
+        return [plane, hole]
+
     def test_make_chip_shunt_hp(self, tmp_path):
         model.reset_allocator()
         meshes = TestChip.make_chip_shunt(3, 3, 5)
@@ -166,6 +205,19 @@ class TestChip:
         model.reset_allocator()
         meshes = TestChip.make_chip_shunt(1, 1, 1)
         verify_models(meshes, tmp_path, TestChip.FILE_CHIP_SHUNT_LP)
+
+    def test_make_hollow_plane(self, tmp_path):
+        model.reset_allocator()
+        mesh_direct = TestChip.make_hollow_plane(24, 3, (2, 4), False)
+        [mesh.translate(np.array([0.0, 0.0, 0.5])) for mesh in mesh_direct]
+        mesh_inverted = TestChip.make_hollow_plane(12, 1, 1, True)
+        [mesh.translate(np.array([0.0, 0.0, -0.5])) for mesh in mesh_inverted]
+        verify_models(mesh_direct + mesh_inverted, tmp_path, TestChip.FILE_HOLLOW_PLANE)
+
+    def test_make_hollow_plane_asymmetric(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestChip.make_hollow_plane(24, 3, (2, 3, 4, 5), False)
+        verify_models(mesh, tmp_path, TestChip.FILE_HOLLOW_PLANE_ASYMMETRIC)
 
 
 class TestHelpers:
@@ -345,7 +397,6 @@ class TestPins:
 
 
 class TestPrimitives:
-    FILE_BODY_CAP = 'test_body_cap.x3d'
     FILE_LOFT_MESH = 'test_loft_mesh.x3d'
     FILE_SOLID_CAP = 'test_solid_cap.x3d'
     FILE_RECT_HALF = 'test_rect_half.x3d'
@@ -390,20 +441,6 @@ class TestPrimitives:
                 1
             ))
         return curve
-
-    def test_make_body_cap(self, tmp_path):
-        model.reset_allocator()
-
-        corners = [
-            np.array([ 1.0,  1.0, 0.0]),
-            np.array([-1.0,  1.0, 0.0]),
-            np.array([-1.0, -1.0, 0.0]),
-            np.array([ 1.0, -1.0, 0.0])
-        ]
-        offset = np.array([0.2, 0.2])
-        mesh = primitives.make_body_cap(corners, 0.5, offset, 24)
-
-        verify_models([mesh], tmp_path, TestPrimitives.FILE_BODY_CAP)
 
     def test_make_loft_mesh(self, tmp_path):
         model.reset_allocator()
@@ -535,6 +572,7 @@ class TestBox:
     FILE_BOX_MARK_HP = 'test_box_mark_hp.x3d'
     FILE_BOX_MARK_LP = 'test_box_mark_lp.x3d'
     FILE_NONUNIFORM_BOX = 'test_nonuniform_box.x3d'
+    FILE_NONUNIFORM_BOX_MARK = 'test_nonuniform_box_mark.x3d'
 
     @staticmethod
     def make_barrel_box(edge_resolution, line_resolution):
@@ -558,21 +596,17 @@ class TestBox:
 
     @staticmethod
     def make_box_mark(edge_resolution, line_resolution, mark_resolution):
-        body = primitives.make_box_with_mark(
+        body, mark = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
             mark_radius=0.3,
-            mark_offset=np.array([0.2, 0.2]),
+            mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
-
-        mark = geometry.Circle(0.3, mark_resolution)
-        mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
-
         return [body, mark]
 
     @staticmethod
@@ -588,7 +622,7 @@ class TestBox:
 
     @staticmethod
     def make_banded_box_mark(edge_resolution, line_resolution, mark_resolution):
-        body = primitives.make_box_with_mark(
+        body, mark = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
@@ -596,15 +630,11 @@ class TestBox:
             band_size=0.1,
             band_offset=-0.3,
             mark_radius=0.3,
-            mark_offset=np.array([0.2, 0.2]),
+            mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
-
-        mark = geometry.Circle(0.3, mark_resolution)
-        mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
-
         return [body, mark]
 
     @staticmethod
@@ -612,9 +642,24 @@ class TestBox:
         return primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
-            edge_resolution=3,
+            edge_resolution=4,
             line_resolution=(3, 2, 1)
         )
+
+    @staticmethod
+    def make_nonuniform_box_mark():
+        body, mark = primitives.make_box_with_mark(
+            size=np.array([2.0, 2.0, 2.0]),
+            chamfer=0.2,
+            edge_resolution=4,
+            line_resolution=(3, 2, 1),
+            plane_resolution=5,
+            mark_radius=0.3,
+            mark_resolution=20
+        )
+        body.appearance().material = helpers.make_light_gray_material()
+        mark.appearance().material = helpers.make_dark_gray_material()
+        return [body, mark]
 
     def test_make_barrel_box_hp(self, tmp_path):
         model.reset_allocator()
@@ -671,6 +716,11 @@ class TestBox:
         mesh = TestBox.make_nonuniform_box()
         verify_models([mesh], tmp_path, TestBox.FILE_NONUNIFORM_BOX)
 
+    def test_make_nonuniform_box_mark(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestBox.make_nonuniform_box_mark()
+        verify_models(meshes, tmp_path, TestBox.FILE_NONUNIFORM_BOX_MARK)
+
 
 class TestCarvedBox:
     FILE_CARVED_BOX_HP = 'test_carved_box_hp.x3d'
@@ -717,25 +767,22 @@ class TestRoundedBox:
         )
 
     @staticmethod
-    def make_rounded_box_mark(edge_resolution, line_resolution, mark_resolution):
-        body = primitives.make_rounded_box(
+    def make_rounded_box_mark(edge_resolution, line_resolution, mark_resolution, plane_resolution):
+        body, mark = primitives.make_rounded_box(
             size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
             chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
+            plane_resolution=plane_resolution,
             band_size=0.1,
             band_offset=-0.3,
             mark_radius=0.3,
-            mark_offset=np.array([0.2, 0.2]),
+            mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
         )
         body.appearance().material = helpers.make_light_gray_material()
-
-        mark = geometry.Circle(0.3, mark_resolution)
-        mark.translate(np.array([0.2, 0.2, 1.0]))
         mark.appearance().material = helpers.make_dark_gray_material()
-
         return [body, mark]
 
     def test_make_rounded_box_hp(self, tmp_path):
@@ -750,12 +797,12 @@ class TestRoundedBox:
 
     def test_make_rounded_box_mark_hp(self, tmp_path):
         model.reset_allocator()
-        meshes = TestRoundedBox.make_rounded_box_mark(3, 3, 24)
+        meshes = TestRoundedBox.make_rounded_box_mark(3, 3, 24, 2)
         verify_models(meshes, tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_MARK_HP)
 
     def test_make_rounded_box_mark_lp(self, tmp_path):
         model.reset_allocator()
-        meshes = TestRoundedBox.make_rounded_box_mark(1, 1, 12)
+        meshes = TestRoundedBox.make_rounded_box_mark(1, 1, 12, None)
         verify_models(meshes, tmp_path, TestRoundedBox.FILE_ROUNDED_BOX_MARK_LP)
 
 
@@ -791,8 +838,6 @@ class TestShapeScale:
     FILE_SHAPE_EQUALIZED = 'test_shape_equalized.x3d'
     FILE_SHAPE_SCALE_SIMPLE = 'test_shape_scale_simple.x3d'
     FILE_SHAPE_SCALE_SMART = 'test_shape_scale_smart.x3d'
-    FILE_SHAPE_SCALE_SIMPLE_INV = 'test_shape_scale_simple_inv.x3d'
-    FILE_SHAPE_SCALE_SMART_INV = 'test_shape_scale_smart_inv.x3d'
 
     @staticmethod
     def make_equalized_rect():
@@ -859,20 +904,52 @@ class TestShapeScale:
 
     def test_simple_scale(self, tmp_path):
         model.reset_allocator()
-        mesh = TestShapeScale.make_simple_scaled_rect(5, 3, False)
-        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE)
+        mesh_direct = TestShapeScale.make_simple_scaled_rect(5, 3, False)
+        mesh_direct.translate(np.array([0.0, 0.0, 0.5]))
+        mesh_inverted = TestShapeScale.make_simple_scaled_rect(5, 3, True)
+        mesh_inverted.translate(np.array([0.0, 0.0, -0.5]))
+        verify_models([mesh_direct, mesh_inverted], tmp_path,
+                      TestShapeScale.FILE_SHAPE_SCALE_SIMPLE)
 
     def test_smart_scale(self, tmp_path):
         model.reset_allocator()
-        mesh = TestShapeScale.make_smart_scaled_rect(5, 3, False)
-        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART)
+        mesh_direct = TestShapeScale.make_smart_scaled_rect(5, 3, False)
+        mesh_direct.translate(np.array([0.0, 0.0, 0.5]))
+        mesh_inverted = TestShapeScale.make_smart_scaled_rect(5, 3, True)
+        mesh_inverted.translate(np.array([0.0, 0.0, -0.5]))
+        verify_models([mesh_direct, mesh_inverted], tmp_path,
+                      TestShapeScale.FILE_SHAPE_SCALE_SMART)
 
-    def test_simple_scale_inversion(self, tmp_path):
-        model.reset_allocator()
-        mesh = TestShapeScale.make_simple_scaled_rect(5, 3, True)
-        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SIMPLE_INV)
 
-    def test_smart_scale_inversion(self, tmp_path):
+class TestBezierSurfaces:
+    FILE_SURFACE_QUAD_ASYMMETRIC = 'test_surface_quad_asymmetric.x3d'
+
+    @staticmethod
+    def make_surface_quad(resolution_u0, resolution_u1, resolution_v):
+        # disable=invalid-name
+        x, y = 2.0, 1.0
+        wx, wy = x * 2.0 / 3.0, y * 2.0 / 3.0
+        # enable=invalid-name
+
+        points = (
+            np.array([ x,  y, 0.0]),
+            np.array([ x, -y, 0.0]),
+            np.array([-x, -y, 0.0]),
+            np.array([-x,  y, 0.0])
+        )
+        controls = (
+            (np.array([-wx, 0.0, 0.0]), np.array([0.0, -wy, 0.0])),
+            (np.array([0.0,  wy, 0.0]), np.array([-wx, 0.0, 0.0])),
+            (np.array([ wx, 0.0, 0.0]), np.array([0.0,  wy, 0.0])),
+            (np.array([0.0, -wy, 0.0]), np.array([ wx, 0.0, 0.0]))
+        )
+
+        lines = bezier.make_quad_lines(points, controls)
+        patch = primitives.AsymmetricBezierQuad(*lines, resolution_u0, resolution_u1,
+                                                resolution_v, False)
+        return patch.tessellate()
+
+    def test_surface_quad_asymmetric(self, tmp_path):
         model.reset_allocator()
-        mesh = TestShapeScale.make_smart_scaled_rect(5, 3, True)
-        verify_models([mesh], tmp_path, TestShapeScale.FILE_SHAPE_SCALE_SMART_INV)
+        mesh = TestBezierSurfaces.make_surface_quad(2, 7, 5)
+        verify_models([mesh], tmp_path, TestBezierSurfaces.FILE_SURFACE_QUAD_ASYMMETRIC)

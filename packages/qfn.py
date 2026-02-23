@@ -46,7 +46,7 @@ class QFN:
     @staticmethod
     def detach_pads(mesh, count, size, band, pin_width, pin_pitch, first_pin_offset):
         detach_regions = []
-        for i in range(0, count[0]):
+        for i in range(count[0]):
             x_pos = i * pin_pitch - first_pin_offset[0]
             y_pos = size[1] / 2.0
 
@@ -58,7 +58,7 @@ class QFN:
                 (x_pos - pin_width / 2.0 - QFN.EPSILON, -y_pos - band[1], -size[2]),
                 (x_pos + pin_width / 2.0 + QFN.EPSILON,              0.0,      0.0)
             ))
-        for i in range(0, count[1]):
+        for i in range(count[1]):
             x_pos = size[0] / 2.0
             y_pos = i * pin_pitch - first_pin_offset[1]
 
@@ -140,7 +140,7 @@ class QFN:
             np.array([ heatsink_size[0] / 2.0, -heatsink_size[1] / 2.0, -body_size[2] / 2.0])
         ]
         heatsink_vertices = primitives.make_bezier_quad_outline(heatsink_corners)
-        heatsink_vertices_indexed = dict(zip(list(range(0, len(heatsink_vertices))),
+        heatsink_vertices_indexed = dict(zip(list(range(len(heatsink_vertices))),
                                              heatsink_vertices))
         body_vertices = mesh.find_vertices([region])
         primitives.append_hollow_cap(mesh, body_vertices, heatsink_vertices_indexed,
@@ -157,7 +157,7 @@ class QFN:
             np.array([*mark_offset, body_size[2] / 2.0]),
             mark_radius, resolution
         )
-        mark_vertices_indexed = dict(zip(list(range(0, len(mark_vertices))), mark_vertices))
+        mark_vertices_indexed = dict(zip(list(range(len(mark_vertices))), mark_vertices))
         body_vertices = mesh.find_vertices([region])
         primitives.append_hollow_cap(mesh, body_vertices, mark_vertices_indexed,
                                      normal=np.array([0.0, 0.0, 1.0]))

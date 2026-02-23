@@ -77,7 +77,7 @@ class DIP(exporter.Footprint):
         first_pin_offset = float(columns - 1) / 2.0 * self.pitch[0]
 
         pads = []
-        for i in range(0, columns):
+        for i in range(columns):
             x_offset = i * self.pitch[0] - first_pin_offset
             y_offset = self.pitch[1] / 2.0
             pads.append(exporter.SmdPad(str(i + 1), self.pad_size,

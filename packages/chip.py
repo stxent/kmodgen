@@ -129,6 +129,7 @@ class ChipResistor:
         b = (pb, pb - v0 * edge_roundness, pb + (beg - end) * line_roundness)
         c = (pc, pc + (beg - end) * line_roundness, pc - v1 * edge_roundness)
         mean = (beg + pb + pc) / 3.0
+
         return curves.BezierTri(a, b, c, mean, resolution, inverse)
 
     @staticmethod
@@ -176,17 +177,14 @@ class ChipResistor:
 
         if pull is None:
             points = None
-            resolution_smooth = resolution
+            resolution_u, resolution_v = resolution
         else:
-            steps = ((1.0 - 2.0 * pull) / (resolution[0]), 1.0 / (resolution[1]))
-            points = [
-                [pull + i * steps[0] for i in range(0, resolution[0] + 1)],
-                [i * steps[1] for i in range(0, resolution[1] + 1)]
-            ]
-            points[0] = [0.0, *points[0], 1.0]
-            resolution_smooth = (resolution[0] + 2, resolution[1])
+            points_u = [0.0] + list(np.linspace(pull, 1.0 - pull, resolution[0] + 1)) + [1.0]
+            points_v = list(np.linspace(0.0, 1.0, resolution[1] + 1))
+            resolution_u, resolution_v = resolution[0] + 2, resolution[1]
 
-        return curves.BezierQuad(line0, line1, line2, line3, resolution_smooth, inverse, points)
+        return curves.BezierQuad(line0, line1, line2, line3, (resolution_u, resolution_v), inverse,
+                                 (points_u, points_v))
 
     @staticmethod
     def make_body_path_face(vertices, normal, offset, scale, resolution, pull):
@@ -215,7 +213,7 @@ class ChipResistor:
             mean += vertex
         mean /= len(mesh.geo_vertices)
 
-        vertices = dict(zip(list(range(0, len(mesh.geo_vertices))), mesh.geo_vertices))
+        vertices = dict(zip(list(range(len(mesh.geo_vertices))), mesh.geo_vertices))
         indices = [x[0] for x in primitives.sort_vertices_by_angle(vertices, mean, normal)]
         count = len(vertices)
 
@@ -230,7 +228,7 @@ class ChipResistor:
 
         polygons = []
         if pull is not None:
-            for i in range(0, count):
+            for i in range(count):
                 index_0, index_1 = indices[i], indices[(i + 1) % count]
                 if ((index_0 in (beg_index, end_index) or index_1 in (beg_index, end_index))
                     and (index_0 > end_index or index_1 > end_index)):
@@ -242,14 +240,14 @@ class ChipResistor:
                         polygons.append([count + index_1, count + index_0, index_1])
                     continue
                 polygons.append([index_0, index_1, count + index_1, count + index_0])
-            for i in range(0, count):
+            for i in range(count):
                 polygons.append([
                     count + indices[i],
                     count + indices[(i + 1) % count],
                     mean_index
                 ])
         else:
-            for i in range(0, count):
+            for i in range(count):
                 polygons.append([
                     indices[i],
                     indices[(i + 1) % count],
@@ -301,102 +299,103 @@ class ChipResistor:
         ]
 
         meshes = []
+        patches = []
         vdown = np.array([0.0, 0.0, -1.0]) * chamfer
         vside = np.array([0.0, 1.0, 0.0]) * chamfer
 
         # Body edges
 
-        meshes.append(ChipResistor.make_body_edge(
+        patches.append(ChipResistor.make_body_edge(
             corner_points[0][0] - corner_shift, corner_points[1][0] + corner_shift,
-            -vdown, -vside, (line_resolution, edge_resolution), False))
-        meshes.append(ChipResistor.make_body_edge(
+            -vdown, -vside, (edge_resolution, line_resolution), False))
+        patches.append(ChipResistor.make_body_edge(
             corner_points[0][1] - corner_shift, corner_points[1][1] + corner_shift,
-            vdown, -vside, (line_resolution, edge_resolution), True))
-        meshes.append(ChipResistor.make_body_edge(
+            vdown, -vside, (edge_resolution, line_resolution), True))
+        patches.append(ChipResistor.make_body_edge(
             corner_points[2][0] + corner_shift, corner_points[3][0] - corner_shift,
-            -vdown, vside, (line_resolution, edge_resolution), False))
-        meshes.append(ChipResistor.make_body_edge(
+            -vdown, vside, (edge_resolution, line_resolution), False))
+        patches.append(ChipResistor.make_body_edge(
             corner_points[2][1] + corner_shift, corner_points[3][1] - corner_shift,
-            vdown, vside, (line_resolution, edge_resolution), True))
+            vdown, vside, (edge_resolution, line_resolution), True))
 
         # Body corners, side one
 
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[0][0], corner_points[0][0] - corner_shift,
             -vdown, -vside, edge_resolution, False))
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[0][1], corner_points[0][1] - corner_shift,
             vdown, -vside, edge_resolution, True))
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[1][0], corner_points[1][0] + corner_shift,
             -vdown, -vside, edge_resolution, True))
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[1][1], corner_points[1][1] + corner_shift,
             vdown, -vside, edge_resolution, False))
 
         # Body corners, side two
 
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[2][0], corner_points[2][0] + corner_shift,
             -vdown, vside, edge_resolution, False))
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[2][1], corner_points[2][1] + corner_shift,
             vdown, vside, edge_resolution, True))
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[3][0], corner_points[3][0] - corner_shift,
             -vdown, vside, edge_resolution, True))
-        meshes.append(ChipResistor.make_body_corner(
+        patches.append(ChipResistor.make_body_corner(
             corner_points[3][1], corner_points[3][1] - corner_shift,
             vdown, vside, edge_resolution, False))
 
         # Vertical stripes
 
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[0][0], corner_points[0][0] - corner_shift,
             corner_points[0][1], corner_points[0][1] - corner_shift,
-            vdown, (line_resolution, edge_resolution), False, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+            vdown, (edge_resolution, line_resolution), False, edge_pull))
+        patches.append(ChipResistor.make_body_side(
             corner_points[1][0], corner_points[1][0] + corner_shift,
             corner_points[1][1], corner_points[1][1] + corner_shift,
-            vdown, (line_resolution, edge_resolution), True, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+            vdown, (edge_resolution, line_resolution), True, edge_pull))
+        patches.append(ChipResistor.make_body_side(
             corner_points[2][0], corner_points[2][0] + corner_shift,
             corner_points[2][1], corner_points[2][1] + corner_shift,
-            vdown, (line_resolution, edge_resolution), False, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+            vdown, (edge_resolution, line_resolution), False, edge_pull))
+        patches.append(ChipResistor.make_body_side(
             corner_points[3][0], corner_points[3][0] - corner_shift,
             corner_points[3][1], corner_points[3][1] - corner_shift,
-            vdown, (line_resolution, edge_resolution), True, edge_pull))
+            vdown, (edge_resolution, line_resolution), True, edge_pull))
 
         # Horizontal stripes
 
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[0][0], corner_points[0][0] - corner_shift,
             corner_points[3][0], corner_points[3][0] - corner_shift,
-            vside, (line_resolution, edge_resolution), True, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+            vside, (edge_resolution, line_resolution), True, edge_pull))
+        patches.append(ChipResistor.make_body_side(
             corner_points[0][1], corner_points[0][1] - corner_shift,
             corner_points[3][1], corner_points[3][1] - corner_shift,
-            vside, (line_resolution, edge_resolution), False, edge_pull))
+            vside, (edge_resolution, line_resolution), False, edge_pull))
 
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[1][0], corner_points[1][0] + corner_shift,
             corner_points[2][0], corner_points[2][0] + corner_shift,
-            vside, (line_resolution, edge_resolution), False, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+            vside, (edge_resolution, line_resolution), False, edge_pull))
+        patches.append(ChipResistor.make_body_side(
             corner_points[1][1], corner_points[1][1] + corner_shift,
             corner_points[2][1], corner_points[2][1] + corner_shift,
-            vside, (line_resolution, edge_resolution), True, edge_pull))
+            vside, (edge_resolution, line_resolution), True, edge_pull))
 
         # Top and bottom planes
 
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[0][0] - corner_shift - vside,
             corner_points[1][0] + corner_shift - vside,
             corner_points[3][0] - corner_shift + vside,
             corner_points[2][0] + corner_shift + vside,
             None, (line_resolution, line_resolution), True, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[0][1] - corner_shift - vside,
             corner_points[1][1] + corner_shift - vside,
             corner_points[3][1] - corner_shift + vside,
@@ -405,13 +404,13 @@ class ChipResistor:
 
         # Left and right planes
 
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[0][0] - corner_shift - vdown,
             corner_points[1][0] + corner_shift - vdown,
             corner_points[0][1] - corner_shift + vdown,
             corner_points[1][1] + corner_shift + vdown,
             None, (line_resolution, line_resolution), False, edge_pull))
-        meshes.append(ChipResistor.make_body_side(
+        patches.append(ChipResistor.make_body_side(
             corner_points[2][0] + corner_shift - vdown,
             corner_points[3][0] - corner_shift - vdown,
             corner_points[2][1] + corner_shift + vdown,
@@ -436,6 +435,8 @@ class ChipResistor:
         body = meshes[0]
         for mesh in meshes[1:]:
             body.append(mesh)
+        for patch in patches:
+            body.append(patch.tessellate())
         body.optimize()
         return body
 
@@ -729,21 +730,21 @@ class BentLeadsChip:
         return result
 
     def generate(self, materials, resolutions, _, descriptor):
+        pin_size = primitives.hmils(np.array(descriptor['pins']['size']))
+        pin_thickness = primitives.hmils(np.array(descriptor['pins']['thickness']))
+
         try:
             pin_forked = descriptor['pins']['fork']
         except KeyError:
             pin_forked = False
-
         try:
-            pin_added_length = primitives.hmils(np.array(descriptor['pins']['extension']))
+            pin_length = primitives.hmils(np.array(descriptor['pins']['length']))
         except KeyError:
-            pin_added_length = 0.0
+            pin_length = pin_thickness * 1.5
 
-        pin_size = primitives.hmils(np.array(descriptor['pins']['size']))
-        pin_thickness = primitives.hmils(np.array(descriptor['pins']['thickness']))
         body_size = primitives.hmils(np.array(descriptor['body']['size']))
         if self.pin_size_added:
-            body_size[0] -= pin_thickness * 3.0
+            body_size[0] -= pin_length * 2.0
 
         band_size = BentLeadsChip.BAND_SIZE
         body_chamfer = min(BentLeadsChip.DEFAULT_CHAMFER, pin_thickness * 2.0 / 3.0)
@@ -773,12 +774,12 @@ class BentLeadsChip:
         if f'{self.material}.Strip' in materials:
             strip_mesh.appearance().material = materials[f'{self.material}.Strip']
 
-        top_roundness = pin_thickness * 1.5 + pin_added_length
-        bottom_roundness = pin_thickness * 3.0 + pin_added_length
-        if top_roundness + bottom_roundness + pin_chamfer * 2.0 >= pin_size[2]:
-            raise ValueError()
-
         if pin_forked:
+            max_roundness = (pin_size[2] - pin_chamfer * 3.0) / 2.0
+            top_roundness = (pin_length, min(pin_length, max_roundness))
+            roundness = min(pin_length * 2.0, pin_size[2] - top_roundness[1] - pin_chamfer * 3.0)
+            bottom_roundness = (roundness, roundness)
+
             left_contact = primitives.make_bent_fork_pin_mesh(
                 width=pin_size[1],
                 height=pin_size[2],
@@ -788,13 +789,18 @@ class BentLeadsChip:
                 bottom_roundness=bottom_roundness,
                 end_slope=body_slope,
                 cutout_width=pin_size[1] / 2.0,
-                cutout_height=max(pin_size[2] / 3.0, top_roundness + pin_chamfer * 2.0),
+                cutout_height=max(pin_size[2] / 3.0, top_roundness[1] + pin_chamfer * 1.0),
                 chamfer=pin_chamfer,
                 edge_resolution=resolutions['edge'],
                 line_resolution=resolutions['line'],
                 slope_resolution=resolutions['arc']
             )
         else:
+            max_roundness = (pin_size[2] - pin_chamfer) / 2.0
+            top_roundness = (pin_length, min(pin_length, max_roundness))
+            roundness = min(pin_length * 2.0, pin_size[2] - top_roundness[1] - pin_chamfer)
+            bottom_roundness = (roundness, roundness)
+
             left_contact = primitives.make_bent_pin_mesh(
                 width=pin_size[1],
                 height=pin_size[2],

@@ -1,0 +1,41 @@
+{
+  "materials": {
+    "Inductor.Alloy": "Nickel",
+    "Inductor.Lead": "Lead"
+  },
+  "parts": [
+    {
+      "package": {"type": "ChipShieldedInductor", "spec": "thick"},
+      "title": "0415CDMCCDS",
+      "body": {"size": [4.4, 4.2, 1.5]},
+      "niche": {"size": [1.1, 2.5, 0.15]},
+      "pins": {"size": [0.8, 2.0, 0.75], "thickness": 0.1},
+      "pads": {"pitch": 2.2, "size": [1.5, 2.5]},
+      "source": "Sumida specifications"
+    }, {
+      "package": {"type": "ChipShieldedInductor", "spec": "thick"},
+      "title": "0420CDMCCDS",
+      "body": {"size": [4.4, 4.2, 1.8]},
+      "niche": {"size": [1.1, 2.5, 0.15]},
+      "pins": {"size": [0.8, 2.0, 0.9], "thickness": 0.1},
+      "pads": {"pitch": 2.2, "size": [1.5, 2.5]},
+      "source": "Sumida specifications"
+    }, {
+      "package": {"type": "ChipShieldedInductor", "spec": "thick"},
+      "title": "0530CDMCCDS",
+      "body": {"size": [5.4, 5.2, 2.8]},
+      "niche": {"size": [1.5, 2.5, 0.15]},
+      "pins": {"size": [0.8, 2.2, 1.4], "thickness": 0.1},
+      "pads": {"pitch": 2.2, "size": [1.9, 2.5]},
+      "source": "Sumida specifications"
+    }, {
+      "package": {"type": "ChipShieldedInductor", "spec": "thick"},
+      "title": "0630CDMCCDS",
+      "body": {"size": [7.0, 6.6, 2.8]},
+      "niche": {"size": [2.0, 3.6, 0.15]},
+      "pins": {"size": [1.6, 2.9, 1.4], "thickness": 0.1},
+      "pads": {"pitch": 3.7, "size": [2.4, 3.5]},
+      "source": "Sumida specifications"
+    }
+  ]
+}

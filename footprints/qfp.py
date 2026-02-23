@@ -81,7 +81,7 @@ class QFP(exporter.Footprint):
         # Horizontal pads
         y_offset = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
         pad = lambda x: self.pad(x, self.count[0], False)
-        for i in range(0, self.count[0]):
+        for i in range(self.count[0]):
             x_offset = self.spacing(i, self.count[0]) - first_pin_offset[0]
             pads.append(exporter.SmdPad(str(1 + i), pad(i),
                                         np.array([x_offset, y_offset])))
@@ -91,7 +91,7 @@ class QFP(exporter.Footprint):
         # Vertical pads
         x_offset = (self.body_size[0] + self.pad_size[1]) / 2.0 + self.margin
         pad = lambda x: self.pad(x, self.count[1], True)
-        for j in range(0, self.count[1]):
+        for j in range(self.count[1]):
             y_offset = self.spacing(j, self.count[1]) - first_pin_offset[1]
             pads.append(exporter.SmdPad(str(1 + j + self.count[0]), pad(j),
                                         np.array([x_offset, -y_offset])))

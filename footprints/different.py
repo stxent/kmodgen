@@ -47,7 +47,7 @@ class ESP32(exporter.Footprint):
         ))
 
         # Signal pads, vertical rows
-        for i in range(0, self.pad_ver_count):
+        for i in range(self.pad_ver_count):
             x_offset = self.pad_hor_offset[0]
             y_offset_left = self.pad_hor_offset[1] + i * self.pad_pitch
             y_offset_right = self.pad_hor_offset[1] + (self.pad_ver_count - i - 1) * self.pad_pitch
@@ -58,7 +58,7 @@ class ESP32(exporter.Footprint):
                                         np.array([x_offset, y_offset_right])))
 
         # Signal pads, horizontal row
-        for i in range(0, self.pad_hor_count):
+        for i in range(self.pad_hor_count):
             x_offset = -(self.pad_hor_count - 1) * self.pad_pitch / 2.0 + i * self.pad_pitch
             y_offset = self.pad_ver_offset
             size = self.pad_size

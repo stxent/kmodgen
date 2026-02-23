@@ -57,8 +57,8 @@ class PinHeader(exporter.Footprint):
     def generate_pads(self):
         objects = []
 
-        for x_offset in range(0, self.count[0]):
-            for y_offset in range(0, self.count[1]):
+        for x_offset in range(self.count[0]):
+            for y_offset in range(self.count[1]):
                 number = 1 + x_offset * self.count[1] + y_offset
                 if number == 1:
                     style = exporter.AbstractPad.STYLE_RECT

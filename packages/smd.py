@@ -346,24 +346,32 @@ class SOT:
             body_resolutions = (resolutions['line'], 2, resolutions['line'])
             dot_radius = None
 
-        dot_offset = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
+        dot_offset_xy = -(body_size[0:2] / 2.0 - SOT.MARK_MARGIN)
+        dot_offset = np.array([*dot_offset_xy, 0.0])
         body_offset_z = body_size[2] / 2.0
         if not flat_pin:
             body_offset_z += SOT.BODY_OFFSET_Z
 
         meshes = []
 
-        body_mesh = primitives.make_box_with_mark(
+        box_meshes = primitives.make_box_with_mark(
             size=body_size,
             chamfer=body_chamfer,
             edge_resolution=resolutions['edge'],
             line_resolution=body_resolutions,
+            plane_resolution=max(resolutions['line'], 2),
             band_size=SOT.BAND_WIDTH,
             band_offset=band_offset,
             mark_radius=dot_radius,
             mark_offset=dot_offset,
             mark_resolution=resolutions['circle']
         )
+        try:
+            body_mesh = box_meshes[0]
+            dot_mesh = box_meshes[1]
+        except TypeError:
+            body_mesh = box_meshes
+            dot_mesh = None
 
         if strip_width is not None:
             body_mesh = SOT.move_body_strip(body_mesh, body_size, body_chamfer, strip_width)
@@ -381,9 +389,8 @@ class SOT:
         body_mesh.translate(np.array([0.0, 0.0, body_offset_z]))
         meshes.append(body_mesh)
 
-        if dot_radius is not None:
-            dot_mesh = geometry.Circle(dot_radius, resolutions['circle'])
-            dot_mesh.translate(np.array([*dot_offset, body_offset_z + body_size[2] / 2.0]))
+        if dot_mesh is not None:
+            dot_mesh.translate(np.array([0.0, 0.0, body_offset_z]))
 
             if f'{self.material}.Mark' in materials:
                 dot_mesh.appearance().material = materials[f'{self.material}.Mark']

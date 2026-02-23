@@ -35,7 +35,7 @@ class QFP:
 
         # Horizontal pins
         y_offset = size[1] / 2.0 + offset
-        for i in range(0, count[0]):
+        for i in range(count[0]):
             x_offset = pitch * (i - (count[0] - 1) / 2.0)
             pins.append(make_pin(x_offset, y_offset, math.pi,
                 i + 1))
@@ -44,7 +44,7 @@ class QFP:
 
         # Vertical pins
         x_offset = size[0] / 2.0 + offset
-        for i in range(0, count[1]):
+        for i in range(count[1]):
             y_offset = pitch * (i - (count[1] - 1) / 2.0)
             pins.append(make_pin(x_offset, -y_offset, math.pi / 2.0,
                 i + 1 + count[0]))
@@ -65,20 +65,25 @@ class QFP:
         body_slope = math.atan(2.0 * band_width_proj / body_size[2])
         pin_offset = pin_shape[1] * math.sin(body_slope) / 2.0
 
-        body_mesh = primitives.make_rounded_box(
+        box_meshes = primitives.make_rounded_box(
             size=body_size,
             roundness=QFP.BODY_ROUNDNESS,
             chamfer=QFP.BODY_CHAMFER,
             edge_resolution=resolutions['edge'],
             line_resolution=resolutions['line'],
+            plane_resolution=max(resolutions['line'], 2),
             band_size=QFP.BAND_WIDTH,
             band_offset=QFP.BAND_OFFSET,
             mark_radius=QFP.MARK_RADIUS,
             mark_offset=dot_offset,
             mark_resolution=resolutions['circle']
         )
-        dot_mesh = geometry.Circle(QFP.MARK_RADIUS, resolutions['circle'])
-        dot_mesh.translate(np.array([*dot_offset, body_size[2] + QFP.BODY_OFFSET_Z]))
+        try:
+            body_mesh = box_meshes[0]
+            dot_mesh = box_meshes[1]
+        except TypeError:
+            body_mesh = box_meshes
+            dot_mesh = None
 
         if 'QFP.Plastic' in materials:
             body_mesh.appearance().material = materials['QFP.Plastic']
@@ -87,6 +92,7 @@ class QFP:
 
         if 'QFP.Dot' in materials:
             dot_mesh.appearance().material = materials['QFP.Dot']
+        dot_mesh.translate(np.array([0.0, 0.0, body_size[2] / 2.0 + QFP.BODY_OFFSET_Z]))
         dot_mesh.rename('Dot')
 
         pin_mesh = primitives.make_pin_mesh(
@@ -115,7 +121,8 @@ class QFP:
     @staticmethod
     def calc_mark_offset(count, pitch):
         first_pin_offset = (np.asarray(count, dtype=np.float32) - 1.0) * pitch / 2.0
-        return -first_pin_offset + pitch / 2.0
+        mark_offset = -first_pin_offset + pitch / 2.0
+        return np.array([*mark_offset, 0.0])
 
 
 types = [QFP]

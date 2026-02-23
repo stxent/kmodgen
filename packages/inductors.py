@@ -170,7 +170,7 @@ class ChipOpenDrumInductor:
         def make_center_hex(outer_radius, chamfer):
             radius = (outer_radius + chamfer * 2.0) / (math.sqrt(3.0) / 2.0)
             output = []
-            for i in range(0, 8):
+            for i in range(8):
                 angle = -((i * 2.0 + 1.0) / 16.0) * math.pi * 2.0
                 point = np.array([
                     math.cos(angle) * radius,
@@ -234,7 +234,7 @@ class ChipOpenDrumInductor:
         disc_shape_shifts = [0.0]
         bottom_offsets = [(0.0, 0.0)]
 
-        for i in range(0, corner_segments):
+        for i in range(corner_segments):
             angle = (math.pi / 2.0) * ((i + 1) / corner_segments)
             radial_offset = (1.0 - math.cos(angle)) * chamfer
             vertical_offset = math.sin(angle) * chamfer
@@ -252,7 +252,7 @@ class ChipOpenDrumInductor:
         tube_shape_slices = [tube_shape]
         tube_shape_shifts = [0.0]
 
-        for i in range(0, corner_segments):
+        for i in range(corner_segments):
             angle = (math.pi / 2.0) * ((corner_segments - (i + 1)) / corner_segments)
             radial_offset = math.cos(angle) * chamfer
             vertical_offset = (1.0 - math.sin(angle)) * chamfer
@@ -275,7 +275,7 @@ class ChipOpenDrumInductor:
         left_median = model.calc_median_point(left_contact)
 
         slices = []
-        for i in range(0, len(bottom_offsets)):
+        for i in range(len(bottom_offsets)):
             vertical_offset = pin_height + chamfer - bottom_offsets[i][1]
             scale = np.array([0.0, bottom_offsets[i][0], 0.0])
             slices.append(shift_slice(primitives.simple_scale(bottom, scale), vertical_offset))
@@ -284,12 +284,12 @@ class ChipOpenDrumInductor:
 
         # Part 2
         slices = []
-        for i in range(0, len(disc_shape_slices)):
+        for i in range(len(disc_shape_slices)):
             vertical_offset = pin_height + disc_thickness - chamfer + disc_shape_shifts[i]
             slices.append(shift_slice(disc_shape_slices[i], vertical_offset))
 
         slices.append(shift_slice(interim_shape, pin_height + disc_thickness))
-        for i in range(0, len(tube_shape_slices)):
+        for i in range(len(tube_shape_slices)):
             vertical_offset = pin_height + disc_thickness + tube_shape_shifts[i]
             slices.append(shift_slice(tube_shape_slices[i], vertical_offset))
         slices.append(shift_slice(tube_shape_slices[-1], body_height - disc_thickness - chamfer))
@@ -298,19 +298,19 @@ class ChipOpenDrumInductor:
         # Part 3
         slices = []
         slices.append(shift_slice(disc_shape_slices[0], body_height - chamfer))
-        for i in range(0, len(disc_shape_slices)):
+        for i in range(len(disc_shape_slices)):
             vertical_offset = body_height - disc_thickness + chamfer - disc_shape_shifts[i]
             slices.append(shift_slice(disc_shape_slices[i], vertical_offset))
 
         slices.append(shift_slice(interim_shape, body_height - disc_thickness))
-        for i in range(0, len(tube_shape_slices)):
+        for i in range(len(tube_shape_slices)):
             vertical_offset = body_height - disc_thickness - tube_shape_shifts[i]
             slices.append(shift_slice(tube_shape_slices[i], vertical_offset))
         parts.append(ChipOpenDrumInductor.SliceSet(slices, True))
 
         # Part 4
         slices = []
-        for i in range(0, len(disc_shape_slices)):
+        for i in range(len(disc_shape_slices)):
             vertical_offset = body_height - chamfer + disc_shape_shifts[i]
             slices.append(shift_slice(disc_shape_slices[i], vertical_offset))
         slices.append(shift_slice(interim_shape, body_height))
@@ -319,7 +319,7 @@ class ChipOpenDrumInductor:
 
         # Contact part
         slices = [shift_slice(left_contact, pin_height + chamfer)]
-        for i in range(0, len(bottom_offsets)):
+        for i in range(len(bottom_offsets)):
             offset_h = bottom_offsets[i][0] / 4.0
             offset_v = (chamfer - bottom_offsets[i][1]) / 4.0
             slices.append(shift_slice(primitives.smart_scale(left_contact, offset_h,
@@ -426,7 +426,7 @@ class ChipOpenDrumInductor:
         winding_current_angle = beg_angle
         winding_current_v = winding_offset_v
         winding_points = []
-        for _ in range(0, winding_steps):
+        for _ in range(winding_steps):
             position = np.array([
                 math.cos(winding_current_angle) * (winding_radius + wire_radius),
                 math.sin(winding_current_angle) * (winding_radius + wire_radius),

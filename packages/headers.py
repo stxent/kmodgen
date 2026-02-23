@@ -31,7 +31,7 @@ class PinHeader:
         body.visual_appearance = model_body.appearance()
 
         pins = []
-        for i in range(0, count[0]):
+        for i in range(count[0]):
             if i == 0:
                 segment = copy.deepcopy(model_edge)
                 segment.rotate([0.0, 0.0, 1.0], math.pi)
@@ -169,7 +169,7 @@ class BoxHeader:
             body.appearance().material = materials['BoxHeader.Plastic']
 
         pins = []
-        for i in range(0, count[0]):
+        for i in range(count[0]):
             pin = model.Mesh(parent=model_pin, name='{:s}_{:d}Pin{:d}'.format(name,
                 count[0] * count[1], (i + 1)))
             pin.translate([float(i) * pitch, pitch / 2.0, 0.001])

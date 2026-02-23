@@ -24,9 +24,9 @@ class RadialCapacitor:
             raise ValueError()
 
         if beginning:
-            vertices = [slices[i][0] for i in range(0, len(slices))]
+            vertices = [slices[i][0] for i in range(len(slices))]
         else:
-            vertices = [slices[i][-1] for i in range(0, len(slices))]
+            vertices = [slices[i][-1] for i in range(len(slices))]
 
         center = sum(vertices) / len(slices)
         angle = lambda v: math.atan2((v - center)[1], (v - center)[0])
@@ -43,7 +43,7 @@ class RadialCapacitor:
         outer_points = []
         body_points = []
 
-        for i in range(0, sections):
+        for i in range(sections):
             direction = 2.0 * math.pi / float(sections) * float(i)
             vector = np.array([math.cos(direction), math.sin(direction), 0.0])
             first_circle_points.append(center + vector * first_circle_radius
@@ -77,7 +77,7 @@ class RadialCapacitor:
             body_points.append(points)
 
         edge_points = []
-        for i in range(0, sections):
+        for i in range(sections):
             inner_range = (outer_points[rot(i - 1, sections)][0], outer_points[i][3])
             outer_range = (outer_points[rot(i - 1, sections)][3], outer_points[i][0])
             inner = (angle(inner_range[0]), angle(inner_range[1]))
@@ -133,12 +133,12 @@ class RadialCapacitor:
             geo_vertices.extend(points)
 
         def edge_indices(edge):
-            index_range = range(0, len(edge_points[edge]))
+            index_range = range(len(edge_points[edge]))
             return [10 * sections + sum(map(len, edge_points[0:edge])) + i for i in index_range]
 
         # Central polygon
-        geo_polygons.append(list(range(0, sections)))
-        for i in range(0, sections):
+        geo_polygons.append(list(range(sections)))
+        for i in range(sections):
             # Bumped polygons
             geo_polygons.append([
                 first_circle_point_func(i + 1),

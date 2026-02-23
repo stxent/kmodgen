@@ -91,7 +91,7 @@ class CrystalTH(exporter.Footprint):
 
         # Horizontal offset of the first pin
         first_pin_offset = -float(self.count - 1) * self.pitch / 2.0
-        for i in range(0, self.count):
+        for i in range(self.count):
             x_offset = first_pin_offset + self.pitch * i
             objects.append(exporter.HolePad(str(i + 1), self.pad_size, (x_offset, 0.0),
                 self.inner_diameter))

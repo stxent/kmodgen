@@ -84,7 +84,7 @@ class SOP(exporter.Footprint):
 
         # Horizontal pads
         y_offset = (self.body_size[1] + self.pad_size[1]) / 2.0 + self.margin
-        for i in range(0, self.rows):
+        for i in range(self.rows):
             x_offset = self.spacing(i, self.rows) - first_pin_offset
             pads.append(exporter.SmdPad(str(i + 1), self.pad(i, self.rows),
                                         np.array([x_offset, y_offset])))
