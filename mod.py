@@ -68,8 +68,11 @@ def load_models(config, files, pattern):
         for part in filter(lambda x: pattern_re.search(x['title']) is not None, desc['parts']):
             for package in types:
                 if package.__name__ == part['package']['type']:
-                    models.append((package().generate(materials, resolutions, templates, part),
-                                  part['title']))
+                    group = package().generate(materials, resolutions, templates, part)
+                    for entry in group:
+                        # Enable back-face culling
+                        entry.appearance().solid = True
+                    models.append((group, part['title']))
 
     return models
 

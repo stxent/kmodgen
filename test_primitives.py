@@ -156,7 +156,9 @@ class TestChip:
         )
 
         body.appearance().material = helpers.make_dark_gray_material()
+        body.appearance().solid = True
         lead.appearance().material = helpers.make_light_gray_material()
+        lead.appearance().solid = True
 
         return [body, lead]
 
@@ -194,6 +196,7 @@ class TestChip:
         plane, hole = bezier.patch_to_mesh(patches[0]), bezier.patch_to_mesh(patches[1])
         plane.appearance().material = helpers.make_light_gray_material()
         hole.appearance().material = helpers.make_dark_gray_material()
+
         return [plane, hole]
 
     def test_make_chip_shunt_hp(self, tmp_path):
@@ -293,7 +296,7 @@ class TestBentPins:
 
     @staticmethod
     def make_bent_pin(edge_resolution, line_resolution, slope_resolution):
-        return primitives.make_bent_pin_mesh(
+        mesh = primitives.make_bent_pin_mesh(
             width=1.0,
             height=2.0,
             length=1.0,
@@ -306,10 +309,12 @@ class TestBentPins:
             line_resolution=line_resolution,
             slope_resolution=slope_resolution
         )
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bent_fork_pin(edge_resolution, line_resolution, slope_resolution):
-        return primitives.make_bent_fork_pin_mesh(
+        mesh = primitives.make_bent_fork_pin_mesh(
             width=1.0,
             height=2.0,
             length=1.0,
@@ -324,6 +329,8 @@ class TestBentPins:
             line_resolution=line_resolution,
             slope_resolution=slope_resolution
         )
+        mesh.appearance().solid = True
+        return mesh
 
     def test_make_bent_pin_hp(self, tmp_path):
         model.reset_allocator()
@@ -354,7 +361,7 @@ class TestPins:
 
     @staticmethod
     def make_curved_pin(edge_resolution, line_resolution, slope_resolution):
-        return primitives.make_pin_mesh(
+        mesh = primitives.make_pin_mesh(
             pin_shape_size=np.array([0.5, 0.3]),
             pin_height=2.0,
             pin_length=4.0,
@@ -364,16 +371,20 @@ class TestPins:
             line_resolution=line_resolution,
             slope_resolution=slope_resolution
         )
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_flat_pin(edge_resolution, line_resolution):
-        return primitives.make_flat_pin_mesh(
+        mesh = primitives.make_flat_pin_mesh(
             pin_shape_size=np.array([0.5, 0.3]),
             pin_length=4.0,
             end_slope=np.deg2rad(10.0),
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
+        mesh.appearance().solid = True
+        return mesh
 
     def test_make_curved_pin_hp(self, tmp_path):
         model.reset_allocator()
@@ -398,7 +409,6 @@ class TestPins:
 
 class TestPrimitives:
     FILE_LOFT_MESH = 'test_loft_mesh.x3d'
-    FILE_SOLID_CAP = 'test_solid_cap.x3d'
     FILE_RECT_HALF = 'test_rect_half.x3d'
     FILE_ROTATION_CAP = 'test_rotation_cap.x3d'
     FILE_ROTATION_MESH = 'test_rotation_mesh.x3d'
@@ -459,27 +469,9 @@ class TestPrimitives:
 
         slices = curves.loft(path=path_points, shape=shape_points)
         mesh = geometry.build_loft_mesh(slices, True, True)
+        mesh.appearance().solid = True
 
         verify_models([mesh], tmp_path, TestPrimitives.FILE_LOFT_MESH)
-
-    def test_make_solid_cap(self, tmp_path):
-        model.reset_allocator()
-
-        corners = [
-            np.array([ 1.0,  1.0, 0.0]),
-            np.array([-1.0,  1.0, 0.0]),
-            np.array([-1.0, -1.0, 0.0]),
-            np.array([ 1.0, -1.0, 0.0])
-        ]
-
-        mesh = model.Mesh()
-        vertices = primitives.make_bezier_quad_outline(corners)
-
-        mesh.geo_vertices.extend(vertices)
-        vertices_indexed = dict(zip(list(range(0, len(vertices))), vertices))
-        primitives.append_solid_cap(mesh, vertices_indexed, origin=np.array([0.0, 0.0, -1.0]))
-
-        verify_models([mesh], tmp_path, TestPrimitives.FILE_SOLID_CAP)
 
     def test_make_rect_half(self, tmp_path):
         model.reset_allocator()
@@ -512,17 +504,9 @@ class TestPrimitives:
     def test_make_rotation_cap(self, tmp_path):
         model.reset_allocator()
 
-        curve = TestPrimitives.make_barrel_curve(
-            radius=1.0,
-            height=2.0,
-            edge_resolution=3,
-            closed=False
-        )
-        slices = curves.rotate(
-            curve=curve,
-            axis=np.array([0.0, 0.0, 1.0]),
-            edges=24
-        )
+        curve = TestPrimitives.make_barrel_curve(radius=1.0, height=2.0, edge_resolution=3,
+                                                 closed=False)
+        slices = curves.rotate(curve=curve, axis=np.array([0.0, 0.0, 1.0]), edges=24)
 
         beg_cap = primitives.make_rotation_cap_mesh(slices, True)
         end_cap = primitives.make_rotation_cap_mesh(slices, False)
@@ -535,27 +519,18 @@ class TestPrimitives:
         mesh.append(beg_cap)
         mesh.append(end_cap)
         mesh.optimize()
+        mesh.appearance().solid = True
 
         verify_models([mesh], tmp_path, TestPrimitives.FILE_ROTATION_CAP)
 
     def test_make_rotation_mesh(self, tmp_path):
         model.reset_allocator()
 
-        curve = TestPrimitives.make_barrel_curve(
-            radius=1.0,
-            height=2.0,
-            edge_resolution=3
-        )
-        slices = curves.rotate(
-            curve=curve,
-            axis=np.array([0.0, 0.0, 1.0]),
-            edges=24
-        )
-        mesh = geometry.build_rotation_mesh(
-            slices=slices,
-            wrap=True,
-            invert=True
-        )
+        curve = TestPrimitives.make_barrel_curve(radius=1.0, height=2.0, edge_resolution=3)
+        slices = curves.rotate(curve=curve, axis=np.array([0.0, 0.0, 1.0]), edges=24)
+
+        mesh = geometry.build_rotation_mesh(slices=slices, wrap=True, invert=True)
+        mesh.appearance().solid = True
 
         verify_models([mesh], tmp_path, TestPrimitives.FILE_ROTATION_MESH)
 
@@ -576,7 +551,7 @@ class TestBox:
 
     @staticmethod
     def make_barrel_box(edge_resolution, line_resolution):
-        return primitives.make_box_with_mark(
+        body = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 1.0]),
             chamfer=0.2,
             band_size=0.2,
@@ -584,15 +559,19 @@ class TestBox:
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
+        body.appearance().solid = True
+        return body
 
     @staticmethod
     def make_box(edge_resolution, line_resolution):
-        return primitives.make_box_with_mark(
+        body = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
+        body.appearance().solid = True
+        return body
 
     @staticmethod
     def make_box_mark(edge_resolution, line_resolution, mark_resolution):
@@ -605,13 +584,17 @@ class TestBox:
             mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
         )
+
         body.appearance().material = helpers.make_light_gray_material()
+        body.appearance().solid = True
         mark.appearance().material = helpers.make_dark_gray_material()
+        mark.appearance().solid = True
+
         return [body, mark]
 
     @staticmethod
     def make_banded_box(edge_resolution, line_resolution):
-        return primitives.make_box_with_mark(
+        body = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
@@ -619,6 +602,8 @@ class TestBox:
             band_size=0.1,
             band_offset=0.3
         )
+        body.appearance().solid = True
+        return body
 
     @staticmethod
     def make_banded_box_mark(edge_resolution, line_resolution, mark_resolution):
@@ -633,18 +618,24 @@ class TestBox:
             mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
         )
+
         body.appearance().material = helpers.make_light_gray_material()
+        body.appearance().solid = True
         mark.appearance().material = helpers.make_dark_gray_material()
+        mark.appearance().solid = True
+
         return [body, mark]
 
     @staticmethod
     def make_nonuniform_box():
-        return primitives.make_box_with_mark(
+        body = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=4,
             line_resolution=(3, 2, 1)
         )
+        body.appearance().solid = True
+        return body
 
     @staticmethod
     def make_nonuniform_box_mark():
@@ -657,8 +648,12 @@ class TestBox:
             mark_radius=0.3,
             mark_resolution=20
         )
+
         body.appearance().material = helpers.make_light_gray_material()
+        body.appearance().solid = True
         mark.appearance().material = helpers.make_dark_gray_material()
+        mark.appearance().solid = True
+
         return [body, mark]
 
     def test_make_barrel_box_hp(self, tmp_path):
@@ -728,7 +723,7 @@ class TestCarvedBox:
 
     @staticmethod
     def make_carved_box(edge_resolution, line_resolution):
-        return primitives.make_carved_box(
+        body = primitives.make_carved_box(
             size=np.array([2.0, 2.0, 2.0]),
             niche_size=np.array([0.6, 1.0, 0.6]),
             chamfer=0.2,
@@ -736,6 +731,8 @@ class TestCarvedBox:
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
+        body.appearance().solid = True
+        return body
 
     def test_make_carved_box_hp(self, tmp_path):
         model.reset_allocator()
@@ -756,7 +753,7 @@ class TestRoundedBox:
 
     @staticmethod
     def make_rounded_box(edge_resolution, line_resolution):
-        return primitives.make_rounded_box(
+        body = primitives.make_rounded_box(
             size=np.array([2.0, 2.0, 2.0]),
             roundness=0.5,
             chamfer=0.2,
@@ -765,6 +762,8 @@ class TestRoundedBox:
             band_size=0.1,
             band_offset=0.3
         )
+        body.appearance().solid = True
+        return body
 
     @staticmethod
     def make_rounded_box_mark(edge_resolution, line_resolution, mark_resolution, plane_resolution):
@@ -781,8 +780,12 @@ class TestRoundedBox:
             mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
         )
+
         body.appearance().material = helpers.make_light_gray_material()
+        body.appearance().solid = True
         mark.appearance().material = helpers.make_dark_gray_material()
+        mark.appearance().solid = True
+
         return [body, mark]
 
     def test_make_rounded_box_hp(self, tmp_path):
@@ -812,7 +815,7 @@ class TestSlopedBox:
 
     @staticmethod
     def make_sloped_box(edge_resolution, line_resolution):
-        return primitives.make_sloped_box(
+        body = primitives.make_sloped_box(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             slope=math.pi / 4.0,
@@ -822,6 +825,8 @@ class TestSlopedBox:
             band_size=0.1,
             band_offset=0.0
         )
+        body.appearance().solid = True
+        return body
 
     def test_make_sloped_box_hp(self, tmp_path):
         model.reset_allocator()

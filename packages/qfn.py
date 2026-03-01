@@ -8,6 +8,7 @@
 import math
 import numpy as np
 
+import bezier
 import primitives
 from wrlconv import geometry
 from wrlconv import model
@@ -16,32 +17,10 @@ from wrlconv import model
 class QFN:
     BODY_CHAMFER = primitives.hmils(0.05)
     MARK_RADIUS  = primitives.hmils(0.5)
-    EPSILON      = 0.001
+    EPSILON      = 1e-3
 
     def __init__(self, material='QFN'):
         self.material = material
-
-    @staticmethod
-    def blow_top_vertices(mesh, size, band, chamfer):
-        src_plane_size = size[0:2] - chamfer * 2.0 - band[0:2] * 4.0
-        dst_plane_size = size[0:2] - chamfer * 4.0
-        region = (
-            (-src_plane_size[0] / 2.0, -src_plane_size[1] / 2.0,     0.0),
-            ( src_plane_size[0] / 2.0,  src_plane_size[1] / 2.0, size[2]),
-            1
-        )
-
-        transform = model.Transform()
-        transform.scale(np.array([
-            dst_plane_size[0] / src_plane_size[0],
-            dst_plane_size[1] / src_plane_size[1],
-            1.0
-        ]))
-
-        result = model.AttributedMesh(name='Body', regions=[region])
-        result.append(mesh)
-        result.apply_transform({1: transform})
-        return result
 
     @staticmethod
     def detach_pads(mesh, count, size, band, pin_width, pin_pitch, first_pin_offset):
@@ -108,59 +87,59 @@ class QFN:
 
     @staticmethod
     def make_bottom_plane(mesh, body_size, chamfer):
-        top_corner = body_size[0:2] / 2.0 - chamfer * 2.0
-        region = (
-            (-top_corner[0], -top_corner[1], -body_size[2]),
-            ( top_corner[0],  top_corner[1],           0.0)
+        center = np.array([0.0, 0.0, -body_size[2] / 2.0])
+        normal = np.array([0.0, 0.0, -1.0])
+        body_region_corner = body_size[0:2] / 2.0 - chamfer * 2.0
+        body_region = (
+            (-body_region_corner[0], -body_region_corner[1], -body_size[2]),
+            ( body_region_corner[0],  body_region_corner[1],           0.0)
         )
-        body_vertices = mesh.find_vertices([region])
-        primitives.append_solid_cap(mesh, body_vertices, normal=np.array([0.0, 0.0, -1.0]))
+        body_vertices = mesh.find_vertices([body_region])
+        body_indices = primitives.sort_vertices_by_angle(body_vertices, center, normal)
+        body_slice = [mesh.geo_vertices[number] for number, _ in body_indices]
+
+        return primitives.slice_connect_nearest([body_slice, [center]], True)
 
     @staticmethod
-    def make_top_plane(mesh, body_size, chamfer):
-        top_corner = body_size[0:2] / 2.0 - chamfer * 2.0
-        region = (
-            (-top_corner[0], -top_corner[1],          0.0),
-            ( top_corner[0],  top_corner[1], body_size[2])
+    def make_heatsink_plane(mesh, body_size, heatsink_size, chamfer, line_resolution):
+        # Select body vertices
+        center = np.array([0.0, 0.0, -body_size[2] / 2.0])
+        normal = np.array([0.0, 0.0, -1.0])
+        body_region_corner = body_size[0:2] / 2.0 - chamfer * 2.0
+        body_region = (
+            (-body_region_corner[0], -body_region_corner[1], -body_size[2]),
+            ( body_region_corner[0],  body_region_corner[1],           0.0)
         )
-        body_vertices = mesh.find_vertices([region])
-        primitives.append_solid_cap(mesh, body_vertices, normal=np.array([0.0, 0.0, 1.0]))
+        body_vertices = mesh.find_vertices([body_region])
+        body_indices = primitives.sort_vertices_by_angle(body_vertices, center, normal)
+        body_slice = [mesh.geo_vertices[number] for number, _ in body_indices]
 
-    @staticmethod
-    def make_heatsink_hole(mesh, body_size, heatsink_size, chamfer):
-        top_corner = body_size[0:2] / 2.0 - chamfer * 2.0
-        region = (
-            (-top_corner[0], -top_corner[1], -body_size[2]),
-            ( top_corner[0],  top_corner[1],           0.0)
-        )
+        # Make heatsink mesh
+        heatsink_top_corner = heatsink_size / 2.0
         heatsink_corners = [
-            np.array([ heatsink_size[0] / 2.0,  heatsink_size[1] / 2.0, -body_size[2] / 2.0]),
-            np.array([-heatsink_size[0] / 2.0,  heatsink_size[1] / 2.0, -body_size[2] / 2.0]),
-            np.array([-heatsink_size[0] / 2.0, -heatsink_size[1] / 2.0, -body_size[2] / 2.0]),
-            np.array([ heatsink_size[0] / 2.0, -heatsink_size[1] / 2.0, -body_size[2] / 2.0])
+            np.array([ heatsink_top_corner[0],  heatsink_top_corner[1], -body_size[2] / 2.0]),
+            np.array([-heatsink_top_corner[0],  heatsink_top_corner[1], -body_size[2] / 2.0]),
+            np.array([-heatsink_top_corner[0], -heatsink_top_corner[1], -body_size[2] / 2.0]),
+            np.array([ heatsink_top_corner[0], -heatsink_top_corner[1], -body_size[2] / 2.0])
         ]
-        heatsink_vertices = primitives.make_bezier_quad_outline(heatsink_corners)
-        heatsink_vertices_indexed = dict(zip(list(range(len(heatsink_vertices))),
-                                             heatsink_vertices))
-        body_vertices = mesh.find_vertices([region])
-        primitives.append_hollow_cap(mesh, body_vertices, heatsink_vertices_indexed,
-                                     np.array([0.0, 0.0, -1.0]))
+        heatsink_patch = bezier.default_face_functor(heatsink_corners, tuple([(None, None)] * 4),
+                                                     line_resolution, False)
+        heatsink_part = heatsink_patch[0].tessellate()
 
-    @staticmethod
-    def make_mark_hole(mesh, body_size, mark_radius, mark_offset, chamfer, resolution):
-        top_corner = body_size[0:2] / 2.0 - chamfer * 2.0
-        region = (
-            (-top_corner[0], -top_corner[1],          0.0),
-            ( top_corner[0],  top_corner[1], body_size[2])
+        # Select heatsink vertices
+        heatsink_region_corner = heatsink_top_corner - QFN.EPSILON
+        heatsink_region = (
+            (-heatsink_region_corner[0], -heatsink_region_corner[1], -body_size[2]),
+            ( heatsink_region_corner[0],  heatsink_region_corner[1],           0.0)
         )
-        mark_vertices = primitives.make_circle_outline(
-            np.array([*mark_offset, body_size[2] / 2.0]),
-            mark_radius, resolution
-        )
-        mark_vertices_indexed = dict(zip(list(range(len(mark_vertices))), mark_vertices))
-        body_vertices = mesh.find_vertices([region])
-        primitives.append_hollow_cap(mesh, body_vertices, mark_vertices_indexed,
-                                     normal=np.array([0.0, 0.0, 1.0]))
+        heatsink_vertices = heatsink_part.find_vertices([heatsink_region], include=False)
+        heatsink_indices = primitives.sort_vertices_by_angle(heatsink_vertices, center, normal)
+        heatsink_slice = [heatsink_vertices[number] for number, _ in heatsink_indices]
+
+        # Make connection between body and heatsink
+        body_part = primitives.slice_connect_nearest([body_slice, heatsink_slice], True)
+
+        return (body_part, heatsink_part)
 
     @staticmethod
     def mold_edge_pin_offsets(mesh, size, pin_width, pin_pitch, band, plane_size, resolution,
@@ -350,34 +329,42 @@ class QFN:
             (-size[0] / 2.0 + band[0], -size[1] / 2.0 + band[1], -size[2]),
             ( size[0] / 2.0 - band[0],  size[1] / 2.0 - band[1], 0.0)
         )
-        center_region_top = (
-            (-size[0] / 2.0 + band[0], -size[1] / 2.0 + band[1], 0.0),
-            ( size[0] / 2.0 - band[0],  size[1] / 2.0 - band[1], size[2])
-        )
-        mesh.detach_faces([center_region_bottom, center_region_top])
+        mesh.detach_faces([center_region_bottom])
 
     @staticmethod
     def make_qfn_body(size, count, chamfer, pin_pitch, pin_width, pin_height, pin_length,
-                      heatsink=None, mark_radius=None, mark_offset=np.zeros(2),
-                      edge_resolution=3, line_resolution=1, mark_resolution=24):
-        resolution = count * 2 + 3
+                      heatsink=None, mark_radius=None, mark_offset=np.zeros(3),
+                      edge_resolution=3, line_resolution=1, mark_resolution=24, plane_resolution=1):
+        body_resolution = count * 2 + 3
         first_pin_offset = (np.asarray(count, dtype=np.float32) - 1.0) * pin_pitch / 2.0
 
         plane_size = size - chamfer * 2.0
         band = np.array([
-            plane_size[0] / resolution[0] / 2.0,
-            plane_size[1] / resolution[1] / 2.0,
+            plane_size[0] / body_resolution[0] / 2.0,
+            plane_size[1] / body_resolution[1] / 2.0,
             size[2] / 4.0
         ])
 
-        source_mesh = primitives.make_box_with_mark(size=size, chamfer=chamfer,
-                                                    edge_resolution=edge_resolution,
-                                                    line_resolution=(*resolution, 2))
+        box_meshes = primitives.make_box_with_mark(
+            size=size,
+            chamfer=chamfer,
+            edge_resolution=edge_resolution,
+            line_resolution=(*body_resolution, 2),
+            plane_resolution=plane_resolution,
+            mark_radius=mark_radius,
+            mark_offset=mark_offset,
+            mark_resolution=mark_resolution
+        )
+        try:
+            source_mesh = box_meshes[0]
+            dot_mesh = box_meshes[1]
+        except TypeError:
+            source_mesh = box_meshes
+            dot_mesh = None
         QFN.remove_unused_vertices(source_mesh, size, band)
 
-        top_face_forming = QFN.blow_top_vertices(source_mesh, size, band, chamfer)
-        edge_pin_forming = QFN.mold_edge_pin_offsets(top_face_forming, size, pin_width, pin_pitch,
-                                                     band, plane_size, resolution, chamfer,
+        edge_pin_forming = QFN.mold_edge_pin_offsets(source_mesh, size, pin_width, pin_pitch,
+                                                     band, plane_size, body_resolution, chamfer,
                                                      first_pin_offset)
         corner_pin_forming = QFN.fix_inner_corners(edge_pin_forming, count, size, band, pin_length,
                                                    chamfer)
@@ -388,25 +375,20 @@ class QFN:
         pin_mesh = QFN.detach_pads(final_forming, count, size, band, pin_width, pin_pitch,
                                    first_pin_offset)
 
-        if mark_radius is not None:
-            QFN.make_mark_hole(final_forming, size, mark_radius, mark_offset, chamfer,
-                               mark_resolution)
-            mark_mesh = geometry.Circle(mark_radius, mark_resolution)
-            mark_mesh.translate([*mark_offset, size[2] / 2.0])
-        else:
-            QFN.make_top_plane(final_forming, size, chamfer)
-            mark_mesh = None
-
         if heatsink is not None:
-            QFN.make_heatsink_hole(final_forming, size, heatsink, chamfer)
-
-            heatsink_mesh = geometry.Plane(heatsink, (line_resolution, line_resolution))
-            heatsink_mesh.translate([0.0, 0.0, -size[2] / 2.0])
-            pin_mesh.append(heatsink_mesh)
+            body_part, heatsink_part = QFN.make_heatsink_plane(final_forming, size, heatsink,
+                                                               chamfer, line_resolution)
         else:
-            QFN.make_bottom_plane(final_forming, size, chamfer)
+            body_part = QFN.make_bottom_plane(final_forming, size, chamfer)
+            heatsink_part = None
 
-        return [final_forming, pin_mesh, mark_mesh]
+        final_forming.append(body_part)
+        final_forming.optimize()
+
+        if heatsink_part is not None:
+            pin_mesh.append(heatsink_part)
+
+        return [final_forming, pin_mesh, dot_mesh]
 
     def generate(self, materials, resolutions, _, descriptor):
         try:
@@ -438,7 +420,7 @@ class QFN:
             mark_offset = QFN.calc_mark_offset(body_size, mark_radius, chamfer)
         else:
             mark_radius = None
-            mark_offset = np.zeros(2)
+            mark_offset = np.zeros(3)
 
         try:
             pin_height = primitives.hmils(descriptor['pins']['height'])
@@ -450,7 +432,7 @@ class QFN:
         except KeyError:
             heatsink_size = None
 
-        body_mesh, pin_mesh, mark_mesh = QFN.make_qfn_body(
+        body_mesh, pin_mesh, dot_mesh = QFN.make_qfn_body(
             size=body_size,
             count=pin_count,
             chamfer=chamfer,
@@ -463,7 +445,8 @@ class QFN:
             mark_offset=mark_offset,
             edge_resolution=resolutions['chamfer'],
             line_resolution=resolutions['line'],
-            mark_resolution=resolutions['circle']
+            mark_resolution=resolutions['circle'],
+            plane_resolution=max(resolutions['line'], 2)
         )
 
         meshes = []
@@ -482,19 +465,20 @@ class QFN:
         pin_mesh.rename('Pins')
         meshes.append(pin_mesh)
 
-        if mark_mesh is not None:
+        if dot_mesh is not None:
             if f'{self.material}.Dot' in materials:
-                mark_mesh.appearance().material = materials[f'{self.material}.Dot']
-            mark_mesh.apply(body_transform)
-            mark_mesh.rename('Dot')
-            meshes.append(mark_mesh)
+                dot_mesh.appearance().material = materials[f'{self.material}.Dot']
+            dot_mesh.apply(body_transform)
+            dot_mesh.rename('Dot')
+            meshes.append(dot_mesh)
 
         return meshes
 
     @staticmethod
     def calc_mark_offset(size, radius, chamfer):
         plane_size = size[0:2] - chamfer * 2.0
-        return -plane_size / 2.0 + radius * 2.0
+        mark_offset = -plane_size / 2.0 + radius * 2.0
+        return np.array([*mark_offset, 0.0])
 
 
 class DFN(QFN):

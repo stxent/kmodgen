@@ -91,30 +91,6 @@ class CircularBezierQuad(curves.BezierQuad):
         return mesh
 
 
-def make_bezier_quad_outline(points, resolution=(1, 1), roundness=1.0 / 3.0):
-    p01_vec = (points[1] - points[0]) * roundness
-    p03_vec = (points[3] - points[0]) * roundness
-    p21_vec = (points[1] - points[2]) * roundness
-    p23_vec = (points[3] - points[2]) * roundness
-
-    p10_vec = -p01_vec
-    p12_vec = -p21_vec
-    p30_vec = -p03_vec
-    p32_vec = -p23_vec
-
-    side_a = curves.Bezier(points[0], p01_vec, points[1], p10_vec, resolution[0])
-    side_b = curves.Bezier(points[1], p12_vec, points[2], p21_vec, resolution[1])
-    side_c = curves.Bezier(points[2], p23_vec, points[3], p32_vec, resolution[0])
-    side_d = curves.Bezier(points[3], p30_vec, points[0], p03_vec, resolution[1])
-
-    vertices = []
-    vertices.extend(side_a.tessellate())
-    vertices.extend(side_b.tessellate())
-    vertices.extend(side_c.tessellate())
-    vertices.extend(side_d.tessellate())
-    return vertices
-
-
 def make_circle_outline(center, radius, edges):
     vertices = []
     angle, delta = 0.0, math.pi * 2.0 / edges
@@ -144,74 +120,9 @@ def sort_vertices_by_angle(vertices, mean, normal, direction=None):
         if np.linalg.det(np.array([direction, vector, normal])) < 0.0:
             angle = -angle
         angles.append((key, angle))
-    angles.sort(key=lambda x: x[1])
+    angles.sort(key=lambda pair: pair[1])
 
     return angles
-
-
-def append_hollow_cap(mesh, outer, inner, normal):
-    inner_mean = np.zeros(3)
-    for vertex in inner.values():
-        inner_mean += vertex
-    inner_mean /= len(inner)
-
-    direction = inner[next(iter(inner))] - inner_mean
-    inner_indices = sort_vertices_by_angle(inner, inner_mean, normal, direction)
-    outer_indices = sort_vertices_by_angle(outer, inner_mean, normal, direction)
-
-    i_count, o_count = len(inner_indices), len(outer_indices)
-    i_index, o_index = 0, 0
-    i_offset = len(mesh.geo_vertices)
-    polygons = []
-
-    while o_index < o_count:
-        if o_index < o_count - 1:
-            threshold = (outer_indices[o_index + 1][1] + outer_indices[o_index][1]) / 2.0
-        else:
-            threshold = outer_indices[o_index][1]
-
-        while i_index < i_count and (inner_indices[i_index][1] < threshold
-                                     or o_index == o_count - 1):
-            polygons.append([
-                outer_indices[o_index][0],
-                inner_indices[(i_index + 1) % i_count][0] + i_offset,
-                inner_indices[i_index][0] + i_offset
-            ])
-            i_index += 1
-
-        polygons.append([
-            outer_indices[o_index][0],
-            outer_indices[(o_index + 1) % o_count][0],
-            inner_indices[i_index % i_count][0] + i_offset
-        ])
-        o_index += 1
-
-    for vertex in inner.values():
-        mesh.geo_vertices.append(vertex)
-    mesh.geo_polygons.extend(polygons)
-
-
-def append_solid_cap(mesh, vertices, origin=None, normal=None):
-    if origin is None and normal is None:
-        raise ValueError()
-
-    mean = np.zeros(3)
-    for vertex in vertices.values():
-        mean += vertex
-    mean /= len(vertices)
-
-    if normal is None:
-        normal = model.normalize(mean - origin)
-
-    indices = [x[0] for x in sort_vertices_by_angle(vertices, mean, normal)]
-    mean_index = len(mesh.geo_vertices)
-    mesh.geo_vertices.append(mean)
-
-    count = len(indices)
-    polygons = []
-    for i in range(count):
-        polygons.append([indices[i % count], indices[(i + 1) % count], mean_index])
-    mesh.geo_polygons.extend(polygons)
 
 
 def make_hollow_plane(points, controls, hollow_offset, hollow_radius,

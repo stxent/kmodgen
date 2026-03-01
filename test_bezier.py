@@ -109,7 +109,9 @@ class TestBezierObject:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_box_2(sharpness):
@@ -162,7 +164,9 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_box_3():
@@ -219,7 +223,9 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_box_4():
@@ -277,7 +283,9 @@ class TestBezierObject:
             line_resolution=3,
             vertex_attributes=vertex_attributes
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_cube():
@@ -321,7 +329,9 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_cube_part():
@@ -416,7 +426,9 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_pyramid_4c():
@@ -449,7 +461,9 @@ class TestBezierObject:
             edge_resolution=5,
             line_resolution=3
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_pyramid_cut():
@@ -630,7 +644,9 @@ class TestBezierObjectCurves:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_drum():
@@ -700,7 +716,9 @@ class TestBezierObjectCurves:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return bezier.patch_to_mesh(mesh_object.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     @staticmethod
     def make_bezier_dumbbell(arc_resolution, edge_resolution, line_resolution):
@@ -785,7 +803,7 @@ class TestBezierObjectCurves:
         start, center = len(vertices) - 6, len(vertices) - 1
         faces.append([(start + i, center) for i in range(4)])
 
-        body = bezier.BezierObject(
+        mesh_object = bezier.BezierObject(
             vertices=vertices,
             edges=edges,
             faces=faces,
@@ -796,7 +814,9 @@ class TestBezierObjectCurves:
             vertex_attributes=vertex_attributes,
             edge_attributes=edge_attributes
         )
-        return bezier.patch_to_mesh(body.build())
+        mesh = bezier.patch_to_mesh(mesh_object.build())
+        mesh.appearance().solid = True
+        return mesh
 
     def test_bezier_corner(self, tmp_path):
         model.reset_allocator()

@@ -121,7 +121,7 @@ class QFP:
     @staticmethod
     def calc_mark_offset(count, pitch):
         first_pin_offset = (np.asarray(count, dtype=np.float32) - 1.0) * pitch / 2.0
-        mark_offset = -first_pin_offset + pitch / 2.0
+        mark_offset = -first_pin_offset + pitch
         return np.array([*mark_offset, 0.0])
 
 
