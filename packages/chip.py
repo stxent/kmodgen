@@ -9,29 +9,29 @@ import copy
 import math
 import numpy as np
 
+import bezier
 import primitives
-from packages import generic
 from wrlconv import curves
 from wrlconv import geometry
 from wrlconv import model
 
 
 class ChipBase:
-    CHAMFER_DETAILS = 1
     DEFAULT_CHAMFER = primitives.hmils(0.05)
 
     def __init__(self, material):
         self.material = material
 
     @staticmethod
-    def make_chip(body_size, lead_width, lead_chamfer, edge_resolution, line_resolution):
+    def make_chip(body_size, lead_width, lead_chamfer, arc_resolution, edge_resolution,
+                  line_resolution):
         body_chamfer = lead_chamfer / 2.0
 
         lead_size = np.array([lead_width, body_size[1], body_size[2]])
         ceramic_size = np.array([
             body_size[0] - 2.0 * lead_width,
-            body_size[1] - 2.0 * body_chamfer,
-            body_size[2] - 2.0 * body_chamfer
+            body_size[1] - 2.0 * lead_chamfer,
+            body_size[2] - 2.0 * lead_chamfer
         ])
 
         body, leads = primitives.make_chip(
@@ -39,7 +39,7 @@ class ChipBase:
             lead_size=lead_size,
             body_chamfer=body_chamfer,
             lead_chamfer=lead_chamfer,
-            chamfer_resolution=ChipBase.CHAMFER_DETAILS,
+            arc_resolution=arc_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
@@ -57,6 +57,7 @@ class ChipBase:
             body_size=body_size,
             lead_width=lead_width,
             lead_chamfer=max(chamfer_from_size, ChipBase.DEFAULT_CHAMFER),
+            arc_resolution=resolutions['arc'],
             edge_resolution=resolutions['edge'],
             line_resolution=resolutions['line']
         )
@@ -65,6 +66,963 @@ class ChipBase:
             meshes[0].appearance().material = materials[f'{self.material}.Ceramic']
         if f'{self.material}.Lead' in materials:
             meshes[1].appearance().material = materials[f'{self.material}.Lead']
+        return meshes
+
+
+class ChipLED:
+    CHIP_CHAMFER = primitives.hmils(0.005)
+    CHIP_HEIGHT = primitives.hmils(0.025)
+    CHIP_LENGTH = primitives.hmils(0.1)
+    DEFAULT_CHAMFER = primitives.hmils(0.05)
+
+    def __init__(self):
+        self.material_suffix = ''
+
+    @staticmethod
+    def make_vertex_rect(x, y, z):
+        return [
+            np.array([ x,  y, z]),
+            np.array([ x, -y, z]),
+            np.array([-x, -y, z]),
+            np.array([-x,  y, z])
+        ]
+
+    @staticmethod
+    def make_crystal(size, chamfer, offset, edge_resolution, line_resolution):
+        x, y = np.array(size[:2]) / 2.0
+        z = size[2]
+
+        vertices = []
+        vertices.extend(ChipLED.make_vertex_rect(x, y, offset + z))
+        vertices.extend(ChipLED.make_vertex_rect(x, y, offset))
+        vertices.extend(ChipLED.make_vertex_rect(x, y, -z))
+
+        faces = [
+            [3, 2, 1, 0],
+            [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]
+        ]
+        edges = bezier.unpack_faces(faces)
+        edges.extend([
+            [8, 9, 10, 11, 8],
+            [4, 8], [5, 9], [6, 10], [7, 11]
+        ])
+        vertex_attributes = {i: {bezier.DISCARD: True} for i in range(8, 12)}
+
+        body = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=vertex_attributes
+        )
+        return bezier.patch_to_mesh(body.build())
+
+    @staticmethod
+    def make_lens(lens_size, chamfer, offset, edge_resolution, line_resolution):
+        x = lens_size[0] / 2.0
+        y = lens_size[1] / 2.0
+        z = lens_size[2]
+        x_slope = x / 20.0
+
+        vertices = []
+        vertices.extend(ChipLED.make_vertex_rect(x - x_slope, y, offset + z))
+        vertices.extend(ChipLED.make_vertex_rect(x, y, offset))
+        vertices.extend(ChipLED.make_vertex_rect(x, y, -z))
+
+        faces = [
+            [3, 2, 1, 0],
+            [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]
+        ]
+        edges = bezier.unpack_faces(faces)
+        edges.extend([
+            [8, 9, 10, 11, 8],
+            [4, 8], [5, 9], [6, 10], [7, 11]
+        ])
+        vertex_attributes = {i: {bezier.DISCARD: True} for i in range(8, 12)}
+
+        body = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=vertex_attributes
+        )
+        return bezier.patch_to_mesh(body.build())
+
+    @staticmethod
+    def make_traces(x, y, z, n, corners, mark_width, arc_resolution):
+        vertices = []
+        vertex_attributes = {}
+        edges = []
+        edge_attributes = {}
+
+        x_cell, y_cell = x * 2.0 / 8.0, y * 2.0 / 6.0
+        r = min(x_cell, y_cell) / 5.0
+        w = r * curves.calc_bezier_weight(angle=math.pi / 2.0)
+        wx_cell = x_cell / 3.0
+        wy_cell = y_cell / 1.5
+        x_bar = x - x_cell
+
+        vertices.extend([
+            # Offset 0
+            np.array([x - mark_width,        y - y_cell * 1.5,     z]),
+            np.array([x - x_cell * 5.0 + r,  y - y_cell * 1.5,     z]),
+            np.array([x - x_cell * 5.0,      y - y_cell * 1.5 - r, z]),
+            np.array([x - x_cell * 5.0,     -y + y_cell * 1.5 + r, z]),
+            np.array([x - x_cell * 5.0 + r, -y + y_cell * 1.5,     z]),
+            np.array([x - x_cell * 3.0 - r, -y + y_cell * 1.5,     z]),
+            np.array([x - x_cell * 3.0,     -y + y_cell * 1.5 + r, z]),
+            np.array([x - x_cell * 3.0,      y - y_cell * 2.5 - r, z]),
+            np.array([x - x_cell * 3.0 + r,  y - y_cell * 2.5,     z]),
+            np.array([x - x_cell * 1.5 - r,  y - y_cell * 2.5,     z]),
+            np.array([x - x_cell * 1.5,      y - y_cell * 2.5 - r, z]),
+            np.array([x - x_cell * 1.5,     -y + y_cell * 1.5 + r, z]),
+            np.array([x - x_cell * 1.5 + r, -y + y_cell * 1.5,     z]),
+            np.array([x - mark_width,       -y + y_cell * 1.5,     z]),
+
+            # Offset 14
+            np.array([-x + mark_width,        y - y_cell * 2.0,     z]),
+            np.array([-x + x_cell * 2.0 - r,  y - y_cell * 2.0,     z]),
+            np.array([-x + x_cell * 2.0,      y - y_cell * 2.0 - r, z]),
+            np.array([-x + x_cell * 2.0,     -y + y_cell * 2.0 + r, z]),
+            np.array([-x + x_cell * 2.0 - r, -y + y_cell * 2.0,     z]),
+            np.array([-x + mark_width,       -y + y_cell * 2.0,     z]),
+        ])
+
+        vertex_attributes.update({
+            corners[0]: {bezier.TENSION: {n: np.array([0.0, -wy_cell, 0.0])}},
+            n: {bezier.TENSION: {corners[0]: np.array([wx_cell, 0.0, 0.0])}},
+
+            corners[1]: {bezier.TENSION: {n + 13: np.array([0.0, wy_cell, 0.0])}},
+            n + 13: {bezier.TENSION: {corners[1]: np.array([wx_cell, 0.0, 0.0])}},
+
+            corners[3]: {bezier.TENSION: {n + 14: np.array([0.0, -wy_cell, 0.0])}},
+            n + 14: {bezier.TENSION: {corners[3]: np.array([-wx_cell, 0.0, 0.0])}},
+
+            corners[2]: {bezier.TENSION: {n + 19: np.array([0.0, wy_cell, 0.0])}},
+            n + 19: {bezier.TENSION: {corners[2]: np.array([-wx_cell, 0.0, 0.0])}},
+
+            n + 1: {bezier.TENSION: {n + 2: np.array([ -w, 0.0, 0.0])}},
+            n + 2: {bezier.TENSION: {n + 1: np.array([0.0,   w, 0.0])}},
+
+            n + 3: {bezier.TENSION: {n + 4: np.array([0.0,  -w, 0.0])}},
+            n + 4: {bezier.TENSION: {n + 3: np.array([ -w, 0.0, 0.0])}},
+
+            n + 5: {bezier.TENSION: {n + 6: np.array([  w, 0.0, 0.0])}},
+            n + 6: {bezier.TENSION: {n + 5: np.array([0.0,  -w, 0.0])}},
+
+            n + 7: {bezier.TENSION: {n + 8: np.array([0.0,   w, 0.0])}},
+            n + 8: {bezier.TENSION: {n + 7: np.array([ -w, 0.0, 0.0])}},
+
+            n + 9: {bezier.TENSION: {n + 10: np.array([  w, 0.0, 0.0])}},
+            n + 10: {bezier.TENSION: {n + 9: np.array([0.0,   w, 0.0])}},
+
+            n + 11: {bezier.TENSION: {n + 12: np.array([0.0,  -w, 0.0])}},
+            n + 12: {bezier.TENSION: {n + 11: np.array([ -w, 0.0, 0.0])}},
+
+            n + 15: {bezier.TENSION: {n + 16: np.array([  w, 0.0, 0.0])}},
+            n + 16: {bezier.TENSION: {n + 15: np.array([0.0,   w, 0.0])}},
+
+            n + 17: {bezier.TENSION: {n + 18: np.array([0.0,  -w, 0.0])}},
+            n + 18: {bezier.TENSION: {n + 17: np.array([  w, 0.0, 0.0])}},
+        })
+
+        edge_attributes.update({
+            tuple(sorted((corners[0], corners[1]))): {bezier.RESOLUTION: arc_resolution},
+            tuple(sorted((corners[2], corners[3]))): {bezier.RESOLUTION: arc_resolution},
+
+            tuple(sorted((corners[0], n + 0))): {bezier.RESOLUTION: arc_resolution},
+            tuple(sorted((corners[1], n + 13))): {bezier.RESOLUTION: arc_resolution},
+            tuple(sorted((corners[2], n + 19))): {bezier.RESOLUTION: arc_resolution},
+            tuple(sorted((corners[3], n + 14))): {bezier.RESOLUTION: arc_resolution},
+
+            (n + 1, n + 2): {bezier.RESOLUTION: arc_resolution},
+            (n + 3, n + 4): {bezier.RESOLUTION: arc_resolution},
+            (n + 5, n + 6): {bezier.RESOLUTION: arc_resolution},
+            (n + 7, n + 8): {bezier.RESOLUTION: arc_resolution},
+            (n + 9, n + 10): {bezier.RESOLUTION: arc_resolution},
+            (n + 11, n + 12): {bezier.RESOLUTION: arc_resolution},
+            (n + 15, n + 16): {bezier.RESOLUTION: arc_resolution},
+            (n + 17, n + 18): {bezier.RESOLUTION: arc_resolution}
+        })
+
+        mark_faces = []
+        mark_faces.append([corners[0], corners[6], n + 0])
+        mark_faces.append([corners[7], corners[1], n + 13])
+
+        inner_faces = []
+        inner_faces.append([n + 0, n + 13, corners[1], corners[0]])
+        inner_faces.append([n + 0, n + 1, n + 8, n + 9])
+        inner_faces.append([n + 1, n + 2, n + 7, n + 8])
+        inner_faces.append([n + 2, n + 3, n + 6, n + 7])
+        inner_faces.append([n + 3, n + 4, n + 5, n + 6])
+        inner_faces.append([n + 0, n + 9, n + 10])
+        inner_faces.append([n + 0, n + 10, n + 11, n + 13])
+        inner_faces.append([n + 11, n + 12, n + 13])
+        inner_faces.append([n + 19, n + 14, corners[3], corners[2]])
+        inner_faces.append([n + 19, n + 18, n + 15, n + 14])
+        inner_faces.append([n + 18, n + 17, n + 16, n + 15])
+
+        outer_faces = []
+        outer_faces.append([corners[6], corners[4], n + 1, n + 0])
+        outer_faces.append([corners[4], n + 2, n + 1])
+        outer_faces.append([corners[4], n + 15, n + 16, n + 2])
+        outer_faces.append([corners[4], n + 14, n + 15])
+        outer_faces.append([corners[4], corners[3], n + 14])
+        outer_faces.append([n + 3, n + 17, n + 18])
+        outer_faces.append([n + 16, n + 17, n + 3, n + 2])
+        outer_faces.append([n + 11, n + 6, n + 5])
+        outer_faces.append([n + 12, n + 11, n + 5])
+        outer_faces.append([n + 11, n + 10, n + 7, n + 6])
+        outer_faces.append([n + 10, n + 9, n + 8, n + 7])
+        outer_faces.append([corners[5], n + 3, n + 18, n + 19])
+        outer_faces.append([corners[5], n + 4, n + 3])
+        outer_faces.append([corners[5], corners[7], n + 5, n + 4])
+        outer_faces.append([corners[5], n + 19, corners[2]])
+        outer_faces.append([corners[7], n + 12, n + 5])
+        outer_faces.append([corners[7], n + 13, n + 12])
+
+        face_attributes = {}
+        for indices in mark_faces + inner_faces + outer_faces:
+            face_attributes[tuple(sorted(indices))] = {
+                bezier.FUNCTOR: primitives.asymmetric_face_functor
+            }
+
+        edges = bezier.unpack_faces(inner_faces + outer_faces + mark_faces)
+        return {
+            'vertices': (vertices, vertex_attributes),
+            'edges': (edges, edge_attributes),
+            'body_faces': (outer_faces, face_attributes),
+            'lead_faces': (inner_faces, face_attributes),
+            'mark_faces': (mark_faces, face_attributes)
+        }
+
+    @staticmethod
+    def make_led_body(body_size, lead_length, mark_width, chamfer, arc_resolution,
+                      edge_resolution, line_resolution, plane_resolution):
+        # pylint: disable=invalid-name
+        y = body_size[1] / 2.0
+        z = body_size[2]
+        t = chamfer * 2.0
+        # pylint: enable=invalid-name
+
+        x_body = body_size[0] / 2.0
+        x_lead = x_body - lead_length
+        x_mark = x_lead - mark_width
+
+        def make_layer_vertices(altitude):
+            return [
+                # Offset 0
+                np.array([     x_mark,      y, altitude]),
+                np.array([     x_lead,      y, altitude]),
+                np.array([ x_body - t,      y, altitude]),
+                np.array([     x_body,      y, altitude]),
+                # Offset 4
+                np.array([     x_body,     -y, altitude]),
+                np.array([ x_body - t,     -y, altitude]),
+                np.array([     x_lead,     -y, altitude]),
+                np.array([     x_mark,     -y, altitude]),
+                # Offset 8
+                np.array([    -x_mark,     -y, altitude]),
+                np.array([    -x_lead,     -y, altitude]),
+                np.array([-x_body + t,     -y, altitude]),
+                np.array([    -x_body,     -y, altitude]),
+                # Offset 12
+                np.array([    -x_body,      y, altitude]),
+                np.array([-x_body + t,      y, altitude]),
+                np.array([    -x_lead,      y, altitude]),
+                np.array([    -x_mark,      y, altitude])
+            ]
+
+        vertices = []
+        vertex_attributes = {}
+
+        vertices.extend(make_layer_vertices(0.0))
+        size = len(vertices)
+        vertices.extend(make_layer_vertices(t))
+        vertices.extend(make_layer_vertices(z - t))
+        vertices.extend(make_layer_vertices(z))
+
+        trace_corner_indices = [
+            # Corner points
+            size * 3 + 1, size * 3 + 6, size * 3 + 9, size * 3 + 14,
+            # Median points
+            size * 3 + 15, size * 3 + 8,
+            # Mark points
+            size * 3 + 0, size * 3 + 7
+        ]
+        trace_corners = [
+            vertices[trace_corner_indices[0]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[1]] + np.array([0.0, chamfer, 0.0]),
+            vertices[trace_corner_indices[2]] + np.array([0.0, chamfer, 0.0]),
+            vertices[trace_corner_indices[3]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[4]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[5]] + np.array([0.0, chamfer, 0.0]),
+            vertices[trace_corner_indices[6]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[7]] + np.array([0.0, chamfer, 0.0]),
+        ]
+
+        traces = ChipLED.make_traces(x_lead, y, z, len(trace_corners),
+                                     list(range(len(trace_corners))),
+                                     mark_width, arc_resolution)
+
+        edges = []
+        edge_attributes = {}
+
+        # Horizontal layers
+        for i in range(4):
+            start = size * i
+            edges.append([start + j for j in range(size)] + [start])
+            if i == 3:
+                edge_attributes[(start + 1, start + 6)] = {bezier.RESOLUTION: plane_resolution}
+                edge_attributes[(start + 9, start + 14)] = {bezier.RESOLUTION: plane_resolution}
+
+        # Vertical edges between layers
+        for i in range(size):
+            edges.append([i + size * j for j in range(4)])
+
+        body_edge_attributes = copy.deepcopy(edge_attributes)
+        lead_edge_attributes = copy.deepcopy(edge_attributes)
+        mark_edge_attributes = copy.deepcopy(edge_attributes)
+        body_vertex_attributes = copy.deepcopy(vertex_attributes)
+        lead_vertex_attributes = copy.deepcopy(vertex_attributes)
+        mark_vertex_attributes = copy.deepcopy(vertex_attributes)
+
+        # Orthogonal connections inside top and bottom layers
+        for i in (0, 3):
+            start = size * i
+            edges.append([start + 0, start + 7])
+            edges.append([start + 1, start + 6])
+            edges.append([start + 2, start + 5])
+            edges.append([start + 8, start + 15])
+            edges.append([start + 9, start + 14])
+            edges.append([start + 10, start + 13])
+
+        def set_edge_affinity(key, body, lead, mark):
+            if not body:
+                if key not in body_edge_attributes:
+                    body_edge_attributes[key] = {}
+                body_edge_attributes[key][bezier.HIDDEN] = not body
+            if not lead:
+                if key not in lead_edge_attributes:
+                    lead_edge_attributes[key] = {}
+                lead_edge_attributes[key][bezier.HIDDEN] = not lead
+            if not mark:
+                if key not in mark_edge_attributes:
+                    mark_edge_attributes[key] = {}
+                mark_edge_attributes[key][bezier.HIDDEN] = not mark
+        def set_body_edge(key):
+            set_edge_affinity(key, True, False, False)
+        def set_lead_edge(key):
+            set_edge_affinity(key, False, True, False)
+        def set_mark_edge(key):
+            set_edge_affinity(key, False, False, True)
+
+        outer_corners = (3, 4, 11, 12)
+        for i in (0, 3):
+            for j in outer_corners:
+                key = size * i + j
+                body_vertex_attributes[key] = {bezier.HIDDEN: True}
+                mark_vertex_attributes[key] = {bezier.HIDDEN: True}
+            for j in range(size):
+                key = tuple(sorted((size * i + j, size * i + (j + 1) % size)))
+                if i == 3 and j in (0, 6):
+                    set_mark_edge(key)
+                else:
+                    if j in (0, 6, 7, 8, 14, 15):
+                        set_body_edge(key)
+                    else:
+                        set_lead_edge(key)
+        for i in range(3):
+            for j in outer_corners:
+                key = (size * i + j, size * (i + 1) + j)
+                set_lead_edge(key)
+
+        body_faces = []
+        lead_faces = []
+        mark_faces = []
+        face_attributes = {}
+
+        start = 0
+        body_faces.append([start + 1, start + 6, start + 7, start + 0])
+        body_faces.append([start + 8, start + 15, start + 0, start + 7])
+        body_faces.append([start + 9, start + 14, start + 15, start + 8])
+
+        for i in range(3):
+            for j in range(size):
+                indices = [
+                    size * (i + 1) + j,
+                    size * (i + 1) + (j + 1) % size,
+                    size * i + (j + 1) % size,
+                    size * i + j
+                ]
+                if i == 1:
+                    if j in (2, 3, 4, 10, 11, 12):
+                        lead_faces.append(indices)
+                    else:
+                        body_faces.append(indices)
+                else:
+                    if i == 2 and j in (0, 6):
+                        mark_faces.append(indices)
+                    elif j in (0, 6, 7, 8, 14, 15):
+                        body_faces.append(indices)
+                    else:
+                        lead_faces.append(indices)
+
+        for i in (0, 3):
+            start = size * i
+            asym_faces = [
+                [start + 1, start + 2, start + 5, start + 6],
+                [start + 2, start + 3, start + 4, start + 5],
+                [start + 9, start + 10, start + 13, start + 14],
+                [start + 10, start + 11, start + 12, start + 13]
+            ]
+            for indices in asym_faces:
+                lead_faces.append(indices if i == 0 else indices[::-1])
+                face_attributes[tuple(sorted(indices))] = {
+                    bezier.FUNCTOR: primitives.asymmetric_face_functor
+                }
+
+        body_base = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=body_faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=body_vertex_attributes,
+            edge_attributes=body_edge_attributes
+        )
+        body_traces = bezier.BezierObject(
+            vertices=trace_corners + traces['vertices'][0],
+            edges=traces['edges'][0],
+            faces=traces['body_faces'][0],
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=traces['vertices'][1],
+            edge_attributes=traces['edges'][1],
+            face_attributes=traces['body_faces'][1]
+        )
+        lead_base = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=lead_faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=lead_vertex_attributes,
+            edge_attributes=lead_edge_attributes,
+            face_attributes=face_attributes
+        )
+        lead_traces = bezier.BezierObject(
+            vertices=trace_corners + traces['vertices'][0],
+            edges=traces['edges'][0],
+            faces=traces['lead_faces'][0],
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=traces['vertices'][1],
+            edge_attributes=traces['edges'][1],
+            face_attributes=traces['lead_faces'][1]
+        )
+        mark_base = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=mark_faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=mark_vertex_attributes,
+            edge_attributes=mark_edge_attributes
+        )
+        mark_traces = bezier.BezierObject(
+            vertices=trace_corners + traces['vertices'][0],
+            edges=traces['edges'][0],
+            faces=traces['mark_faces'][0],
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=traces['vertices'][1],
+            edge_attributes=traces['edges'][1],
+            face_attributes=traces['mark_faces'][1]
+        )
+
+        return (
+            bezier.patch_to_mesh(body_base.build() + body_traces.build()),
+            bezier.patch_to_mesh(lead_base.build() + lead_traces.build()),
+            bezier.patch_to_mesh(mark_base.build() + mark_traces.build())
+        )
+
+    @staticmethod
+    def make_led_body_with_holes(body_size, lead_length, mark_width, chamfer, arc_resolution,
+                                 edge_resolution, line_resolution, plane_resolution):
+        # pylint: disable=invalid-name
+        r = min(body_size[:2]) / 6.0
+        y = body_size[1] / 2.0
+        z = body_size[2]
+        w = r * curves.calc_bezier_weight(angle=math.pi / 2.0)
+        t = chamfer * 2.0
+        # pylint: enable=invalid-name
+
+        x_body = body_size[0] / 2.0
+        x_lead = x_body - lead_length
+        x_guard = x_lead + chamfer
+        x_mark = x_lead - mark_width
+
+        def make_layer_attributes(n):
+            start_a, start_b = 5, 18
+            return {
+                n + start_a + 0: {bezier.TENSION: {
+                    n + start_a + 1: np.array([-w, 0.0, 0.0])
+                }},
+                n + start_a + 1: {bezier.TENSION: {
+                    n + start_a + 0: np.array([0.0,  w, 0.0]),
+                    n + start_a + 2: np.array([0.0, -w, 0.0])
+                }},
+                n + start_a + 2: {bezier.TENSION: {
+                    n + start_a + 1: np.array([-w, 0.0, 0.0])
+                }},
+
+                n + start_b + 0: {bezier.TENSION: {
+                    n + start_b + 1: np.array([w, 0.0, 0.0])
+                }},
+                n + start_b + 1: {bezier.TENSION: {
+                    n + start_b + 0: np.array([0.0, -w, 0.0]),
+                    n + start_b + 2: np.array([0.0,  w, 0.0])
+                }},
+                n + start_b + 2: {bezier.TENSION: {
+                    n + start_b + 1: np.array([w, 0.0, 0.0])
+                }}
+            }
+
+        def make_layer_vertices(altitude):
+            return [
+                # Offset 0
+                np.array([     x_mark,      y, altitude]),
+                np.array([     x_lead,      y, altitude]),
+                np.array([    x_guard,      y, altitude]),
+                np.array([     x_body,      y, altitude]),
+                np.array([     x_body,  r + t, altitude]),
+                # Offset 5
+                np.array([     x_body,      r, altitude]),
+                np.array([ x_body - r,    0.0, altitude]),
+                np.array([     x_body,     -r, altitude]),
+                np.array([     x_body, -r - t, altitude]),
+                np.array([     x_body,     -y, altitude]),
+                # Offset 10
+                np.array([    x_guard,     -y, altitude]),
+                np.array([     x_lead,     -y, altitude]),
+                np.array([     x_mark,     -y, altitude]),
+                np.array([    -x_mark,     -y, altitude]),
+                np.array([    -x_lead,     -y, altitude]),
+                # Offset 15
+                np.array([   -x_guard,     -y, altitude]),
+                np.array([    -x_body,     -y, altitude]),
+                np.array([    -x_body, -r - t, altitude]),
+                np.array([    -x_body,     -r, altitude]),
+                np.array([-x_body + r,    0.0, altitude]),
+                # Offset 20
+                np.array([    -x_body,      r, altitude]),
+                np.array([    -x_body,  r + t, altitude]),
+                np.array([    -x_body,      y, altitude]),
+                np.array([   -x_guard,      y, altitude]),
+                np.array([    -x_lead,      y, altitude]),
+                # Offset 25
+                np.array([    -x_mark,      y, altitude])
+            ]
+
+        vertices = []
+        vertex_attributes = {}
+
+        vertex_attributes.update(make_layer_attributes(len(vertices)))
+        vertices.extend(make_layer_vertices(0.0))
+        size = len(vertices)
+        vertex_attributes.update(make_layer_attributes(len(vertices)))
+        vertices.extend(make_layer_vertices(t))
+        vertex_attributes.update(make_layer_attributes(len(vertices)))
+        vertices.extend(make_layer_vertices(z - t))
+        vertex_attributes.update(make_layer_attributes(len(vertices)))
+        vertices.extend(make_layer_vertices(z))
+
+        trace_corner_indices = [
+            # Corner points
+            size * 3 + 1, size * 3 + 11, size * 3 + 14, size * 3 + 24,
+            # Median points
+            size * 3 + 25, size * 3 + 13,
+            # Mark points
+            size * 3 + 0, size * 3 + 12
+        ]
+        trace_corners = [
+            vertices[trace_corner_indices[0]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[1]] + np.array([0.0, chamfer, 0.0]),
+            vertices[trace_corner_indices[2]] + np.array([0.0, chamfer, 0.0]),
+            vertices[trace_corner_indices[3]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[4]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[5]] + np.array([0.0, chamfer, 0.0]),
+            vertices[trace_corner_indices[6]] + np.array([0.0, -chamfer, 0.0]),
+            vertices[trace_corner_indices[7]] + np.array([0.0, chamfer, 0.0]),
+        ]
+
+        traces = ChipLED.make_traces(x_lead, y, z, len(trace_corners),
+                                     list(range(len(trace_corners))),
+                                     mark_width, arc_resolution)
+
+        edges = []
+        edge_attributes = {}
+
+        # Horizontal layers
+        for i in range(4):
+            edges.append([j + size * i for j in range(size)] + [size * i])
+
+            if i in (0, 3):
+                start = size * i
+                edge_attributes[(start + 2, start + 10)] = {bezier.RESOLUTION: plane_resolution}
+                edge_attributes[(start + 15, start + 23)] = {bezier.RESOLUTION: plane_resolution}
+
+                for start in (size * i + 2, size * i + 15):
+                    edge_attributes[(start + 0, start + 2)] = {bezier.RESOLUTION: plane_resolution}
+                    edge_attributes[(start + 0, start + 3)] = {bezier.RESOLUTION: plane_resolution}
+                    edge_attributes[(start + 0, start + 4)] = {bezier.RESOLUTION: plane_resolution}
+                    edge_attributes[(start + 8, start + 4)] = {bezier.RESOLUTION: plane_resolution}
+                    edge_attributes[(start + 8, start + 5)] = {bezier.RESOLUTION: plane_resolution}
+                    edge_attributes[(start + 8, start + 6)] = {bezier.RESOLUTION: plane_resolution}
+
+            edge_attributes[(size * i + 5, size * i + 6)] = {bezier.RESOLUTION: arc_resolution}
+            edge_attributes[(size * i + 6, size * i + 7)] = {bezier.RESOLUTION: arc_resolution}
+            edge_attributes[(size * i + 18, size * i + 19)] = {bezier.RESOLUTION: arc_resolution}
+            edge_attributes[(size * i + 19, size * i + 20)] = {bezier.RESOLUTION: arc_resolution}
+
+        # Vertical edges between layers
+        for i in range(size):
+            edges.append([i + size * j for j in range(4)])
+
+        # Layer crosses
+        for i in (0, 3):
+            start = size * i
+            edges.extend([
+                [start + 2, start + 6, start + 10, start + 2],
+                [start + 15, start + 19, start + 23, start + 15]
+            ])
+            edges.append([start + 4, start + 2, start + 5])
+            edges.append([start + 7, start + 10, start + 8])
+            edges.append([start + 17, start + 15, start + 18])
+            edges.append([start + 20, start + 23, start + 21])
+
+        body_edge_attributes = copy.deepcopy(edge_attributes)
+        lead_edge_attributes = copy.deepcopy(edge_attributes)
+        mark_edge_attributes = copy.deepcopy(edge_attributes)
+        body_vertex_attributes = copy.deepcopy(vertex_attributes)
+        lead_vertex_attributes = copy.deepcopy(vertex_attributes)
+        mark_vertex_attributes = copy.deepcopy(vertex_attributes)
+
+        # Orthogonal connections inside top and bottom layers
+        for i in (0, 3):
+            start = size * i
+            edges.append([start + 0, start + 12])
+            edges.append([start + 1, start + 11])
+            edges.append([start + 13, start + 25])
+            edges.append([start + 14, start + 24])
+            lead_edge_attributes[(start + 1, start + 11)] = {bezier.RESOLUTION: plane_resolution}
+            lead_edge_attributes[(start + 14, start + 24)] = {bezier.RESOLUTION: plane_resolution}
+
+        def set_edge_affinity(key, body, lead, mark):
+            if not body:
+                if key not in body_edge_attributes:
+                    body_edge_attributes[key] = {}
+                body_edge_attributes[key][bezier.HIDDEN] = not body
+            if not lead:
+                if key not in lead_edge_attributes:
+                    lead_edge_attributes[key] = {}
+                lead_edge_attributes[key][bezier.HIDDEN] = not lead
+            if not mark:
+                if key not in mark_edge_attributes:
+                    mark_edge_attributes[key] = {}
+                mark_edge_attributes[key][bezier.HIDDEN] = not mark
+        def set_body_edge(key):
+            set_edge_affinity(key, True, False, False)
+        def set_lead_edge(key):
+            set_edge_affinity(key, False, True, False)
+        def set_mark_edge(key):
+            set_edge_affinity(key, False, False, True)
+
+        inner_corners = (5, 7, 18, 20)
+        outer_corners = (3, 9, 16, 22)
+        for i in (0, 3):
+            for j in (*outer_corners, *inner_corners):
+                key = size * i + j
+                body_vertex_attributes[key] = {bezier.HIDDEN: True}
+                mark_vertex_attributes[key] = {bezier.HIDDEN: True}
+            for j in range(size):
+                key = tuple(sorted((size * i + j, size * i + (j + 1) % size)))
+                if i == 3 and j in (0, 11):
+                    set_mark_edge(key)
+                else:
+                    if j in (0, 11, 12, 13, 24, 25):
+                        set_body_edge(key)
+                    else:
+                        set_lead_edge(key)
+        for i in range(3):
+            for j in outer_corners:
+                key = (size * i + j, size * (i + 1) + j)
+                if i == 1:
+                    set_body_edge(key)
+                else:
+                    set_lead_edge(key)
+            for j in inner_corners:
+                key = (size * i + j, size * (i + 1) + j)
+                set_lead_edge(key)
+
+        # Build time optimization for body patches
+        body_discarded_indices = list(range(2, 11)) + list(range(15, 24))
+        for i in (0, 3):
+            for j in body_discarded_indices:
+                key = size * i + j
+                if key not in body_vertex_attributes:
+                    body_vertex_attributes[key] = {}
+                body_vertex_attributes[key][bezier.DISCARD] = True
+        # Build time optimization for mark patches
+        mark_indices = [
+            size * 2, size * 2 + 1, size * 2 + 11, size * 2 + 12,
+            size * 3, size * 3 + 1, size * 3 + 11, size * 3 + 12
+        ]
+        for key in list(range(len(vertices))):
+            if key not in mark_indices:
+                if key not in mark_vertex_attributes:
+                    mark_vertex_attributes[key] = {}
+                mark_vertex_attributes[key][bezier.DISCARD] = True
+
+        body_faces = []
+        lead_faces = []
+        mark_faces = []
+        face_attributes = {}
+
+        start = 0
+        body_faces.append([start + 1, start + 11, start + 12, start + 0])
+        body_faces.append([start + 0, start + 12, start + 13, start + 25])
+        body_faces.append([start + 14, start + 24, start + 25, start + 13])
+
+        for i in range(3):
+            for j in range(size):
+                indices = [
+                    size * (i + 1) + j,
+                    size * (i + 1) + (j + 1) % size,
+                    size * i + (j + 1) % size,
+                    size * i + j
+                ]
+                if i == 1:
+                    if (j >= 4 and j < 8) or (j >= 17 and j < 21):
+                        lead_faces.append(indices)
+                    else:
+                        body_faces.append(indices)
+                else:
+                    if i == 2 and j in (0, 11):
+                        mark_faces.append(indices)
+                    elif j in (0, 11, 12, 13, 24, 25):
+                        body_faces.append(indices)
+                    else:
+                        lead_faces.append(indices)
+
+        for i in (0, 3):
+            start = size * i
+            asym_faces = [
+                [start + 1, start + 2, start + 10, start + 11],
+                [start + 14, start + 15, start + 23, start + 24]
+            ]
+            for indices in asym_faces:
+                lead_faces.append(indices if i == 0 else indices[::-1])
+                face_attributes[tuple(sorted(indices))] = {
+                    bezier.FUNCTOR: primitives.asymmetric_face_functor
+                }
+
+        for start, invert in ((2, True), (15, True), (size * 3 + 2, False), (size * 3 + 15, False)):
+            asym_faces = [
+                [start + 0, start + 1, start + 2],
+                [start + 0, start + 2, start + 3],
+                [start + 0, start + 3, start + 4],
+                [start + 4, start + 8, start + 0],
+                [start + 4, start + 5, start + 8],
+                [start + 5, start + 6, start + 8],
+                [start + 6, start + 7, start + 8]
+            ]
+            for indices in asym_faces:
+                lead_faces.append(indices if invert else indices[::-1])
+                face_attributes[tuple(sorted(indices))] = {
+                    bezier.FUNCTOR: primitives.asymmetric_face_functor
+                }
+
+        body_base = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=body_faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=body_vertex_attributes,
+            edge_attributes=body_edge_attributes
+        )
+        body_traces = bezier.BezierObject(
+            vertices=trace_corners + traces['vertices'][0],
+            edges=traces['edges'][0],
+            faces=traces['body_faces'][0],
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=traces['vertices'][1],
+            edge_attributes=traces['edges'][1],
+            face_attributes=traces['body_faces'][1]
+        )
+        lead_base = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=lead_faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=lead_vertex_attributes,
+            edge_attributes=lead_edge_attributes,
+            face_attributes=face_attributes
+        )
+        lead_traces = bezier.BezierObject(
+            vertices=trace_corners + traces['vertices'][0],
+            edges=traces['edges'][0],
+            faces=traces['lead_faces'][0],
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=traces['vertices'][1],
+            edge_attributes=traces['edges'][1],
+            face_attributes=traces['lead_faces'][1]
+        )
+        mark_base = bezier.BezierObject(
+            vertices=vertices,
+            edges=edges,
+            faces=mark_faces,
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=mark_vertex_attributes,
+            edge_attributes=mark_edge_attributes
+        )
+        mark_traces = bezier.BezierObject(
+            vertices=trace_corners + traces['vertices'][0],
+            edges=traces['edges'][0],
+            faces=traces['mark_faces'][0],
+            chamfer=chamfer,
+            sharpness=math.pi * (5.0 / 6.0),
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=traces['vertices'][1],
+            edge_attributes=traces['edges'][1],
+            face_attributes=traces['mark_faces'][1]
+        )
+
+        return (
+            bezier.patch_to_mesh(body_base.build() + body_traces.build()),
+            bezier.patch_to_mesh(lead_base.build() + lead_traces.build()),
+            bezier.patch_to_mesh(mark_base.build() + mark_traces.build())
+        )
+
+    def generate(self, materials, resolutions, _, descriptor):
+        source_body_size = primitives.hmils(descriptor['body']['size'])
+        source_lens_size = primitives.hmils(descriptor['body']['lens'])
+        mark_width = primitives.hmils(descriptor['mark']['width'])
+        lead_length = primitives.hmils(descriptor['pins']['length'])
+
+        body_size = np.array([
+            source_body_size[0],
+            source_body_size[1],
+            source_body_size[2] - source_lens_size[2]
+        ])
+        body_chamfer = min(ChipLED.DEFAULT_CHAMFER, min(body_size) / 10.0)
+        lens_chamfer = body_chamfer * 2.0
+
+        lens_size = np.array([
+            min(body_size[0] - lead_length * 2.0, source_lens_size[0]),
+            source_lens_size[1] - body_chamfer * 2.0,
+            source_lens_size[2]
+        ])
+        chip_size = max(body_size[1] / 10.0, ChipLED.CHIP_LENGTH)
+
+        try:
+            is_body_plain = descriptor['body']['plain']
+        except KeyError:
+            is_body_plain = False
+
+        meshes = []
+
+        crystal_mesh = ChipLED.make_crystal(
+            size=(chip_size, chip_size, ChipLED.CHIP_HEIGHT),
+            chamfer=ChipLED.CHIP_CHAMFER,
+            offset=body_size[2],
+            edge_resolution=resolutions['chamfer'],
+            line_resolution=resolutions['line']
+        )
+        if 'LED.Crystal' in materials:
+            crystal_mesh.appearance().material = materials['LED.Crystal']
+        meshes.append(crystal_mesh)
+
+        lens_mesh = ChipLED.make_lens(
+            lens_size=lens_size,
+            chamfer=lens_chamfer,
+            offset=body_size[2],
+            edge_resolution=resolutions['edge'],
+            line_resolution=resolutions['line']
+        )
+        if 'LED.Cap' in materials:
+            lens_mesh.appearance().material = materials['LED.Cap']
+        meshes.append(lens_mesh)
+
+        if is_body_plain:
+            body_parts = ChipLED.make_led_body(
+                body_size=body_size,
+                lead_length=lead_length,
+                mark_width=mark_width,
+                chamfer=body_chamfer,
+
+                arc_resolution=resolutions['arc'],
+                edge_resolution=resolutions['edge'],
+                line_resolution=resolutions['line'],
+                plane_resolution=resolutions['arc']
+            )
+        else:
+            body_parts = ChipLED.make_led_body_with_holes(
+                body_size=body_size,
+                lead_length=lead_length,
+                mark_width=mark_width,
+                chamfer=body_chamfer,
+
+                arc_resolution=resolutions['arc'],
+                edge_resolution=resolutions['edge'],
+                line_resolution=resolutions['line'],
+                plane_resolution=resolutions['arc']
+            )
+
+        if 'LED.Body' in materials:
+            body_parts[0].appearance().material = materials['LED.Body']
+        if 'LED.Lead' in materials:
+            body_parts[1].appearance().material = materials['LED.Lead']
+        if 'LED.Mark' in materials:
+            body_parts[2].appearance().material = materials['LED.Mark']
+        meshes.extend(body_parts)
+
         return meshes
 
 
@@ -176,7 +1134,7 @@ class ChipResistor:
         )
 
         if pull is None:
-            points = None
+            points_u, points_v = None, None
             resolution_u, resolution_v = resolution
         else:
             points_u = [0.0] + list(np.linspace(pull, 1.0 - pull, resolution[0] + 1)) + [1.0]
@@ -830,20 +1788,17 @@ class BentLeadsCapacitor(BentLeadsChip):
     def __init__(self):
         super().__init__('BentLeadsCapacitor', pin_size_added=True)
 
-
 class BentLeadsDiode(BentLeadsChip):
     def __init__(self):
         super().__init__('BentLeadsDiode')
 
+class ChipCapacitor(ChipBase):
+    def __init__(self):
+        super().__init__('ChipCapacitor')
 
 class ChipInductor(ChipBase):
     def __init__(self):
         super().__init__('ChipInductor')
-
-
-class ChipCapacitor(ChipBase):
-    def __init__(self):
-        super().__init__('ChipCapacitor')
 
 
 types = [
@@ -851,6 +1806,7 @@ types = [
     BentLeadsDiode,
     ChipCapacitor,
     ChipInductor,
+    ChipLED,
     ChipResistor,
     ChipShunt
 ]

@@ -107,7 +107,7 @@ class QFP(exporter.Footprint):
             return descriptor['description']
 
         pin_count = (descriptor['pins']['columns'] + descriptor['pins']['rows']) * 2
-        size_str = [primitives.round1f(x) for x in descriptor['body']['size'][0:2]]
+        size_str = [primitives.round1f(x) for x in descriptor['body']['size'][:2]]
         height_str = primitives.round2f(descriptor['body']['size'][2])
         pitch_str = primitives.round2f(descriptor['pins']['pitch'])
         return '{:d} leads, body {:s}x{:s}x{:s} mm, pitch {:s} mm'.format(

@@ -66,24 +66,12 @@ class TestBezierObject:
             np.array([ -x,   y,  -z])
         ]
         vertex_attributes = {
-            8: {'inversion': True}
+            8: {bezier.INVERSION: True}
         }
-        edges = [
-            # Top
-            [0, 1, 2, 3, 4, 5, 0], [1, 4],
-            # Medium
-            [6, 7, 8, 9, 6],
-            # Bottom
-            [10, 11, 12, 13, 10],
-            # Sides
-            [3, 11], [4, 12], [5, 13],
-            [0, 7], [1, 8], [2, 9],
-            [6, 10], [7, 13], [9, 11]
-        ]
         edge_attributes = {
-            (1, 8): {'inversion': True},
-            (7, 8): {'inversion': True},
-            (8, 9): {'inversion': True}
+            (1, 8): {bezier.INVERSION: True},
+            (7, 8): {bezier.INVERSION: True},
+            (8, 9): {bezier.INVERSION: True}
         }
         faces = [
             [5, 0, 7, 13], [6, 10, 13, 7], [11, 9, 2, 3], [10, 6, 9, 11],
@@ -101,7 +89,7 @@ class TestBezierObject:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=5,
@@ -136,15 +124,6 @@ class TestBezierObject:
             np.array([ -x,  -y,  -z]),
             np.array([ -x,   y,  -z])
         ]
-        edges = [
-            # Horizontal
-            [0, 1, 2, 3, 0],
-            [4, 5, 6, 7, 4],
-            [8, 9, 10, 11, 8],
-            # Vertical
-            [0, 4], [1, 5], [2, 6], [3, 7],
-            [4, 8], [5, 9], [6, 10], [7, 11]
-        ]
         faces = [
             # Top
             [3, 2, 1, 0],
@@ -157,7 +136,7 @@ class TestBezierObject:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             sharpness=sharpness,
@@ -189,19 +168,6 @@ class TestBezierObject:
             np.array([ -x,  -y,  -z]),
             np.array([ -x,   y,  -z])
         ]
-        edges = [
-            # Horizontal
-            [0, 1, 2, 3, 0],
-            [4, 5],
-            [6, 7, 8, 9, 6],
-            # Vertical
-            [0, 4], [3, 5],
-            [4, 6], [5, 9],
-            [1, 7], [2, 8],
-            # Diagonal
-            [6, 4], [3, 5],
-            [4, 7], [5, 8]
-        ]
         faces = [
             # Top
             [3, 2, 1, 0],
@@ -217,7 +183,7 @@ class TestBezierObject:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=5,
@@ -248,23 +214,15 @@ class TestBezierObject:
             np.array([ -x,  y, -z])
         ]
         vertex_attributes = {
-            0: {'chamfer': r},
-            1: {'chamfer': r},
-            2: {'chamfer': r},
-            3: {'chamfer': r},
-            4: {'chamfer': {5: r, 7: r}},
-            5: {'chamfer': {6: r, 4: r}},
-            6: {'chamfer': {7: r, 5: r}},
-            7: {'chamfer': {4: r, 6: r}}
+            0: {bezier.CHAMFER: r},
+            1: {bezier.CHAMFER: r},
+            2: {bezier.CHAMFER: r},
+            3: {bezier.CHAMFER: r},
+            4: {bezier.CHAMFER: {5: r, 7: r}},
+            5: {bezier.CHAMFER: {6: r, 4: r}},
+            6: {bezier.CHAMFER: {7: r, 5: r}},
+            7: {bezier.CHAMFER: {4: r, 6: r}}
         }
-        edges = [
-            # Top
-            [0, 1, 2, 3, 0],
-            # Bottom
-            [4, 5, 6, 7, 4],
-            # Sides
-            [0, 4], [1, 5], [2, 6], [3, 7]
-        ]
         faces = [
             # Top
             [3, 2, 1, 0],
@@ -276,7 +234,7 @@ class TestBezierObject:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.1,
             edge_resolution=5,
@@ -304,14 +262,6 @@ class TestBezierObject:
             np.array([ -x, -y, -z]),
             np.array([ -x,  y, -z])
         ]
-        edges = [
-            # Top
-            [0, 1, 2, 3, 0],
-            # Bottom
-            [4, 5, 6, 7, 4],
-            # Sides
-            [0, 4], [1, 5], [2, 6], [3, 7]
-        ]
         faces = [
             # Top
             [3, 2, 1, 0],
@@ -323,7 +273,7 @@ class TestBezierObject:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=5,
@@ -357,21 +307,11 @@ class TestBezierObject:
             np.array([ -x,  y,  -z])
         ]
         vertex_attributes = {
-            8: {'discard': True},
-            9: {'discard': True},
-            10: {'discard': True},
-            11: {'discard': True}
+            8: {bezier.DISCARD: True},
+            9: {bezier.DISCARD: True},
+            10: {bezier.DISCARD: True},
+            11: {bezier.DISCARD: True}
         }
-        edges = [
-            # Top
-            [0, 1, 2, 3, 0],
-            # Medium
-            [4, 5, 6, 7, 4],
-            # Bottom
-            [8, 9, 10, 11, 8],
-            # Sides
-            [0, 4, 8], [1, 5, 9], [2, 6, 10], [3, 7, 11]
-        ]
         faces = [
             # Top
             [0, 1, 2, 3],
@@ -379,12 +319,12 @@ class TestBezierObject:
             [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]
         ]
         face_attributes = {
-            (0, 1, 2, 3): {'inversion': True}
+            (0, 1, 2, 3): {bezier.INVERSION: True}
         }
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             sharpness=math.pi * (5.0 / 6.0),
@@ -408,19 +348,13 @@ class TestBezierObject:
             np.array([math.cos(a1) * r, math.sin(a1) * r, 0.0]),
             np.array([math.cos(a2) * r, math.sin(a2) * r, 0.0])
         ]
-        edges = [
-            # Bottom
-            [1, 2, 3, 1],
-            # Sides
-            [0, 1], [0, 2], [0, 3]
-        ]
         faces = [
             [0, 1, 2], [0, 2, 3], [0, 3, 1], [3, 2, 1]
         ]
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=5,
@@ -443,19 +377,13 @@ class TestBezierObject:
             np.array([ -r, 0.0, 0.0]),
             np.array([0.0,  -r, 0.0])
         ]
-        edges = [
-            # Bottom
-            [1, 2, 3, 4, 1],
-            # Sides
-            [0, 1], [0, 2], [0, 3], [0, 4]
-        ]
         faces = [
             [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
         ]
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=5,
@@ -479,24 +407,18 @@ class TestBezierObject:
             np.array([0.0,  -r, 0.0])
         ]
         vertex_attributes = {
-            0: {'hidden': True}
+            0: {bezier.HIDDEN: True}
         }
-        edges = [
-            # Bottom
-            [1, 2, 3, 4, 1],
-            # Sides
-            [0, 1], [0, 2], [0, 3], [0, 4]
-        ]
         faces = [
             [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
         ]
         face_attributes = {
-            (4, 3, 2, 1): {'hidden': True}
+            (4, 3, 2, 1): {bezier.HIDDEN: True}
         }
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=3,
@@ -595,32 +517,20 @@ class TestBezierObjectCurves:
             np.array([       -x, -y,       -z])
         ]
         vertex_attributes = {
-            4:  {'bezier': { 8: np.array([  0.0, 0.0, -outer])}},
-            5:  {'bezier': { 9: np.array([  0.0, 0.0, -inner])}},
-            6:  {'bezier': {10: np.array([  0.0, 0.0, -inner])}},
-            7:  {'bezier': {11: np.array([  0.0, 0.0, -outer])}},
-            8:  {'bezier': { 4: np.array([outer, 0.0,    0.0])}},
-            9:  {'bezier': { 5: np.array([inner, 0.0,    0.0])}},
-            10: {'bezier': { 6: np.array([inner, 0.0,    0.0])}},
-            11: {'bezier': { 7: np.array([outer, 0.0,    0.0])}}
+            4:  {bezier.TENSION: { 8: np.array([  0.0, 0.0, -outer])}},
+            5:  {bezier.TENSION: { 9: np.array([  0.0, 0.0, -inner])}},
+            6:  {bezier.TENSION: {10: np.array([  0.0, 0.0, -inner])}},
+            7:  {bezier.TENSION: {11: np.array([  0.0, 0.0, -outer])}},
+            8:  {bezier.TENSION: { 4: np.array([outer, 0.0,    0.0])}},
+            9:  {bezier.TENSION: { 5: np.array([inner, 0.0,    0.0])}},
+            10: {bezier.TENSION: { 6: np.array([inner, 0.0,    0.0])}},
+            11: {bezier.TENSION: { 7: np.array([outer, 0.0,    0.0])}}
         }
-        edges = [
-            # Top
-            [0, 1, 2, 3, 0],
-            [4, 5, 6, 7, 4],
-            # Bottom
-            [8, 9, 10, 11, 8],
-            [12, 13, 14, 15, 12],
-            # Sides
-            [0, 4], [1, 5], [2, 6], [3, 7],
-            [4, 8], [5, 9], [6, 10], [7, 11],
-            [8, 12], [9, 13], [10, 14], [11, 15]
-        ]
         edge_attributes = {
-            (4, 8):  {'resolution': 10},
-            (5, 9):  {'resolution': 10},
-            (6, 10): {'resolution': 10},
-            (7, 11): {'resolution': 10}
+            (4, 8):  {bezier.RESOLUTION: 10},
+            (5, 9):  {bezier.RESOLUTION: 10},
+            (6, 10): {bezier.RESOLUTION: 10},
+            (7, 11): {bezier.RESOLUTION: 10}
         }
         faces = [
             # Top
@@ -635,7 +545,7 @@ class TestBezierObjectCurves:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.1,
             sharpness=math.pi * (5.0 / 6.0),
@@ -672,29 +582,21 @@ class TestBezierObjectCurves:
         ]
         vertex_attributes = {
             # Top
-            1:  {'bezier': {2: np.array([0.0,   t, 0.0]), 4: np.array([0.0,  -t, 0.0])}},
-            2:  {'bezier': {3: np.array([ -t, 0.0, 0.0]), 1: np.array([  t, 0.0, 0.0])}},
-            3:  {'bezier': {4: np.array([0.0,  -t, 0.0]), 2: np.array([0.0,   t, 0.0])}},
-            4:  {'bezier': {1: np.array([  t, 0.0, 0.0]), 3: np.array([ -t, 0.0, 0.0])}},
+            1:  {bezier.TENSION: {2: np.array([0.0,   t, 0.0]), 4: np.array([0.0,  -t, 0.0])}},
+            2:  {bezier.TENSION: {3: np.array([ -t, 0.0, 0.0]), 1: np.array([  t, 0.0, 0.0])}},
+            3:  {bezier.TENSION: {4: np.array([0.0,  -t, 0.0]), 2: np.array([0.0,   t, 0.0])}},
+            4:  {bezier.TENSION: {1: np.array([  t, 0.0, 0.0]), 3: np.array([ -t, 0.0, 0.0])}},
             # Bottom
-            6:  {'bezier': {7: np.array([0.0,   t, 0.0]), 9: np.array([0.0,  -t, 0.0])}},
-            7:  {'bezier': {8: np.array([ -t, 0.0, 0.0]), 6: np.array([  t, 0.0, 0.0])}},
-            8:  {'bezier': {9: np.array([0.0,  -t, 0.0]), 7: np.array([0.0,   t, 0.0])}},
-            9:  {'bezier': {6: np.array([  t, 0.0, 0.0]), 8: np.array([ -t, 0.0, 0.0])}}
+            6:  {bezier.TENSION: {7: np.array([0.0,   t, 0.0]), 9: np.array([0.0,  -t, 0.0])}},
+            7:  {bezier.TENSION: {8: np.array([ -t, 0.0, 0.0]), 6: np.array([  t, 0.0, 0.0])}},
+            8:  {bezier.TENSION: {9: np.array([0.0,  -t, 0.0]), 7: np.array([0.0,   t, 0.0])}},
+            9:  {bezier.TENSION: {6: np.array([  t, 0.0, 0.0]), 8: np.array([ -t, 0.0, 0.0])}}
         }
-        edges = [
-            # Top
-            [1, 2, 3, 4, 1], [0, 1], [0, 2], [0, 3], [0, 4],
-            # Bottom
-            [6, 7, 8, 9, 6], [5, 6], [5, 7], [5, 8], [5, 9],
-            # Sides
-            [1, 6], [2, 7], [3, 8], [4, 9]
-        ]
         edge_attributes = {
-            (1, 6):  {'resolution': 1},
-            (2, 7):  {'resolution': 1},
-            (3, 8):  {'resolution': 1},
-            (4, 9):  {'resolution': 1}
+            (1, 6):  {bezier.RESOLUTION: 1},
+            (2, 7):  {bezier.RESOLUTION: 1},
+            (3, 8):  {bezier.RESOLUTION: 1},
+            (4, 9):  {bezier.RESOLUTION: 1}
         }
         faces = [
             # Top
@@ -707,7 +609,7 @@ class TestBezierObjectCurves:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             sharpness=math.pi * (5.0 / 6.0),
@@ -733,19 +635,19 @@ class TestBezierObjectCurves:
         def make_control_group(y, z, n): # pylint: disable=invalid-name
             w = curves.calc_bezier_weight(angle=math.pi / 2.0)
             return {
-                n + 0: {'bezier': {
+                n + 0: {bezier.TENSION: {
                     n + 3: np.array([0.0, -w * y,    0.0]),
                     n + 1: np.array([0.0,  w * y,    0.0])
                 }},
-                n + 1: {'bezier': {
+                n + 1: {bezier.TENSION: {
                     n + 0: np.array([0.0,    0.0,  w * z]),
                     n + 2: np.array([0.0,    0.0, -w * z])
                 }},
-                n + 2: {'bezier': {
+                n + 2: {bezier.TENSION: {
                     n + 1: np.array([0.0,  w * y,    0.0]),
                     n + 3: np.array([0.0, -w * y,    0.0])
                 }},
-                n + 3: {'bezier': {
+                n + 3: {bezier.TENSION: {
                     n + 2: np.array([0.0,    0.0, -w * z]),
                     n + 0: np.array([0.0,    0.0,  w * z])
                 }}
@@ -773,21 +675,15 @@ class TestBezierObjectCurves:
         vertices.append(np.array([x, 0.0, 0.0]))
         vertices.append(np.array([-x, 0.0, 0.0]))
 
-        edges = []
         edge_attributes = {}
 
         for i in range(len(vertices) // 4):
             circle = [list(range(i * 4, (i + 1) * 4)) + [i * 4]]
-            edges.extend(circle)
             for edge in bezier.unpack_edges(circle):
-                key = tuple(sorted(edge))
-                edge_attributes[key] = {'resolution': arc_resolution}
+                key = tuple(edge)
+                edge_attributes[key] = {bezier.RESOLUTION: arc_resolution}
                 if i in (2, 3):
-                    edge_attributes[key] |= {'inversion': True}
-        for i in range(4):
-            edges.append([i + j * 4 for j in range(len(vertices) // 4)])
-            edges.append([len(vertices) - 2, i])
-            edges.append([len(vertices) - 1, len(vertices) - 3 - i])
+                    edge_attributes[key] |= {bezier.INVERSION: True}
 
         faces = []
 
@@ -805,7 +701,7 @@ class TestBezierObjectCurves:
 
         mesh_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=chamfer,
             sharpness=math.pi * (5.0 / 6.0),
@@ -889,19 +785,13 @@ class TestBezierDebug:
             np.array([ -r, 0.0, 0.0]),
             np.array([0.0,  -r, 0.0])
         ]
-        edges = [
-            # Bottom
-            [1, 2, 3, 4, 1],
-            # Sides
-            [0, 1], [0, 2], [0, 3], [0, 4]
-        ]
         faces = [
             [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
         ]
 
         bezier_object = bezier.BezierObject(
             vertices=vertices,
-            edges=edges,
+            edges=[],
             faces=faces,
             chamfer=0.2,
             edge_resolution=5,
@@ -951,10 +841,10 @@ class TestBezierDebug:
             np.array([0.0,  -r, 0.0])
         ]
         vertex_attributes = {
-            1: {'bezier': {4: np.array([0.0,  -w, 0.0]), 2: np.array([0.0,   w, 0.0])}},
-            2: {'bezier': {1: np.array([  w, 0.0, 0.0]), 3: np.array([ -w, 0.0, 0.0])}},
-            3: {'bezier': {2: np.array([0.0,   w, 0.0]), 4: np.array([0.0,  -w, 0.0])}},
-            4: {'bezier': {1: np.array([  w, 0.0, 0.0]), 3: np.array([ -w, 0.0, 0.0])}}
+            1: {bezier.TENSION: {4: np.array([0.0,  -w, 0.0]), 2: np.array([0.0,   w, 0.0])}},
+            2: {bezier.TENSION: {1: np.array([  w, 0.0, 0.0]), 3: np.array([ -w, 0.0, 0.0])}},
+            3: {bezier.TENSION: {2: np.array([0.0,   w, 0.0]), 4: np.array([0.0,  -w, 0.0])}},
+            4: {bezier.TENSION: {1: np.array([  w, 0.0, 0.0]), 3: np.array([ -w, 0.0, 0.0])}}
         }
         edges = [
             # Bottom
@@ -966,14 +856,14 @@ class TestBezierDebug:
             [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], [4, 3, 2, 1]
         ]
 
-        debug_edges = bezier.debug_edges(vertices, edges, vertex_attributes)
+        debug_edges = bezier.debug_edges(vertices, edges, [], vertex_attributes)
+        assert len(debug_edges.geo_polygons) == 44
+        debug_edges = bezier.debug_edges(vertices, [], faces, vertex_attributes)
         assert len(debug_edges.geo_polygons) == 44
         debug_controls = bezier.debug_vertex_controls(vertices, vertex_attributes)
         assert len(debug_controls.geo_polygons) == 8
-        debug_polygons = bezier.debug_face_polygons(vertices, faces)
+        debug_polygons = bezier.debug_faces(vertices, faces)
         assert len(debug_polygons.geo_polygons) == len(faces)
-        debug_normals = bezier.debug_face_normals(vertices, faces)
-        assert len(debug_normals.geo_polygons) == len(faces)
 
 
 class TestBezierHelpers:

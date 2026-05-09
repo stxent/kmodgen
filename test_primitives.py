@@ -29,23 +29,49 @@ def verify_models(meshes, destination_path, source_name):
     assert compare_models(source_name, serialized) is True
 
 
-class TestChips:
+class TestChip:
     FILE_CHIP_CAPS = 'test_chip_caps.x3d'
     FILE_CHIP_HP = 'test_chip_hp.x3d'
     FILE_CHIP_LP = 'test_chip_lp.x3d'
+    FILE_CHIP_SHUNT_HP = 'test_chip_shunt_hp.x3d'
+    FILE_CHIP_SHUNT_LP = 'test_chip_shunt_lp.x3d'
+    FILE_HOLLOW_PLANE = 'test_hollow_plane.x3d'
+    FILE_HOLLOW_PLANE_ASYMMETRIC = 'test_hollow_plane_asymmetric.x3d'
 
     @staticmethod
-    def make_chip(chamfer_resolution, edge_resolution, line_resolution):
+    def make_chip_shunt(edge_resolution, line_resolution, slope_resolution):
+        body, lead = primitives.make_chip_shunt(
+            length=3.0,
+            width=1.0,
+            thickness=0.2,
+            clearance=0.2,
+            lead_length=0.4,
+            active_width=0.8,
+            chamfer=0.05,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            slope_resolution=slope_resolution
+        )
+
+        body.appearance().material = helpers.make_dark_gray_material()
+        body.appearance().solid = True
+        lead.appearance().material = helpers.make_light_gray_material()
+        lead.appearance().solid = True
+
+        return [body, lead]
+
+    @staticmethod
+    def make_chip(arc_resolution, edge_resolution, line_resolution):
         body_size = np.array([2.0, 1.0, 0.5])
         lead_width = 0.5
         lead_chamfer = 0.1
-        body_chamfer = lead_chamfer / (2.0 * math.sqrt(2.0))
+        body_chamfer = 0.05
 
         lead_size = np.array([lead_width, body_size[1], body_size[2]])
         ceramic_size = np.array([
             body_size[0] - 2.0 * lead_width,
-            body_size[1] - 2.0 * body_chamfer,
-            body_size[2] - 2.0 * body_chamfer
+            body_size[1] - 2.0 * lead_chamfer,
+            body_size[2] - 2.0 * lead_chamfer
         ])
 
         body, lead = primitives.make_chip(
@@ -53,12 +79,18 @@ class TestChips:
             lead_size=lead_size,
             body_chamfer=body_chamfer,
             lead_chamfer=lead_chamfer,
-            chamfer_resolution=chamfer_resolution,
+            arc_resolution=arc_resolution,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution
         )
-        lead.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
-        body.translate(np.array([0.0, 0.0, body_size[2] / 2.0]))
+
+        body.translate((0.0, 0.0, body_size[2] / 2.0))
+        body.appearance().material = helpers.make_dark_gray_material()
+        body.appearance().solid = True
+        lead.translate((0.0, 0.0, body_size[2] / 2.0))
+        lead.appearance().material = helpers.make_light_gray_material()
+        lead.appearance().solid = True
+
         return [body, lead]
 
     @staticmethod
@@ -116,52 +148,6 @@ class TestChips:
         )
         return [cap_xp, cap_xn, cap_yp, cap_yn, cap_zp, cap_zn]
 
-    def test_make_chip_caps(self, tmp_path):
-        model.reset_allocator()
-        meshes = TestChips.make_chip_caps((2, 3, 4), (1, 2, 3))
-        verify_models(meshes, tmp_path, TestChips.FILE_CHIP_CAPS)
-
-    def test_make_chip_hp(self, tmp_path):
-        model.reset_allocator()
-        meshes = TestChips.make_chip(2, 3, 3)
-        verify_models(meshes, tmp_path, TestChips.FILE_CHIP_HP)
-
-    def test_make_chip_lp(self, tmp_path):
-        model.reset_allocator()
-        meshes = TestChips.make_chip(1, 1, 1)
-        verify_models(meshes, tmp_path, TestChips.FILE_CHIP_LP)
-
-
-class TestChip:
-    FILE_CHIP_HP = 'test_chip_hp.x3d'
-    FILE_CHIP_LP = 'test_chip_lp.x3d'
-    FILE_CHIP_SHUNT_HP = 'test_chip_shunt_hp.x3d'
-    FILE_CHIP_SHUNT_LP = 'test_chip_shunt_lp.x3d'
-    FILE_HOLLOW_PLANE = 'test_hollow_plane.x3d'
-    FILE_HOLLOW_PLANE_ASYMMETRIC = 'test_hollow_plane_asymmetric.x3d'
-
-    @staticmethod
-    def make_chip_shunt(edge_resolution, line_resolution, slope_resolution):
-        body, lead = primitives.make_chip_shunt(
-            length=3.0,
-            width=1.0,
-            thickness=0.2,
-            clearance=0.2,
-            lead_length=0.4,
-            active_width=0.8,
-            chamfer=0.05,
-            edge_resolution=edge_resolution,
-            line_resolution=line_resolution,
-            slope_resolution=slope_resolution
-        )
-
-        body.appearance().material = helpers.make_dark_gray_material()
-        body.appearance().solid = True
-        lead.appearance().material = helpers.make_light_gray_material()
-        lead.appearance().solid = True
-
-        return [body, lead]
-
     @staticmethod
     def make_hollow_plane(circle_resolution, plane_resolution, side_resolutions, inversion):
         # disable=invalid-name
@@ -198,6 +184,21 @@ class TestChip:
         hole.appearance().material = helpers.make_dark_gray_material()
 
         return [plane, hole]
+
+    def test_make_chip_caps(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestChip.make_chip_caps((2, 3, 4), (1, 2, 3))
+        verify_models(meshes, tmp_path, TestChip.FILE_CHIP_CAPS)
+
+    def test_make_chip_hp(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestChip.make_chip(4, 3, 2)
+        verify_models(meshes, tmp_path, TestChip.FILE_CHIP_HP)
+
+    def test_make_chip_lp(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestChip.make_chip(1, 1, 1)
+        verify_models(meshes, tmp_path, TestChip.FILE_CHIP_LP)
 
     def test_make_chip_shunt_hp(self, tmp_path):
         model.reset_allocator()
@@ -375,13 +376,15 @@ class TestPins:
         return mesh
 
     @staticmethod
-    def make_flat_pin(edge_resolution, line_resolution):
+    def make_flat_pin(edge_resolution, line_resolution, slope_resolution):
         mesh = primitives.make_flat_pin_mesh(
             pin_shape_size=np.array([0.5, 0.3]),
+            pin_height=0.3,
             pin_length=4.0,
-            end_slope=np.deg2rad(10.0),
+            end_slope=-np.deg2rad(10.0),
             edge_resolution=edge_resolution,
-            line_resolution=line_resolution
+            line_resolution=line_resolution,
+            slope_resolution=slope_resolution
         )
         mesh.appearance().solid = True
         return mesh
@@ -398,12 +401,12 @@ class TestPins:
 
     def test_make_flat_pin_hp(self, tmp_path):
         model.reset_allocator()
-        mesh = TestPins.make_flat_pin(3, 3)
+        mesh = TestPins.make_flat_pin(3, 3, 3)
         verify_models([mesh], tmp_path, TestPins.FILE_FLAT_PIN_HP)
 
     def test_make_flat_pin_lp(self, tmp_path):
         model.reset_allocator()
-        mesh = TestPins.make_flat_pin(1, 1)
+        mesh = TestPins.make_flat_pin(1, 1, 1)
         verify_models([mesh], tmp_path, TestPins.FILE_FLAT_PIN_LP)
 
 
@@ -546,6 +549,9 @@ class TestBox:
     FILE_BOX_LP = 'test_box_lp.x3d'
     FILE_BOX_MARK_HP = 'test_box_mark_hp.x3d'
     FILE_BOX_MARK_LP = 'test_box_mark_lp.x3d'
+    FILE_BOX_MARK_BORDER_HP = 'test_box_mark_border_hp.x3d'
+    FILE_BOX_MARK_BORDER_LP = 'test_box_mark_border_lp.x3d'
+    FILE_MICRO_BOX = 'test_micro_box.x3d'
     FILE_NONUNIFORM_BOX = 'test_nonuniform_box.x3d'
     FILE_NONUNIFORM_BOX_MARK = 'test_nonuniform_box_mark.x3d'
 
@@ -574,12 +580,45 @@ class TestBox:
         return body
 
     @staticmethod
-    def make_box_mark(edge_resolution, line_resolution, mark_resolution):
+    def make_micro_box(edge_resolution, line_resolution):
+        body = primitives.make_box_with_mark(
+            size=np.array([0.002, 0.002, 0.002]),
+            chamfer=0.0002,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution
+        )
+        body.appearance().solid = True
+        return body
+
+    @staticmethod
+    def make_box_mark(edge_resolution, line_resolution, mark_resolution, plane_resolution=None):
         body, mark = primitives.make_box_with_mark(
             size=np.array([2.0, 2.0, 2.0]),
             chamfer=0.2,
             edge_resolution=edge_resolution,
             line_resolution=line_resolution,
+            plane_resolution=plane_resolution,
+            mark_radius=0.3,
+            mark_offset=np.array([0.2, 0.2, 0.0]),
+            mark_resolution=mark_resolution
+        )
+
+        body.appearance().material = helpers.make_light_gray_material()
+        body.appearance().solid = True
+        mark.appearance().material = helpers.make_dark_gray_material()
+        mark.appearance().solid = True
+
+        return [body, mark]
+
+    @staticmethod
+    def make_box_mark_border(edge_resolution, line_resolution, mark_resolution, plane_resolution):
+        body, mark = primitives.make_box_with_mark(
+            size=np.array([2.0, 2.0, 2.0]),
+            chamfer=0.2,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            plane_resolution=plane_resolution,
+            border_size=0.4,
             mark_radius=0.3,
             mark_offset=np.array([0.2, 0.2, 0.0]),
             mark_resolution=mark_resolution
@@ -626,36 +665,6 @@ class TestBox:
 
         return [body, mark]
 
-    @staticmethod
-    def make_nonuniform_box():
-        body = primitives.make_box_with_mark(
-            size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.2,
-            edge_resolution=4,
-            line_resolution=(3, 2, 1)
-        )
-        body.appearance().solid = True
-        return body
-
-    @staticmethod
-    def make_nonuniform_box_mark():
-        body, mark = primitives.make_box_with_mark(
-            size=np.array([2.0, 2.0, 2.0]),
-            chamfer=0.2,
-            edge_resolution=4,
-            line_resolution=(3, 2, 1),
-            plane_resolution=5,
-            mark_radius=0.3,
-            mark_resolution=20
-        )
-
-        body.appearance().material = helpers.make_light_gray_material()
-        body.appearance().solid = True
-        mark.appearance().material = helpers.make_dark_gray_material()
-        mark.appearance().solid = True
-
-        return [body, mark]
-
     def test_make_barrel_box_hp(self, tmp_path):
         model.reset_allocator()
         mesh = TestBox.make_barrel_box(3, 3)
@@ -686,6 +695,16 @@ class TestBox:
         meshes = TestBox.make_box_mark(1, 1, 12)
         verify_models(meshes, tmp_path, TestBox.FILE_BOX_MARK_LP)
 
+    def test_make_box_mark_border_hp(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestBox.make_box_mark_border(4, (3, 2, 1), 24, 2)
+        verify_models(meshes, tmp_path, TestBox.FILE_BOX_MARK_BORDER_HP)
+
+    def test_make_box_mark_border_lp(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestBox.make_box_mark_border(1, (1, 1, 1), 12, 1)
+        verify_models(meshes, tmp_path, TestBox.FILE_BOX_MARK_BORDER_LP)
+
     def test_make_banded_box_hp(self, tmp_path):
         model.reset_allocator()
         mesh = TestBox.make_banded_box(3, 3)
@@ -706,14 +725,19 @@ class TestBox:
         meshes = TestBox.make_banded_box_mark(1, 1, 12)
         verify_models(meshes, tmp_path, TestBox.FILE_BANDED_BOX_MARK_LP)
 
+    def test_make_micro_box(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestBox.make_micro_box(3, 1)
+        verify_models([mesh], tmp_path, TestBox.FILE_MICRO_BOX)
+
     def test_make_nonuniform_box(self, tmp_path):
         model.reset_allocator()
-        mesh = TestBox.make_nonuniform_box()
+        mesh = TestBox.make_box(4, (3, 2, 1))
         verify_models([mesh], tmp_path, TestBox.FILE_NONUNIFORM_BOX)
 
     def test_make_nonuniform_box_mark(self, tmp_path):
         model.reset_allocator()
-        meshes = TestBox.make_nonuniform_box_mark()
+        meshes = TestBox.make_box_mark(4, (3, 2, 1), 20, 5)
         verify_models(meshes, tmp_path, TestBox.FILE_NONUNIFORM_BOX_MARK)
 
 
@@ -743,6 +767,36 @@ class TestCarvedBox:
         model.reset_allocator()
         mesh = TestCarvedBox.make_carved_box(1, 1)
         verify_models([mesh], tmp_path, TestCarvedBox.FILE_CARVED_BOX_LP)
+
+
+class TestPlinthedBox:
+    FILE_PLINTHED_BOX_HP = 'test_plinthed_box_hp.x3d'
+    FILE_PLINTHED_BOX_LP = 'test_plinthed_box_lp.x3d'
+
+    @staticmethod
+    def make_plinthed_box(edge_resolution, line_resolution):
+        body = primitives.make_box_with_plinth(
+            size=np.array([2.0, 2.0, 2.0]),
+            band_size=0.1,
+            band_offset=1.0,
+            cutout_length=0.4,
+            cutout_height=0.3,
+            chamfer=0.1,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution
+        )
+        body.appearance().solid = True
+        return body
+
+    def test_make_plinthed_box_hp(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestPlinthedBox.make_plinthed_box(3, 3)
+        verify_models([mesh], tmp_path, TestPlinthedBox.FILE_PLINTHED_BOX_HP)
+
+    def test_make_plinthed_box_lp(self, tmp_path):
+        model.reset_allocator()
+        mesh = TestPlinthedBox.make_plinthed_box(1, 1)
+        verify_models([mesh], tmp_path, TestPlinthedBox.FILE_PLINTHED_BOX_LP)
 
 
 class TestRoundedBox:
@@ -812,6 +866,7 @@ class TestRoundedBox:
 class TestSlopedBox:
     FILE_SLOPED_BOX_HP = 'test_sloped_box_hp.x3d'
     FILE_SLOPED_BOX_LP = 'test_sloped_box_lp.x3d'
+    FILE_SLOPED_BOX_FOOTING = 'test_sloped_box_footing.x3d'
 
     @staticmethod
     def make_sloped_box(edge_resolution, line_resolution):
@@ -828,6 +883,29 @@ class TestSlopedBox:
         body.appearance().solid = True
         return body
 
+    @staticmethod
+    def make_sloped_box_footing(edge_resolution, line_resolution, plane_resolution):
+        body, lead = primitives.make_sloped_box(
+            size=(2.0, 2.0, 2.0),
+            chamfer=0.2,
+            slope=math.pi / 4.0,
+            slope_height=0.5,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            band_size=0.1,
+            band_offset=0.0,
+            footing_size=(0.6, 1.0),
+            footing_offset=(0.2, -0.2),
+            plane_resolution=plane_resolution
+        )
+
+        body.appearance().material = helpers.make_dark_gray_material()
+        body.appearance().solid = True
+        lead.appearance().material = helpers.make_light_gray_material()
+        lead.appearance().solid = True
+
+        return [body, lead]
+
     def test_make_sloped_box_hp(self, tmp_path):
         model.reset_allocator()
         mesh = TestSlopedBox.make_sloped_box(3, 3)
@@ -837,6 +915,11 @@ class TestSlopedBox:
         model.reset_allocator()
         mesh = TestSlopedBox.make_sloped_box(1, 1)
         verify_models([mesh], tmp_path, TestSlopedBox.FILE_SLOPED_BOX_LP)
+
+    def test_make_sloped_box_footing(self, tmp_path):
+        model.reset_allocator()
+        meshes = TestSlopedBox.make_sloped_box_footing(3, 4, 2)
+        verify_models(meshes, tmp_path, TestSlopedBox.FILE_SLOPED_BOX_FOOTING)
 
 
 class TestShapeScale:
@@ -928,12 +1011,13 @@ class TestShapeScale:
 
 class TestBezierSurfaces:
     FILE_SURFACE_QUAD_ASYMMETRIC = 'test_surface_quad_asymmetric.x3d'
+    FILE_SURFACE_TRI_ASYMMETRIC = 'test_surface_tri_asymmetric.x3d'
 
     @staticmethod
-    def make_surface_quad(resolution_u0, resolution_u1, resolution_v):
+    def make_surface_quad(resolutions, inversion):
         # disable=invalid-name
         x, y = 2.0, 1.0
-        wx, wy = x * 2.0 / 3.0, y * 2.0 / 3.0
+        wx, wy, wz = x * 2.0 / 3.0, y * 2.0 / 3.0, 1.0 / 3.0
         # enable=invalid-name
 
         points = (
@@ -943,18 +1027,65 @@ class TestBezierSurfaces:
             np.array([-x,  y, 0.0])
         )
         controls = (
-            (np.array([-wx, 0.0, 0.0]), np.array([0.0, -wy, 0.0])),
-            (np.array([0.0,  wy, 0.0]), np.array([-wx, 0.0, 0.0])),
-            (np.array([ wx, 0.0, 0.0]), np.array([0.0,  wy, 0.0])),
-            (np.array([0.0, -wy, 0.0]), np.array([ wx, 0.0, 0.0]))
+            (np.array([-wx, 0.0, wz]), np.array([0.0, -wy, wz])),
+            (np.array([0.0,  wy, wz]), np.array([-wx, 0.0, wz])),
+            (np.array([ wx, 0.0, wz]), np.array([0.0,  wy, wz])),
+            (np.array([0.0, -wy, wz]), np.array([ wx, 0.0, wz]))
         )
 
         lines = bezier.make_quad_lines(points, controls)
-        patch = primitives.AsymmetricBezierQuad(*lines, resolution_u0, resolution_u1,
-                                                resolution_v, False)
+        patch = primitives.AsymmetricBezierQuad(*lines, resolutions, inversion)
+        return patch.tessellate()
+
+    @staticmethod
+    def make_surface_tri(resolutions, inversion):
+        # pylint: disable=invalid-name
+        r = 1.0
+        a0, a1, a2 = 0.0, -2.0 * math.pi / 3.0, 2.0 * math.pi / 3.0
+        # pylint: enable=invalid-name
+
+        points = [
+            np.array([math.cos(a0) * r, math.sin(a0) * r, 0.0]),
+            np.array([math.cos(a1) * r, math.sin(a1) * r, 0.0]),
+            np.array([math.cos(a2) * r, math.sin(a2) * r, 0.0])
+        ]
+
+        z_tension = np.array([0.0, 0.0, r / 3.0])
+        controls = (
+            ((points[2] - points[0]) / 3.0 + z_tension, (points[1] - points[0]) / 3.0 + z_tension),
+            ((points[0] - points[1]) / 3.0 + z_tension, (points[2] - points[1]) / 3.0 + z_tension),
+            ((points[1] - points[2]) / 3.0 + z_tension, (points[0] - points[2]) / 3.0 + z_tension)
+        )
+
+        mean = sum(points) / len(points) + z_tension
+        vertices = bezier.make_tri_vertices(points, controls)
+        patch = primitives.AsymmetricBezierTri(*vertices, mean, resolutions, inversion)
         return patch.tessellate()
 
     def test_surface_quad_asymmetric(self, tmp_path):
         model.reset_allocator()
-        mesh = TestBezierSurfaces.make_surface_quad(2, 7, 5)
-        verify_models([mesh], tmp_path, TestBezierSurfaces.FILE_SURFACE_QUAD_ASYMMETRIC)
+        mesh0 = TestBezierSurfaces.make_surface_quad((2, 5, 7, 5), False)
+        mesh0.translate((2.0, 1.0, 0.0))
+        mesh1 = TestBezierSurfaces.make_surface_quad((3, 1, 3, 4), False)
+        mesh1.translate((2.0, -1.0, 0.0))
+        mesh2 = TestBezierSurfaces.make_surface_quad((7, 5, 2, 5), True)
+        mesh2.translate((-2.0, -1.0, 0.0))
+        mesh3 = TestBezierSurfaces.make_surface_quad((2, 3, 2, 1), True)
+        mesh3.translate((-2.0, 1.0, 0.0))
+
+        verify_models([mesh0, mesh1, mesh2, mesh3], tmp_path,
+                      TestBezierSurfaces.FILE_SURFACE_QUAD_ASYMMETRIC)
+
+    def test_surface_tri_asymmetric(self, tmp_path):
+        offset_x, offset_y = math.cos(2.0 * math.pi / 3.0), math.sin(2.0 * math.pi / 3.0)
+
+        model.reset_allocator()
+        mesh0 = TestBezierSurfaces.make_surface_tri((7, 3, 3), False)
+        mesh0.translate((1.0, 0.0, 0.0))
+        mesh1 = TestBezierSurfaces.make_surface_tri((2, 5, 2), False)
+        mesh1.translate((offset_x, offset_y, 0.0))
+        mesh2 = TestBezierSurfaces.make_surface_tri((3, 3, 1), True)
+        mesh2.translate((offset_x, -offset_y, 0.0))
+
+        verify_models([mesh0, mesh1, mesh2], tmp_path,
+                      TestBezierSurfaces.FILE_SURFACE_TRI_ASYMMETRIC)

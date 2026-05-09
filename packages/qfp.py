@@ -14,14 +14,15 @@ from wrlconv import model
 
 
 class QFP:
+    BAND_OFFSET = primitives.hmils(0.0)
+    BAND_WIDTH = primitives.hmils(0.1)
+
     BODY_CHAMFER = primitives.hmils(0.1)
     BODY_OFFSET_Z = primitives.hmils(0.1)
     BODY_ROUNDNESS = primitives.hmils(0.5)
 
-    BAND_OFFSET = primitives.hmils(0.0)
-    BAND_WIDTH = primitives.hmils(0.1)
-
     MARK_RADIUS = primitives.hmils(0.5)
+    PIN_SLOPE = 10.0
 
     @staticmethod
     def generate_package_pins(pattern, count, size, offset, pitch):
@@ -61,11 +62,10 @@ class QFP:
         pin_shape = primitives.hmils(descriptor['pins']['shape'])
         dot_offset = QFP.calc_mark_offset(pin_count, pin_pitch)
 
-        band_width_proj = QFP.BAND_WIDTH * math.sqrt(0.5)
-        body_slope = math.atan(2.0 * band_width_proj / body_size[2])
+        body_slope = math.atan(2.0 * QFP.BAND_WIDTH / body_size[2])
         pin_offset = pin_shape[1] * math.sin(body_slope) / 2.0
 
-        box_meshes = primitives.make_rounded_box(
+        body_mesh, dot_mesh = primitives.make_rounded_box(
             size=body_size,
             roundness=QFP.BODY_ROUNDNESS,
             chamfer=QFP.BODY_CHAMFER,
@@ -78,12 +78,6 @@ class QFP:
             mark_offset=dot_offset,
             mark_resolution=resolutions['circle']
         )
-        try:
-            body_mesh = box_meshes[0]
-            dot_mesh = box_meshes[1]
-        except TypeError:
-            body_mesh = box_meshes
-            dot_mesh = None
 
         if 'QFP.Plastic' in materials:
             body_mesh.appearance().material = materials['QFP.Plastic']
@@ -99,7 +93,7 @@ class QFP:
             pin_shape_size=pin_shape,
             pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
             pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
-            pin_slope=np.deg2rad(10.0),
+            pin_slope=np.deg2rad(QFP.PIN_SLOPE),
             end_slope=body_slope,
             edge_resolution=resolutions['chamfer'],
             line_resolution=resolutions['line'],
@@ -112,7 +106,7 @@ class QFP:
             pattern=pin_mesh,
             count=pin_count,
             size=body_size,
-            offset=band_width_proj - pin_offset,
+            offset=QFP.BAND_WIDTH - pin_offset,
             pitch=pin_pitch
         )
 

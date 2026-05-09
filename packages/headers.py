@@ -208,4 +208,9 @@ class BoxHeader:
         )
 
 
-types = [BoxHeader, PinHeader, AngularPinHeader, Jumper]
+types = [
+    AngularPinHeader,
+    BoxHeader,
+    Jumper,
+    PinHeader
+]

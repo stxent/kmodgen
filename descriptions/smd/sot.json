@@ -178,7 +178,7 @@
     }, {
       "package": {"type": "SOT", "spec": "thin"},
       "title": "SOT-666",
-      "band": {"offset": -0.145},
+      "band": {"offset": -0.095},
       "body": {"size": [1.6, 1.2, 0.55]},
       "pads": {
           "default": {"size": [0.38, 0.5], "offset": [0.0, 0.05]},

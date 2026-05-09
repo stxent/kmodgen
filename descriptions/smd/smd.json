@@ -396,30 +396,6 @@
       "mark": {"wrap": false},
       "source": "Laird specifications"
     }, {
-      "package": {"type": "Chip", "spec": "thin"},
-      "title": "LED0603",
-      "body": {"size": [1.6, 0.8]},
-      "pins": {},
-      "pads": {"pitch": 0.7, "size": [0.8, 0.8], "names": ["C", "A"]},
-      "mark": {"dot": true, "wrap": true},
-      "source": "Foryard specifications"
-    }, {
-      "package": {"type": "Chip", "spec": "thin"},
-      "title": "LED0805",
-      "body": {"size": [2.0, 1.25]},
-      "pins": {},
-      "pads": {"pitch": 1.0, "size": [1.2, 1.45], "names": ["C", "A"]},
-      "mark": {"bar": true, "dot": true, "wrap": true},
-      "source": "Foryard specifications"
-    }, {
-      "package": {"type": "Chip", "spec": "thick"},
-      "title": "LED1206",
-      "body": {"size": [3.2, 1.6]},
-      "pins": {},
-      "pads": {"pitch": 1.75, "size": [1.5, 1.8], "names": ["C", "A"]},
-      "mark": {"bar": true, "dot": true, "wrap": true},
-      "source": "Foryard specifications"
-    }, {
       "package": {"type": "ChipResistor", "spec": "thin"},
       "title": "R0402",
       "body": {"size": [1.0, 0.5, 0.35]},

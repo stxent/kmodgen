@@ -1,4 +1,9 @@
 {
+  "materials": {
+    "Crystal.Body": "PurpleCeramic",
+    "Crystal.Cap": "Tin",
+    "Crystal.Lead": "Gold"
+  },
   "templates": [
     "crystals_kx-smd.x3d",
     "crystals_kx-th.x3d",
@@ -6,34 +11,34 @@
   ],
   "parts": [
     {
-      "package": {"type": "Chip", "spec": "thin"},
+      "package": {"type": "CrystalMetalCapSMD2", "spec": "thin"},
       "title": "FC-12M",
-      "body": {"size": [2.05, 1.2]},
-      "pins": {},
+      "body": {"size": [2.05, 1.2, 0.6]},
+      "pins": {"size": [0.525, 1.2], "count": 2},
       "pads": {"pitch": 0.8, "size": [0.7, 1.4]},
       "mark": {"wrap": true},
       "source": "Seiko Epson specifications"
     }, {
-      "package": {"type": "CrystalSMD", "spec": "thin"},
+      "package": {"type": "CrystalMetalCapSMD4", "spec": "thin"},
       "title": "KX-7",
-      "body": {"size": [3.2, 2.5, 0.8]},
+      "body": {"size": [3.2, 2.5, 0.7]},
       "pads": {"size": [1.3, 1.1]},
-      "pins": {"pitch": [2.3, 1.8], "names": ["1", "2", "3", "4"]},
+      "pins": {"size": [1.0, 0.9], "count": 4, "pitch": [2.3, 1.8], "names": ["1", "2", "3", "4"]},
       "source": "Geyer datasheet for KX-7 model"
     }, {
-      "package": {"type": "CrystalSMD", "spec": "thin"},
+      "package": {"type": "CrystalMetalCapSMD4", "spec": "thin"},
       "title": "KX-9",
-      "body": {"size": [5.0, 3.2, 1.0]},
+      "body": {"size": [5.0, 3.2, 0.85]},
       "pads": {"size": [1.6, 1.25]},
-      "pins": {"pitch": [3.7, 2.2], "names": ["1", "2", "3", "4"]},
+      "pins": {"size": [1.2, 0.9], "count": 4, "pitch": [3.7, 2.2], "names": ["1", "2", "3", "4"]},
       "source": "Geyer datasheet for KX-9 model"
     }, {
-      "package": {"type": "CrystalSMD", "spec": "thick"},
+      "package": {"type": "CrystalMetalCapSMD4", "spec": "thick"},
       "title": "KX-13",
-      "body": {"size": [7.0, 5.0, 1.3]},
-      "pads": {"size": [2.2, 1.4]},
-      "pins": {"pitch": [6.4, 2.5], "names": ["1", "2", "3", "4"]},
-      "source": "Geyer datasheet for KX-13 model"
+      "body": {"size": [7.0, 5.0, 1.4]},
+      "pads": {"size": [1.8, 2.0]},
+      "pins": {"size": [1.4, 1.0], "count": 4, "pitch": [5.1, 4.2], "names": ["1", "2", "3", "4"]},
+      "source": "SJK datasheet for 6N oscillator series"
     }, {
       "package": {"type": "CrystalSMD", "spec": "thin"},
       "title": "KX-327L",

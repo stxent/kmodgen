@@ -13,11 +13,13 @@ from wrlconv import model
 
 
 class SOP:
+    BAND_OFFSET = primitives.hmils(0.0)
+    BAND_WIDTH = primitives.hmils(0.1)
+
     BODY_CHAMFER = primitives.hmils(0.1)
     BODY_OFFSET_Z = primitives.hmils(0.1)
 
-    BAND_OFFSET = primitives.hmils(0.0)
-    BAND_WIDTH = primitives.hmils(0.1)
+    PIN_SLOPE = 10.0
 
     @staticmethod
     def generate_package_pins(pattern, count, size, offset, pitch):
@@ -44,15 +46,15 @@ class SOP:
         pin_height = body_size[2] / 2.0 + SOP.BODY_OFFSET_Z
         pin_shape = primitives.hmils(descriptor['pins']['shape'])
 
-        band_width_proj = SOP.BAND_WIDTH * math.sqrt(0.5)
-        body_slope = math.atan(2.0 * band_width_proj / body_size[2])
+        body_slope = math.atan(2.0 * SOP.BAND_WIDTH / body_size[2])
         pin_offset = pin_shape[1] * math.sin(body_slope) / 2.0
 
-        body_transform = model.Transform()
-        body_transform.rotate([0.0, 0.0, 1.0], math.pi)
-        body_transform.translate([0.0, 0.0, pin_height])
+        try:
+            heatsink_size = primitives.hmils(descriptor['heatsink']['size'])
+        except KeyError:
+            heatsink_size = None
 
-        body_mesh = primitives.make_sloped_box(
+        box_meshes = primitives.make_sloped_box(
             size=body_size,
             chamfer=SOP.BODY_CHAMFER,
             slope=math.pi / 4.0,
@@ -60,19 +62,28 @@ class SOP:
             edge_resolution=resolutions['edge'],
             line_resolution=resolutions['line'],
             band_size=SOP.BAND_WIDTH,
-            band_offset=SOP.BAND_OFFSET
+            band_offset=SOP.BAND_OFFSET,
+            footing_size=heatsink_size,
+            plane_resolution=resolutions['line']
         )
 
-        if 'SOP.Plastic' in materials:
-            body_mesh.appearance().material = materials['SOP.Plastic']
-        body_mesh.apply(body_transform)
-        body_mesh.rename('Body')
+        meshes = []
+        body_transform = model.Transform()
+        body_transform.rotate([0.0, 0.0, 1.0], math.pi)
+        body_transform.translate([0.0, 0.0, pin_height])
+
+        try:
+            body_mesh = box_meshes[0]
+            heatsink_mesh = box_meshes[1]
+        except TypeError:
+            body_mesh = box_meshes
+            heatsink_mesh = None
 
         pin_mesh = primitives.make_pin_mesh(
             pin_shape_size=pin_shape,
             pin_height=pin_height + pin_shape[1] * math.cos(body_slope) / 2.0,
             pin_length=primitives.hmils(descriptor['pins']['length']) + pin_offset,
-            pin_slope=np.deg2rad(10.0),
+            pin_slope=np.deg2rad(SOP.PIN_SLOPE),
             end_slope=body_slope,
             edge_resolution=resolutions['chamfer'],
             line_resolution=resolutions['line'],
@@ -85,11 +96,24 @@ class SOP:
             pattern=pin_mesh,
             count=descriptor['pins']['count'],
             size=body_size,
-            offset=band_width_proj - pin_offset,
+            offset=SOP.BAND_WIDTH - pin_offset,
             pitch=primitives.hmils(descriptor['pins']['pitch'])
         )
+        meshes.extend(pins)
 
-        return pins + [body_mesh]
+        if 'SOP.Plastic' in materials:
+            body_mesh.appearance().material = materials['SOP.Plastic']
+        body_mesh.apply(body_transform)
+        body_mesh.rename('Body')
+        meshes.append(body_mesh)
+
+        if heatsink_mesh is not None:
+            if 'SOP.Lead' in materials:
+                heatsink_mesh.appearance().material = materials['SOP.Lead']
+            heatsink_mesh.apply(body_transform)
+            meshes.append(heatsink_mesh)
+
+        return meshes
 
 
 types = [SOP]

@@ -525,7 +525,7 @@ class XT(exporter.Footprint):
 
         # Body outline
         body_offset = np.array([0.0, self.body_size[1] / 2.0 + self.body_offset_from_pin])
-        top_corner = self.body_size[0:2] / 2.0
+        top_corner = self.body_size[:2] / 2.0
 
         polyline = []
         polyline.append(top_corner * np.array([-1.0, +1.0]) + body_offset)
@@ -558,28 +558,25 @@ class XT(exporter.Footprint):
 class EastRisingHB(FFC):
     pass
 
-
 class EastRisingHT(FFC):
     pass
 
-
 class Molex52271(FFC):
     pass
-
 
 class Molex53261(FFC):
     pass
 
 
 types = [
+    EastRisingHB,
+    EastRisingHT,
     FFC,
     IPX,
     MemoryCard,
+    Molex52271,
+    Molex53261,
     SMA,
     USB,
-    XT,
-    EastRisingHB,
-    EastRisingHT,
-    Molex52271,
-    Molex53261
+    XT
 ]

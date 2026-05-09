@@ -115,13 +115,17 @@ class BoxHeader(PinHeader):
         super().__init__(spec, descriptor)
         self.body_size = np.array(descriptor['body']['size'])
 
-
 class Jumper(PinHeader):
     pass
-
 
 class ScrewTerminalBlock(PinHeader):
     pass
 
 
-types = [PinHeader, AngularPinHeader, BoxHeader, Jumper, ScrewTerminalBlock]
+types = [
+    AngularPinHeader,
+    BoxHeader,
+    Jumper,
+    PinHeader,
+    ScrewTerminalBlock
+]

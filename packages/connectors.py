@@ -12,16 +12,13 @@ class IPX(generic.GenericModelFilter):
     def __init__(self):
         super().__init__(IPX.PIVOT_NONE)
 
-
 class MemoryCard(generic.GenericModelFilter):
     def __init__(self):
         super().__init__(IPX.PIVOT_NONE)
 
-
 class SMA(generic.GenericModelFilter):
     def __init__(self):
         super().__init__(IPX.PIVOT_NONE)
-
 
 class USB(generic.GenericModelFilter):
     def __init__(self):

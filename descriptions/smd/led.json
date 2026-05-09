@@ -1,0 +1,44 @@
+{
+  "materials": {
+    "LED.Body": "WhiteCeramic",
+    "LED.Cap": "TransparentPlastic",
+    "LED.Crystal": "Silicon",
+    "LED.Lead": "Gold",
+    "LED.Mark": "GreenGlass"
+  },
+  "parts": [
+    {
+      "package": {"type": "ChipLED", "spec": "thin"},
+      "title": "LED0402",
+      "body": {"size": [1.0, 0.5, 0.5], "lens": [0.8, 0.5, 0.35], "plain": true},
+      "pins": {"length": 0.1},
+      "pads": {"pitch": 0.4, "size": [0.7, 0.5], "names": ["C", "A"]},
+      "mark": {"dot": true, "wrap": true, "width": 0.1},
+      "source": "Kingbright specifications"
+    }, {
+      "package": {"type": "ChipLED", "spec": "thin"},
+      "title": "LED0603",
+      "body": {"size": [1.6, 0.8, 0.8], "lens": [1.0, 0.8, 0.5]},
+      "pins": {"length": 0.3},
+      "pads": {"pitch": 0.7, "size": [0.8, 0.8], "names": ["C", "A"]},
+      "mark": {"dot": true, "wrap": true, "width": 0.15},
+      "source": "Foryard specifications"
+    }, {
+      "package": {"type": "ChipLED", "spec": "thin"},
+      "title": "LED0805",
+      "body": {"size": [2.0, 1.25, 0.8], "lens": [1.2, 1.25, 0.5]},
+      "pins": {"length": 0.4},
+      "pads": {"pitch": 1.0, "size": [1.2, 1.45], "names": ["C", "A"]},
+      "mark": {"bar": true, "dot": true, "wrap": true, "width": 0.2},
+      "source": "Foryard specifications"
+    }, {
+      "package": {"type": "ChipLED", "spec": "thick"},
+      "title": "LED1206",
+      "body": {"size": [3.2, 1.6, 1.1], "lens": [2.0, 1.6, 0.6]},
+      "pins": {"length": 0.6},
+      "pads": {"pitch": 1.75, "size": [1.5, 1.8], "names": ["C", "A"]},
+      "mark": {"bar": true, "dot": true, "wrap": true, "width": 0.2},
+      "source": "Foryard specifications"
+    }
+  ]
+}

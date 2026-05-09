@@ -323,7 +323,7 @@ class RadialCapacitor:
             body.ident = name + 'Body'
             meshes.append(body)
 
-            mark = geometry.build_rotation_mesh(slices=[slices[-1]] + slices[0:2], wrap=False,
+            mark = geometry.build_rotation_mesh(slices=[slices[-1]] + slices[:2], wrap=False,
                                                 invert=True)
             mark.appearance().material = RadialCapacitor.mat(materials, 'Mark')
             mark.ident = name + 'Mark'

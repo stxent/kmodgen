@@ -143,7 +143,7 @@ class Converter:
         out += '\t\t)\n'
 
         if circle.closed:
-            out += f'\t\t(fill {'yes' if circle.fill else 'no'})\n'
+            out += f'\t\t(fill {"yes" if circle.fill else "no"})\n'
 
         out += f'\t\t(layer {Converter.layers_to_text(circle.layer)})\n'
         out += f'\t\t(uuid "{Converter.make_uuid()}")\n'
@@ -240,7 +240,7 @@ class Converter:
         out += '\t\t\t(type solid)\n' # TODO Non-solid line types
         out += '\t\t)\n'
 
-        out += f'\t\t(fill {'yes' if poly.fill else 'no'})\n'
+        out += f'\t\t(fill {"yes" if poly.fill else "no"})\n'
         out += f'\t\t(layer {Converter.layers_to_text(poly.layer)})\n'
         out += f'\t\t(uuid "{Converter.make_uuid()}")\n'
         out += '\t)\n'

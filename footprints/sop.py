@@ -107,7 +107,7 @@ class SOP(exporter.Footprint):
         pitch_str = primitives.round2f(descriptor['pins']['pitch'])
 
         try:
-            heatsink_str = [primitives.round1f(x) for x in descriptor['heatsink']['size'][0:2]]
+            heatsink_str = [primitives.round1f(x) for x in descriptor['heatsink']['size'][:2]]
         except KeyError:
             heatsink_str = None
 

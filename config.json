@@ -1,5 +1,48 @@
 {
   "materials": {
+    "DebugBlue": {
+      "shininess": 0.999,
+      "diffuse": [0.0, 0.0, 1.0],
+      "specular": [1.0, 1.0, 0.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
+    "DebugCyan": {
+      "shininess": 0.999,
+      "diffuse": [0.0, 1.0, 1.0],
+      "specular": [1.0, 0.0, 0.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
+    "DebugGreen": {
+      "shininess": 0.999,
+      "diffuse": [0.0, 1.0, 0.0],
+      "specular": [1.0, 0.0, 1.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
+    "DebugMagenta": {
+      "shininess": 0.999,
+      "diffuse": [1.0, 0.0, 1.0],
+      "specular": [0.0, 1.0, 0.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
+    "DebugRed": {
+      "shininess": 0.999,
+      "diffuse": [1.0, 0.0, 0.0],
+      "specular": [0.0, 1.0, 1.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
+    "DebugTransparent": {
+      "transparency": 0.5,
+      "shininess": 0.999,
+      "diffuse": [0.8, 0.8, 0.8],
+      "specular": [1.0, 1.0, 1.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
+    "DebugYellow": {
+      "shininess": 0.999,
+      "diffuse": [1.0, 1.0, 0.0],
+      "specular": [0.0, 0.0, 1.0],
+      "ambient": [0.1, 0.1, 0.1]
+    },
     "BlackCeramic": {
       "shininess": 0.3,
       "diffuse": "#353839",
@@ -14,6 +57,13 @@
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Chamoisee"
     },
+    "PurpleCeramic": {
+      "shininess": 0.3,
+      "diffuse": "#614051",
+      "specular": [0.4, 0.4, 0.4],
+      "ambient": [0.333, 0.333, 0.333],
+      "prototype": "Eggplant"
+    },
     "WhiteCeramic": {
       "shininess": 0.3,
       "diffuse": "#EBECF0",
@@ -24,35 +74,42 @@
     "Bronze": {
       "shininess": 0.4,
       "diffuse": "#CD8032",
-      "specular": [0.7, 0.7, 0.7],
+      "specular": "#CD8032",
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Chinese bronze"
     },
     "Copper": {
       "shininess": 0.4,
       "diffuse": "#B87333",
-      "specular": [0.7, 0.7, 0.7],
+      "specular": "#B87333",
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Copper"
     },
     "Gold": {
       "shininess": 0.4,
       "diffuse": "#D3AF37",
-      "specular": [0.7, 0.7, 0.7],
+      "specular": "#D3AF37",
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Metallic gold"
     },
     "Nickel": {
       "shininess": 0.4,
       "diffuse": "#727472",
-      "specular": [0.7, 0.7, 0.7],
+      "specular": "#727472",
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Nickel"
+    },
+    "Silicon": {
+      "shininess": 0.4,
+      "diffuse": "#808285",
+      "specular": "#50C878",
+      "ambient": [0.333, 0.333, 0.333],
+      "prototype": "Silicon and Emerald Green"
     },
     "Tin": {
       "shininess": 0.4,
       "diffuse": "#D3D4D5",
-      "specular": [0.7, 0.7, 0.7],
+      "specular": "#D3D4D5",
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Tin"
     },
@@ -91,12 +148,27 @@
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Eerie black"
     },
+    "GreenGlass": {
+      "shininess": 0.95,
+      "diffuse": "#00A86B",
+      "specular": [0.9, 0.9, 0.9],
+      "ambient": [0.333, 0.333, 0.333],
+      "prototype": "Jade"
+    },
     "RedGlass": {
       "shininess": 0.95,
       "diffuse": "#E32636",
       "specular": [0.9, 0.9, 0.9],
       "ambient": [0.333, 0.333, 0.333],
       "prototype": "Alizarin crimson"
+    },
+    "TransparentPlastic": {
+      "transparency": 0.2,
+      "shininess": 0.05,
+      "diffuse": "#EBECF0",
+      "specular": [0.4, 0.4, 0.4],
+      "ambient": [0.333, 0.333, 0.333],
+      "prototype": "Bright gray"
     },
     "Lead": "Tin"
   },

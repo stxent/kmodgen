@@ -89,7 +89,7 @@ class QFN:
     def make_bottom_plane(mesh, body_size, chamfer):
         center = np.array([0.0, 0.0, -body_size[2] / 2.0])
         normal = np.array([0.0, 0.0, -1.0])
-        body_region_corner = body_size[0:2] / 2.0 - chamfer * 2.0
+        body_region_corner = body_size[:2] / 2.0 - chamfer * 2.0
         body_region = (
             (-body_region_corner[0], -body_region_corner[1], -body_size[2]),
             ( body_region_corner[0],  body_region_corner[1],           0.0)
@@ -105,7 +105,7 @@ class QFN:
         # Select body vertices
         center = np.array([0.0, 0.0, -body_size[2] / 2.0])
         normal = np.array([0.0, 0.0, -1.0])
-        body_region_corner = body_size[0:2] / 2.0 - chamfer * 2.0
+        body_region_corner = body_size[:2] / 2.0 - chamfer * 2.0
         body_region = (
             (-body_region_corner[0], -body_region_corner[1], -body_size[2]),
             ( body_region_corner[0],  body_region_corner[1],           0.0)
@@ -148,6 +148,8 @@ class QFN:
         regions = []
         transforms = {}
 
+        # X side inner pin vertices
+
         for i in range(2, resolution[0] - 1):
             x_pin_num = (i - 2) // 2
             x_pin_off = -pin_width / 2.0 if i & 1 == 0 else pin_width / 2.0
@@ -160,34 +162,35 @@ class QFN:
             transform.translate(np.array([x_pin - x_pos, 0.0, 0.0]))
 
             regions.append((
-                (x_pos - band[0], y_pos - band[1] * 3.0, -size[2]),
-                (x_pos + band[0], y_pos + band[1],        size[2]),
+                (x_pos - band[0], y_pos - band[1] * 3.0,    -size[2]),
+                (x_pos + band[0], y_pos + band[1],       QFN.EPSILON),
                 counter
             ))
             transforms[counter] = transform
             counter += 1
 
             regions.append((
-                (x_pos - band[0], -y_pos - band[1],       -size[2]),
-                (x_pos + band[0], -y_pos + band[1] * 3.0,  size[2]),
+                (x_pos - band[0], -y_pos - band[1],          -size[2]),
+                (x_pos + band[0], -y_pos + band[1] * 3.0, QFN.EPSILON),
                 counter
             ))
             transforms[counter] = transform
             counter += 1
 
-        # Horizontal side vertices
+        # X side edge vertices
+
         x_vertex_offset = plane_size[0] / 2.0 - band[0] * 2.0
         x_pin_border = plane_size[0] / 2.0 - chamfer
         x_pin_delta = x_pin_border - x_vertex_offset
 
         regions.append((
-            (x_vertex_offset - band[0],  size[1] / 2.0 - band[1], -size[2]),
-            (x_vertex_offset + band[0],  size[1] / 2.0 + band[1],  size[2]),
+            (x_vertex_offset - band[0],  size[1] / 2.0 - band[1],    -size[2]),
+            (x_vertex_offset + band[0],  size[1] / 2.0 + band[1], QFN.EPSILON),
             counter
         ))
         regions.append((
-            (x_vertex_offset - band[0], -size[1] / 2.0 - band[1], -size[2]),
-            (x_vertex_offset + band[0], -size[1] / 2.0 + band[1],  size[2]),
+            (x_vertex_offset - band[0], -size[1] / 2.0 - band[1],    -size[2]),
+            (x_vertex_offset + band[0], -size[1] / 2.0 + band[1], QFN.EPSILON),
             counter
         ))
         transform = model.Transform()
@@ -196,19 +199,21 @@ class QFN:
         counter += 1
 
         regions.append((
-            (-x_vertex_offset - band[0],  size[1] / 2.0 - band[1], -size[2]),
-            (-x_vertex_offset + band[0],  size[1] / 2.0 + band[1],  size[2]),
+            (-x_vertex_offset - band[0],  size[1] / 2.0 - band[1],    -size[2]),
+            (-x_vertex_offset + band[0],  size[1] / 2.0 + band[1], QFN.EPSILON),
             counter
         ))
         regions.append((
-            (-x_vertex_offset - band[0], -size[1] / 2.0 - band[1], -size[2]),
-            (-x_vertex_offset + band[0], -size[1] / 2.0 + band[1],  size[2]),
+            (-x_vertex_offset - band[0], -size[1] / 2.0 - band[1],    -size[2]),
+            (-x_vertex_offset + band[0], -size[1] / 2.0 + band[1], QFN.EPSILON),
             counter
         ))
         transform = model.Transform()
         transform.translate(np.array([-x_pin_delta, 0.0, 0.0]))
         transforms[counter] = transform
         counter += 1
+
+        # Y side inner pin vertices
 
         for i in range(2, resolution[1] - 1):
             y_pin_num = (i - 2) // 2
@@ -222,34 +227,35 @@ class QFN:
             transform.translate(np.array([0.0, y_pin - y_pos, 0.0]))
 
             regions.append((
-                (x_pos - band[0] * 3.0, y_pos - band[1], -size[2]),
-                (x_pos + band[0],       y_pos + band[1],  size[2]),
+                (x_pos - band[0] * 3.0, y_pos - band[1],    -size[2]),
+                (x_pos + band[0],       y_pos + band[1], QFN.EPSILON),
                 counter
             ))
             transforms[counter] = transform
             counter += 1
 
             regions.append((
-                (-x_pos - band[0],       y_pos - band[1], -size[2]),
-                (-x_pos + band[0] * 3.0, y_pos + band[1],  size[2]),
+                (-x_pos - band[0],       y_pos - band[1],    -size[2]),
+                (-x_pos + band[0] * 3.0, y_pos + band[1], QFN.EPSILON),
                 counter
             ))
             transforms[counter] = transform
             counter += 1
 
-        # Vertical side vertices
+        # Y side edge vertices
+
         y_vertex_offset = plane_size[1] / 2.0 - band[1] * 2.0
         y_pin_border = plane_size[1] / 2.0 - chamfer
         y_pin_delta = y_pin_border - y_vertex_offset
 
         regions.append((
-            ( size[0] / 2.0 - band[0], y_vertex_offset - band[1], -size[2]),
-            ( size[0] / 2.0 + band[0], y_vertex_offset + band[1],  size[2]),
+            ( size[0] / 2.0 - band[0], y_vertex_offset - band[1],    -size[2]),
+            ( size[0] / 2.0 + band[0], y_vertex_offset + band[1], QFN.EPSILON),
             counter
         ))
         regions.append((
-            (-size[0] / 2.0 - band[0], y_vertex_offset - band[1], -size[2]),
-            (-size[0] / 2.0 + band[0], y_vertex_offset + band[1],  size[2]),
+            (-size[0] / 2.0 - band[0], y_vertex_offset - band[1],    -size[2]),
+            (-size[0] / 2.0 + band[0], y_vertex_offset + band[1], QFN.EPSILON),
             counter
         ))
         transform = model.Transform()
@@ -258,13 +264,13 @@ class QFN:
         counter += 1
 
         regions.append((
-            ( size[0] / 2.0 - band[0], -y_vertex_offset - band[1], -size[2]),
-            ( size[0] / 2.0 + band[0], -y_vertex_offset + band[1],  size[2]),
+            ( size[0] / 2.0 - band[0], -y_vertex_offset - band[1],    -size[2]),
+            ( size[0] / 2.0 + band[0], -y_vertex_offset + band[1], QFN.EPSILON),
             counter
         ))
         regions.append((
-            (-size[0] / 2.0 - band[0], -y_vertex_offset - band[1], -size[2]),
-            (-size[0] / 2.0 + band[0], -y_vertex_offset + band[1],  size[2]),
+            (-size[0] / 2.0 - band[0], -y_vertex_offset - band[1],    -size[2]),
+            (-size[0] / 2.0 + band[0], -y_vertex_offset + band[1], QFN.EPSILON),
             counter
         ))
         transform = model.Transform()
@@ -334,7 +340,7 @@ class QFN:
     @staticmethod
     def make_qfn_body(size, count, chamfer, pin_pitch, pin_width, pin_height, pin_length,
                       heatsink=None, mark_radius=None, mark_offset=np.zeros(3),
-                      edge_resolution=3, line_resolution=1, mark_resolution=24, plane_resolution=1):
+                      edge_resolution=3, line_resolution=1, mark_resolution=24):
         body_resolution = count * 2 + 3
         first_pin_offset = (np.asarray(count, dtype=np.float32) - 1.0) * pin_pitch / 2.0
 
@@ -350,7 +356,8 @@ class QFN:
             chamfer=chamfer,
             edge_resolution=edge_resolution,
             line_resolution=(*body_resolution, 2),
-            plane_resolution=plane_resolution,
+            plane_resolution=2,
+            border_size=chamfer * 2.0,
             mark_radius=mark_radius,
             mark_offset=mark_offset,
             mark_resolution=mark_resolution
@@ -445,8 +452,7 @@ class QFN:
             mark_offset=mark_offset,
             edge_resolution=resolutions['chamfer'],
             line_resolution=resolutions['line'],
-            mark_resolution=resolutions['circle'],
-            plane_resolution=max(resolutions['line'], 2)
+            mark_resolution=resolutions['circle']
         )
 
         meshes = []
@@ -476,7 +482,7 @@ class QFN:
 
     @staticmethod
     def calc_mark_offset(size, radius, chamfer):
-        plane_size = size[0:2] - chamfer * 2.0
+        plane_size = size[:2] - chamfer * 2.0
         mark_offset = -plane_size / 2.0 + radius * 2.0
         return np.array([*mark_offset, 0.0])
 
@@ -485,10 +491,13 @@ class DFN(QFN):
     def __init__(self):
         super().__init__('DFN')
 
-
 class LGA(QFN):
     def __init__(self):
         super().__init__('LGA')
 
 
-types = [QFN, DFN, LGA]
+types = [
+    DFN,
+    LGA,
+    QFN
+]

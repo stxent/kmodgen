@@ -5,12 +5,12 @@
 # Copyright (C) 2018 xent
 # Project is distributed under the terms of the GNU General Public License v3.0
 
+import copy
 import math
 import numpy as np
 
 import bezier
 from wrlconv import curves
-from wrlconv import geometry
 from wrlconv import model
 
 
@@ -35,19 +35,51 @@ def round2f(value):
 
 
 class AsymmetricBezierQuad(curves.BezierQuad):
-    def __init__(self, a, b, c, d, resolution_u0, resolution_u1, resolution_v,
-                 inversion=False): # pylint: disable=invalid-name
-        super().__init__(a, b, c, d, (max(resolution_u0, resolution_u1), resolution_v), inversion)
+    def __init__(self, a, b, c, d, resolution, inversion=False): # pylint: disable=invalid-name
+        self.swap = False
+
+        if isinstance(resolution, int):
+            resolution_u0 = resolution_u1 = resolution_v = resolution
+        elif isinstance(resolution, tuple) and len(resolution) == 2:
+            resolution_u0 = resolution_u1 = resolution[0]
+            resolution_v = resolution[1]
+        elif isinstance(resolution, tuple) and len(resolution) == 4:
+            if len(set(resolution)) > 3:
+                raise ValueError()
+
+            if resolution[0] != resolution[2] and resolution[1] != resolution[3]:
+                raise ValueError()
+
+            if resolution[0] != resolution[2]:
+                resolution_u0, resolution_u1 = resolution[0], resolution[2]
+                resolution_v = resolution[1]
+            elif resolution[1] != resolution[3]:
+                resolution_u0, resolution_u1 = resolution[1], resolution[3]
+                resolution_v = resolution[0]
+                self.swap = True
+            else:
+                resolution_u0 = resolution_u1 = resolution[0]
+                resolution_v = resolution[1]
+        else:
+            raise ValueError()
 
         if resolution_u0 < 1 or resolution_u1 < 1 or resolution_v < 1:
             raise ValueError()
 
+        super().__init__(a, b, c, d, (max(resolution_u0, resolution_u1), resolution_v), inversion)
         self.resolution_u0 = resolution_u0 + 1
         self.resolution_u1 = resolution_u1 + 1
 
     def tessellate(self):
+        if self.resolution_u0 == self.resolution_u1:
+            return super().tessellate()
+
         resolutions_u = np.linspace(self.resolution_u0, self.resolution_u1, self.resolution_v)
-        points_v = np.linspace(0.0, 1.0, self.resolution_v)
+
+        if self.swap:
+            points_v = np.linspace(1.0, 0.0, self.resolution_v)
+        else:
+            points_v = np.linspace(0.0, 1.0, self.resolution_v)
 
         slices = []
         for i, resolution_raw in enumerate(resolutions_u):
@@ -55,12 +87,73 @@ class AsymmetricBezierQuad(curves.BezierQuad):
             points_u = np.linspace(0.0, 1.0, resolution)
             current = []
             for point in points_u:
-                current.append(self.interpolate(points_v[i], point))
+                point_uv = (point, points_v[i]) if self.swap else (points_v[i], point)
+                current.append(self.interpolate(*point_uv))
             slices.append(current)
 
         if self.resolution_u0 < self.resolution_u1:
             slices.reverse()
             self.inversion = not self.inversion
+
+        return slice_connect_nearest(slices, self.inversion, False)
+
+
+class AsymmetricBezierTri(curves.BezierTri):
+    def __init__(self, a, b, c, mean, resolution, inversion=False): # pylint: disable=invalid-name
+        if isinstance(resolution, int):
+            resolution_a = resolution_b = resolution
+        elif isinstance(resolution, tuple) and len(resolution) == 3:
+            if len(set(resolution)) > 2:
+                raise ValueError()
+
+            if resolution[1] == resolution[2]:
+                resolution_a, resolution_b = resolution[0], resolution[1]
+                self.mapping = (2, 0, 1)
+            elif resolution[0] == resolution[1]:
+                resolution_a, resolution_b = resolution[2], resolution[0]
+                self.mapping = (1, 2, 0)
+            elif resolution[0] == resolution[2]:
+                resolution_a, resolution_b = resolution[1], resolution[0]
+                self.mapping = (0, 1, 2)
+            else:
+                raise ValueError()
+        else:
+            raise ValueError()
+
+        if resolution_a < 1 or resolution_b < 1:
+            raise ValueError()
+
+        super().__init__(a, b, c, mean, max(resolution_a, resolution_b), inversion)
+
+        self.resolution_a = resolution_a + 1
+        self.resolution_b = resolution_b + 1
+
+    def tessellate(self):
+        if self.resolution_a == self.resolution_b:
+            return super().tessellate()
+
+        resolutions_a = np.linspace(self.resolution_a, 1.0, self.resolution_b)
+        points_a = np.linspace(0.0, 1.0, self.resolution_b)
+
+        slices = []
+        for i, resolution_raw in enumerate(resolutions_a):
+            resolution = round(resolution_raw)
+            point_a = points_a[i]
+
+            if resolution == 1 and i != self.resolution_b - 1:
+                resolution = 2
+
+            points_b = np.linspace(0.0, 1.0 - point_a, resolution)
+            current = []
+            for point_b in points_b:
+                point_abc = (point_a, point_b, (1.0 - point_a) - point_b)
+                point_uvw = (
+                    point_abc[self.mapping[0]],
+                    point_abc[self.mapping[1]],
+                    point_abc[self.mapping[2]]
+                )
+                current.append(self.interpolate(*point_uvw))
+            slices.append(current)
 
         return slice_connect_nearest(slices, self.inversion, False)
 
@@ -89,6 +182,28 @@ class CircularBezierQuad(curves.BezierQuad):
             else:
                 mesh.geo_polygons.append([(i + 1) % mean_index, mean_index, i])
         return mesh
+
+
+def asymmetric_face_functor(points, controls, resolution, inversion):
+    output_controls = bezier.make_control_points(points, controls)
+
+    if len(points) == 4:
+        lines = bezier.make_quad_lines(points, output_controls)
+        patch = AsymmetricBezierQuad(*lines, resolution, inversion)
+        return [patch]
+    if len(points) == 3:
+        mean = sum(points) / 3.0
+        vertices = bezier.make_tri_vertices(points, output_controls)
+        patch = AsymmetricBezierTri(*vertices, mean, resolution, inversion)
+        return [patch]
+    raise ValueError()
+
+
+def circular_face_functor(points, controls, resolution, inversion):
+    output_controls = bezier.make_control_points(points, controls)
+    lines = bezier.make_quad_lines(points, output_controls)
+    patch = CircularBezierQuad(*lines, resolution, inversion)
+    return [patch]
 
 
 def make_circle_outline(center, radius, edges):
@@ -194,8 +309,11 @@ def make_hollow_plane(points, controls, hollow_offset, hollow_radius,
             (hollow_controls[i][1], -hollow_vecs[i] * default_tension)
         ]
         patch_lines = bezier.make_quad_lines(patch_points, patch_controls)
-        patch = AsymmetricBezierQuad(*patch_lines, side_resolutions[i], circle_resolution // 4,
-                                     plane_resolution, inversion)
+        patch = AsymmetricBezierQuad(
+            *patch_lines,
+            (side_resolutions[i], plane_resolution, circle_resolution // 4, plane_resolution),
+            inversion
+        )
         plane_patches.append(patch)
 
     circle_lines = bezier.make_quad_lines(hollow_points, hollow_controls)
@@ -229,7 +347,7 @@ def make_rotation_cap_mesh(slices, inversion):
 
 
 def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_resolution=None,
-                       band_size=None, band_offset=0.0,
+                       band_size=None, band_offset=0.0, border_size=None,
                        mark_radius=None, mark_offset=np.zeros(3), mark_resolution=24):
     try:
         resolutions = (line_resolution[0], line_resolution[1], line_resolution[2])
@@ -272,6 +390,7 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
         np.array([-x, -y, -z]),
         np.array([ x, -y, -z])
     ]
+
     edges = [
         # Top
         [0, 1, 2, 3, 0],
@@ -279,31 +398,29 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
         [4, 5, 6, 7, 4]
     ]
     edge_attributes = {
-        (0, 1): {'resolution': resolutions[0]},
-        (1, 2): {'resolution': resolutions[1]},
-        (2, 3): {'resolution': resolutions[0]},
-        (3, 0): {'resolution': resolutions[1]},
-        (4, 5): {'resolution': resolutions[0]},
-        (5, 6): {'resolution': resolutions[1]},
-        (6, 7): {'resolution': resolutions[0]},
-        (7, 4): {'resolution': resolutions[1]}
+        (0, 1): {bezier.RESOLUTION: resolutions[0]},
+        (1, 2): {bezier.RESOLUTION: resolutions[1]},
+        (2, 3): {bezier.RESOLUTION: resolutions[0]},
+        (3, 0): {bezier.RESOLUTION: resolutions[1]},
+        (4, 5): {bezier.RESOLUTION: resolutions[0]},
+        (5, 6): {bezier.RESOLUTION: resolutions[1]},
+        (6, 7): {bezier.RESOLUTION: resolutions[0]},
+        (7, 4): {bezier.RESOLUTION: resolutions[1]}
     }
-    faces = [
-        # Top
-        [0, 1, 2, 3],
-        # Bottom
-        [7, 6, 5, 4]
-    ]
 
-    if band_size is not None:
-        band_offset_xy = band_size * math.sqrt(0.5)
-        band_offset_z = band_offset
+    faces = []
+    face_attributes = {}
 
+    if border_size is None or not border_size:
+        faces.append([0, 1, 2, 3]) # Top
+    faces.append([7, 6, 5, 4]) # Bottom
+
+    if band_size is not None and band_size:
         vertices.extend([
-            np.array([ x + band_offset_xy,  y + band_offset_xy, band_offset_z]),
-            np.array([-x - band_offset_xy,  y + band_offset_xy, band_offset_z]),
-            np.array([-x - band_offset_xy, -y - band_offset_xy, band_offset_z]),
-            np.array([ x + band_offset_xy, -y - band_offset_xy, band_offset_z])
+            np.array([ x + band_size,  y + band_size, band_offset]),
+            np.array([-x - band_size,  y + band_size, band_offset]),
+            np.array([-x - band_size, -y - band_size, band_offset]),
+            np.array([ x + band_size, -y - band_size, band_offset])
         ])
         edges.extend([
             # Middle
@@ -321,20 +438,20 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
         ])
         edge_attributes.update({
             # Middle
-            (8, 9): {'resolution': resolutions[0]},
-            (9, 10): {'resolution': resolutions[1]},
-            (10, 11): {'resolution': resolutions[0]},
-            (11, 8): {'resolution': resolutions[1]},
+            ( 8,  9): {bezier.RESOLUTION: resolutions[0]},
+            ( 9, 10): {bezier.RESOLUTION: resolutions[1]},
+            (10, 11): {bezier.RESOLUTION: resolutions[0]},
+            (11,  8): {bezier.RESOLUTION: resolutions[1]},
             # Sides, upper half
-            (0, 8): {'resolution': resolutions[2]},
-            (1, 9): {'resolution': resolutions[2]},
-            (2, 10): {'resolution': resolutions[2]},
-            (3, 11): {'resolution': resolutions[2]},
+            ( 0,  8): {bezier.RESOLUTION: resolutions[2]},
+            ( 1,  9): {bezier.RESOLUTION: resolutions[2]},
+            ( 2, 10): {bezier.RESOLUTION: resolutions[2]},
+            ( 3, 11): {bezier.RESOLUTION: resolutions[2]},
             # Sides, lower half
-            (8, 4): {'resolution': resolutions[2]},
-            (9, 5): {'resolution': resolutions[2]},
-            (10, 6): {'resolution': resolutions[2]},
-            (11, 7): {'resolution': resolutions[2]}
+            ( 8,  4): {bezier.RESOLUTION: resolutions[2]},
+            ( 9,  5): {bezier.RESOLUTION: resolutions[2]},
+            (10,  6): {bezier.RESOLUTION: resolutions[2]},
+            (11,  7): {bezier.RESOLUTION: resolutions[2]}
         })
         faces.extend([
             # Sides, upper half
@@ -358,10 +475,10 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
         ])
         edge_attributes.update({
             # Middle
-            (0, 4): {'resolution': resolutions[2]},
-            (1, 5): {'resolution': resolutions[2]},
-            (2, 6): {'resolution': resolutions[2]},
-            (3, 7): {'resolution': resolutions[2]}
+            (0, 4): {bezier.RESOLUTION: resolutions[2]},
+            (1, 5): {bezier.RESOLUTION: resolutions[2]},
+            (2, 6): {bezier.RESOLUTION: resolutions[2]},
+            (3, 7): {bezier.RESOLUTION: resolutions[2]}
         })
         faces.extend([
             # Sides
@@ -371,6 +488,34 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
             [7, 4, 0, 3]
         ])
 
+    if border_size is not None and border_size:
+        top_start = len(vertices)
+        vertices.extend([
+            np.array([ x - border_size,  y - border_size, z]),
+            np.array([-x + border_size,  y - border_size, z]),
+            np.array([-x + border_size, -y + border_size, z]),
+            np.array([ x - border_size, -y + border_size, z])
+        ])
+        edges.append(list(range(top_start, top_start + 4)) + [top_start])
+        faces.append(list(range(top_start, top_start + 4)))
+        for i in range(4):
+            edges.append([i, top_start + i])
+            edge_attributes[(i, top_start + i)] = {bezier.RESOLUTION: plane_resolution}
+            edge_attributes[(top_start + i, top_start + (i + 1) % 4)] = {
+                bezier.RESOLUTION: max(2, resolutions[i % 2] // 2)
+            }
+
+            indices = [(i + 1) % 4, top_start + (i + 1) % 4, top_start + i, i]
+            faces.append(indices)
+            face_attributes[tuple(sorted(indices))] = {bezier.FUNCTOR: asymmetric_face_functor}
+    else:
+        top_start = 0
+
+    # Override top face generation
+    if mark_radius is not None and mark_radius:
+        key = tuple(range(top_start, top_start + 4))
+        face_attributes[key] = {bezier.FUNCTOR: top_face_functor}
+
     body = bezier.BezierObject(
         vertices=vertices,
         edges=edges,
@@ -379,13 +524,9 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
         sharpness=math.pi * (5.0 / 6.0),
         edge_resolution=edge_resolution,
         line_resolution=default_resolution,
-        edge_attributes=edge_attributes
+        edge_attributes=edge_attributes,
+        face_attributes=face_attributes
     )
-
-    # Override top face generation
-    if mark_radius is not None:
-        element = body.find_face([0, 1, 2, 3])
-        element.functor = top_face_functor
 
     body_patches = body.build()
     if mark_patches is not None:
@@ -396,12 +537,11 @@ def make_box_with_mark(size, chamfer, edge_resolution, line_resolution, plane_re
 def make_box_with_plinth(size, band_size, band_offset, cutout_length, cutout_height, chamfer,
                          edge_resolution, line_resolution):
     # pylint: disable=invalid-name
-    x, y = np.array(size[0:2]) / 2.0
+    x, y = np.array(size[:2]) / 2.0
     z = size[2]
     # pylint: enable=invalid-name
 
     top_resolution = 2 # Fixed resolution for strip generation
-    band_xy = np.array(size[0:2]) / 2.0 + band_size
     bottom_slope = band_size / band_offset if band_size > 0.0 else 1.0
     xy_offset = cutout_height * bottom_slope
 
@@ -434,34 +574,18 @@ def make_box_with_plinth(size, band_size, band_offset, cutout_length, cutout_hei
         np.array([-x + cutout_length, -y, 0.0]),
         np.array([-x + cutout_length,  y, 0.0])
     ]
-    vertex_attributes = {
-    }
-    edges = [
-        # Top
-        [0, 1, 2, 3, 0],
-        # Medium
-        [4, 5, 6, 7, 4],
-        [8, 9, 10, 11, 12, 13, 14, 15, 8],
-        [8, 11], [12, 15],
-        # Bottom
-        [16, 17, 18, 19, 16],
-        # Sides
-        [0, 4], [1, 5], [2, 6], [3, 7],
-        [4, 8], [4, 9], [5, 10], [5, 11], [6, 12], [6, 13], [7, 14], [7, 15],
-        [8, 16], [11, 17], [12, 18], [15, 19]
-    ]
     edge_attributes = {
-        ( 8, 11): {'inversion': True},
-        (12, 15): {'inversion': True},
+        ( 8, 11): {bezier.INVERSION: True},
+        (12, 15): {bezier.INVERSION: True},
 
-        ( 0,  3): {'resolution': top_resolution},
-        ( 1,  2): {'resolution': top_resolution},
-        ( 4,  7): {'resolution': top_resolution},
-        ( 5,  6): {'resolution': top_resolution},
-        ( 8, 15): {'resolution': top_resolution},
-        (11, 12): {'resolution': top_resolution},
-        (16, 19): {'resolution': top_resolution},
-        (17, 18): {'resolution': top_resolution}
+        ( 0,  3): {bezier.RESOLUTION: top_resolution},
+        ( 1,  2): {bezier.RESOLUTION: top_resolution},
+        ( 4,  7): {bezier.RESOLUTION: top_resolution},
+        ( 5,  6): {bezier.RESOLUTION: top_resolution},
+        ( 8, 15): {bezier.RESOLUTION: top_resolution},
+        (11, 12): {bezier.RESOLUTION: top_resolution},
+        (16, 19): {bezier.RESOLUTION: top_resolution},
+        (17, 18): {bezier.RESOLUTION: top_resolution}
     }
     faces = [
         # Top
@@ -481,31 +605,15 @@ def make_box_with_plinth(size, band_size, band_offset, cutout_length, cutout_hei
 
     body = bezier.BezierObject(
         vertices=vertices,
-        edges=edges,
+        edges=[],
         faces=faces,
         chamfer=chamfer,
         sharpness=math.pi * (5.0 / 6.0),
         edge_resolution=edge_resolution,
         line_resolution=line_resolution,
-        vertex_attributes=vertex_attributes,
         edge_attributes=edge_attributes
     )
     return bezier.patch_to_mesh(body.build())
-
-
-def make_chip_body(size, chamfer, edge_resolution):
-    x_half = size[0] / 2.0
-    y, z = size[1], size[2] # pylint: disable=invalid-name
-
-    shape = make_rounded_rect(size=np.array([z, y]), roundness=chamfer, segments=edge_resolution)
-    shape_points = []
-    for element in shape:
-        shape_points.extend(element.tessellate())
-    shape_points = curves.optimize(shape_points)
-
-    path_points = [np.array([x_half, 0.0, 0.0]), np.array([-x_half, 0.0, 0.0])]
-    slices = curves.loft(path=path_points, shape=shape_points)
-    return geometry.build_loft_mesh(slices, False, False)
 
 
 def make_chip_lead_cap(size, chamfer, inversion, edge_resolution, line_resolution, axis):
@@ -565,106 +673,174 @@ def make_chip_lead_cap(size, chamfer, inversion, edge_resolution, line_resolutio
     return bezier.patch_to_mesh(body.build())
 
 
-def make_chip_lead_slope(case_size, lead_size, case_chamfer, lead_chamfer, inversion,
-                         edge_resolution, line_resolution):
-    roundness = lead_chamfer
-    x_lead_half = lead_size[0] / 2.0
-    y_case, z_case = case_size[1], case_size[2]
-    y_lead, z_lead = lead_size[1], lead_size[2]
-
-    if inversion:
-        p0 = np.array([-x_lead_half + roundness, 0.0, 0.0])
-        p1 = np.array([x_lead_half - roundness, 0.0, 0.0])
-        p2 = np.array([x_lead_half, 0.0, 0.0])
-    else:
-        p0 = np.array([x_lead_half - roundness, 0.0, 0.0])
-        p1 = np.array([-x_lead_half + roundness, 0.0, 0.0])
-        p2 = np.array([-x_lead_half, 0.0, 0.0])
-
-    path = []
-    path.append(curves.Line(p0, p1, line_resolution))
-    path.append(curves.Bezier(p1, (p2 - p1) / 3.0, p2, (p1 - p2) / 3.0, edge_resolution))
-
-    path_points = []
-    for element in path:
-        path_points.extend(element.tessellate())
-    path_points = curves.optimize(path_points)
-
-    case_shape = make_rounded_rect(size=np.array([z_case, y_case]),
-                                   roundness=case_chamfer, segments=edge_resolution)
-    case_points = []
-    for element in case_shape:
-        case_points.extend(element.tessellate())
-    case_points = curves.optimize(case_points)
-
-    lead_shape = make_rounded_rect(size=np.array([z_lead, y_lead]),
-                                   roundness=roundness, segments=edge_resolution)
-    lead_points = []
-    for element in lead_shape:
-        lead_points.extend(element.tessellate())
-    lead_points = curves.optimize(lead_points)
-
-    def mesh_morphing_func(number):
-        if number >= line_resolution:
-            number = edge_resolution - (number - line_resolution)
-            t_pos = math.sin((math.pi / 2.0) * (number / edge_resolution))
-            points = []
-            for i, point in enumerate(case_points):
-                points.append(point + (lead_points[i] - point) * t_pos)
-            return points
-        return lead_points
-
-    slices = curves.loft(path=path_points, shape=None, morphing=mesh_morphing_func)
-    return geometry.build_loft_mesh(slices, False, False)
-
-
-def make_chip_leads(case_size, lead_size, case_chamfer, lead_chamfer, edge_resolution,
-                    line_resolution):
-    mesh_a = make_chip_lead_cap(size=lead_size, chamfer=lead_chamfer, inversion=False,
-                                edge_resolution=edge_resolution, line_resolution=line_resolution,
-                                axis=0)
-    mesh_a.translate(np.array([(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
-    slope_a = make_chip_lead_slope(case_size=case_size, lead_size=lead_size,
-                                   case_chamfer=case_chamfer, lead_chamfer=lead_chamfer,
-                                   inversion=False, edge_resolution=edge_resolution,
-                                   line_resolution=line_resolution)
-    slope_a.translate(np.array([(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
-
-    mesh_b = make_chip_lead_cap(size=lead_size, chamfer=lead_chamfer, inversion=True,
-                                edge_resolution=edge_resolution, line_resolution=line_resolution,
-                                axis=0)
-    mesh_b.translate(np.array([-(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
-    slope_b = make_chip_lead_slope(case_size=case_size, lead_size=lead_size,
-                                   case_chamfer=case_chamfer, lead_chamfer=lead_chamfer,
-                                   inversion=True, edge_resolution=edge_resolution,
-                                   line_resolution=line_resolution)
-    slope_b.translate(np.array([-(case_size[0] + lead_size[0]) / 2.0, 0.0, 0.0]))
-
-    mesh = model.Mesh()
-    mesh.append(mesh_a)
-    mesh.append(mesh_b)
-    mesh.append(slope_a)
-    mesh.append(slope_b)
-    mesh.optimize()
-    return mesh
-
-
 def make_chip(body_size, lead_size, body_chamfer, lead_chamfer,
-              chamfer_resolution, edge_resolution, line_resolution):
-    lead = make_chip_leads(
-        case_size=body_size,
-        lead_size=lead_size,
-        case_chamfer=body_chamfer,
-        lead_chamfer=lead_chamfer,
+              arc_resolution, edge_resolution, line_resolution):
+    lead_roundness = body_chamfer + lead_chamfer
+    x_lead = lead_size[0] + body_size[0] / 2.0
+    y_lead = lead_size[1] / 2.0
+    z_lead = lead_size[2] / 2.0
+    x_body = body_size[0] / 2.0
+    y_body = body_size[1] / 2.0
+    z_body = body_size[2] / 2.0
+
+    def make_vertices(x, y, z, r): # pylint: disable=invalid-name
+        return [
+            np.array([x,  y - r,      z]),
+            np.array([x,      y,  z - r]),
+            np.array([x,      y, -z + r]),
+            np.array([x,  y - r,     -z]),
+            np.array([x, -y + r,     -z]),
+            np.array([x,     -y, -z + r]),
+            np.array([x,     -y,  z - r]),
+            np.array([x, -y + r,      z])
+        ]
+
+    def make_plane_vertices(x, y, z, r): # pylint: disable=invalid-name
+        return [
+            np.array([x,  y - r,  z - r]),
+            np.array([x,  y - r, -z + r]),
+            np.array([x, -y + r, -z + r]),
+            np.array([x, -y + r,  z - r])
+        ]
+
+    def make_controls(_1, _2, r, n): # pylint: disable=invalid-name
+        w = r * curves.calc_bezier_weight(angle=math.pi / 2.0)
+        return {
+            n + 0: {bezier.TENSION: {n + 1: np.array([0.0,   w, 0.0])}},
+            n + 1: {bezier.TENSION: {n + 0: np.array([0.0, 0.0,   w])}},
+            n + 2: {bezier.TENSION: {n + 3: np.array([0.0, 0.0,  -w])}},
+            n + 3: {bezier.TENSION: {n + 2: np.array([0.0,   w, 0.0])}},
+            n + 4: {bezier.TENSION: {n + 5: np.array([0.0,  -w, 0.0])}},
+            n + 5: {bezier.TENSION: {n + 4: np.array([0.0, 0.0,  -w])}},
+            n + 6: {bezier.TENSION: {n + 7: np.array([0.0, 0.0,   w])}},
+            n + 7: {bezier.TENSION: {n + 6: np.array([0.0,  -w, 0.0])}},
+        }
+
+    vertices = []
+    vertex_attributes = {}
+
+    vertices.extend(make_plane_vertices(x_lead, y_lead, z_lead, lead_roundness))
+    beg_n = len(vertices)
+    vertex_attributes.update(make_controls(y_lead, z_lead, lead_roundness, len(vertices)))
+    vertices.extend(make_vertices(x_lead, y_lead, z_lead, lead_roundness))
+    vertex_attributes.update(make_controls(y_lead, z_lead, lead_roundness, len(vertices)))
+    vertices.extend(make_vertices(x_body, y_lead, z_lead, lead_roundness))
+    vertex_attributes.update(make_controls(y_body, z_body, body_chamfer, len(vertices)))
+    vertices.extend(make_vertices(x_body, y_body, z_body, body_chamfer))
+    vertex_attributes.update(make_controls(y_body, z_body, body_chamfer, len(vertices)))
+    vertices.extend(make_vertices(-x_body, y_body, z_body, body_chamfer))
+    vertex_attributes.update(make_controls(y_lead, z_lead, lead_roundness, len(vertices)))
+    vertices.extend(make_vertices(-x_body, y_lead, z_lead, lead_roundness))
+    vertex_attributes.update(make_controls(y_lead, z_lead, lead_roundness, len(vertices)))
+    vertices.extend(make_vertices(-x_lead, y_lead, z_lead, lead_roundness))
+    end_n = len(vertices)
+    vertices.extend(make_plane_vertices(-x_lead, y_lead, z_lead, lead_roundness))
+
+    for i in range(2, 4):
+        for j in range(8):
+            vertex_attributes[beg_n + i * 8 + j].update({
+                bezier.RESOLUTION: 1,
+                bezier.CHAMFER: 0.0
+            })
+
+    edges = []
+    edge_attributes = {}
+
+    for i in range(0, len(vertices) // 8 - 1):
+        circle = [list(range(beg_n + i * 8, beg_n + (i + 1) * 8)) + [beg_n + i * 8]]
+        edges.extend(circle)
+        for j, edge in enumerate(bezier.unpack_edges(circle)):
+            key = tuple(edge)
+            edge_attributes[key] = {}
+
+            if j % 2 == 0:
+                edge_attributes[key][bezier.RESOLUTION] = arc_resolution
+            if i in (2, 3):
+                edge_attributes[key][bezier.INVERSION] = True
+        if i > 0:
+            lines = [[beg_n + (i - 1) * 8 + j, beg_n + i * 8 + j] for j in range(0, 8)]
+            edges.extend(lines)
+
+    edges.extend([list(range(0, beg_n)) + [0]])
+    edges.extend([list(range(end_n, len(vertices))) + [end_n]])
+    for i in range(8):
+        edges.append([i // 2, beg_n + i])
+        edges.append([len(vertices) - 1 - i // 2, end_n - 1 - i])
+
+    body_faces, lead_faces = [], []
+    face_attributes = {}
+
+    for i in range(0, len(vertices) // 8 - 2):
+        face_indices = [
+            [
+                beg_n + i * 8 + j,
+                beg_n + i * 8 + (j + 1) % 8,
+                beg_n + (i + 1) * 8 + (j + 1) % 8,
+                beg_n + (i + 1) * 8 + j
+            ]
+            for j in range(0, 8)
+        ]
+        if i == 2:
+            body_faces.extend(face_indices)
+        else:
+            lead_faces.extend(face_indices)
+    for i in range(4):
+        indices = [beg_n + i * 2 + 1, beg_n + i * 2, i]
+        lead_faces.append(indices)
+        face_attributes[tuple(sorted(indices))] = {bezier.FUNCTOR: asymmetric_face_functor}
+
+        indices = [end_n - 2 - i * 2, end_n - 1 - i * 2, len(vertices) - 1 - i]
+        lead_faces.append(indices)
+        face_attributes[tuple(sorted(indices))] = {bezier.FUNCTOR: asymmetric_face_functor}
+
+        lead_faces.append([
+            (i + 1) % 4,
+            beg_n + ((i + 1) % 4) * 2,
+            beg_n + i * 2 + 1,
+            i
+        ])
+        lead_faces.append([
+            len(vertices) - 1 - (i + 1) % 4,
+            end_n - 1 - ((i + 1) % 4) * 2,
+            end_n - 2 - i * 2,
+            len(vertices) - 1 - i
+        ])
+    lead_faces.append(list(range(beg_n - 1, -1, -1)))
+    lead_faces.append(list(range(end_n, len(vertices))))
+
+    body_vertex_attributes = copy.deepcopy(vertex_attributes)
+    body_vertex_beg = beg_n + 2 * 8
+    body_vertex_end = body_vertex_beg + 2 * 8 - 1
+    for key in body_vertex_attributes:
+        if key < body_vertex_beg or key > body_vertex_end:
+            body_vertex_attributes[key][bezier.DISCARD] = True
+
+    lead = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=lead_faces,
+        chamfer=lead_chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
         edge_resolution=edge_resolution,
-        line_resolution=line_resolution
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes,
+        face_attributes=face_attributes
     )
-    body = make_chip_body(
-        size=body_size,
-        chamfer=body_chamfer,
-        edge_resolution=edge_resolution
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=body_faces,
+        chamfer=lead_chamfer,
+        sharpness=math.pi * (5.0 / 6.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=body_vertex_attributes,
+        edge_attributes=edge_attributes
     )
-    return (body, lead)
+
+    return (bezier.patch_to_mesh(body.build()), bezier.patch_to_mesh(lead.build()))
+
 
 def make_chip_shunt(length, width, thickness, clearance, lead_length, active_width, chamfer,
                     edge_resolution, line_resolution, slope_resolution):
@@ -705,14 +881,14 @@ def make_chip_shunt(length, width, thickness, clearance, lead_length, active_wid
     body_vertex_attributes = {}
     for i in list(range(3)) + list(range(5, 8)):
         for j in range(4):
-            body_vertex_attributes[i * 4 + j] = {'discard': True}
+            body_vertex_attributes[i * 4 + j] = {bezier.DISCARD: True}
 
     lead_vertex_attributes = {}
     for i in range(4):
-        lead_vertex_attributes[4 + i] = {'bezier': {8 + i: -slope_tension}}
-        lead_vertex_attributes[8 + i] = {'bezier': {4 + i: slope_tension}}
-        lead_vertex_attributes[20 + i] = {'bezier': {24 + i: -slope_tension}}
-        lead_vertex_attributes[24 + i] = {'bezier': {20 + i: slope_tension}}
+        lead_vertex_attributes[4 + i] = {bezier.TENSION: {8 + i: -slope_tension}}
+        lead_vertex_attributes[8 + i] = {bezier.TENSION: {4 + i: slope_tension}}
+        lead_vertex_attributes[20 + i] = {bezier.TENSION: {24 + i: -slope_tension}}
+        lead_vertex_attributes[24 + i] = {bezier.TENSION: {20 + i: slope_tension}}
 
     edges = []
     for i in range(len(vertices) // 4):
@@ -720,14 +896,17 @@ def make_chip_shunt(length, width, thickness, clearance, lead_length, active_wid
         if i > 0:
             edges.extend([[(i - 1) * 4 + j, i * 4 + j] for j in range(4)])
 
-    edge_attributes = {
-        (4 + i, 8 + i): {'resolution': slope_resolution} for i in range(4)
-    } | {
-        (20 + i, 24 + i): {'resolution': slope_resolution} for i in range(4)
-    }
-    lead_edge_attributes = edge_attributes | {
-        (12 + i, 16 + i): {'hidden': True} for i in range(4)
-    }
+    edge_attributes = {}
+    edge_attributes.update({
+        (4 + i, 8 + i): {bezier.RESOLUTION: slope_resolution} for i in range(4)
+    })
+    edge_attributes.update({
+        (20 + i, 24 + i): {bezier.RESOLUTION: slope_resolution} for i in range(4)
+    })
+    lead_edge_attributes = copy.deepcopy(edge_attributes)
+    lead_edge_attributes.update({
+        (12 + i, 16 + i): {bezier.HIDDEN: True} for i in range(4)
+    })
 
     lead_faces = [[3, 2, 1, 0], [28, 29, 30, 31]]
     body_faces = []
@@ -813,47 +992,31 @@ def make_carved_box(size, niche_size, chamfer, roundness, edge_resolution, line_
         np.array([              -x,                 y, -z])
     ]
     vertex_attributes = {
-        0:  {'chamfer': { 1: r,  3: r}},
-        1:  {'chamfer': { 2: r,  0: r}},
-        2:  {'chamfer': { 3: r,  1: r}},
-        3:  {'chamfer': { 0: r,  2: r}},
-        12: {'chamfer': {13: r, 23: r}},
-        17: {'chamfer': {18: r, 16: r}},
-        18: {'chamfer': {19: r, 17: r}},
-        23: {'chamfer': {12: r, 22: r}},
+        0:  {bezier.CHAMFER: { 1: r,  3: r}},
+        1:  {bezier.CHAMFER: { 2: r,  0: r}},
+        2:  {bezier.CHAMFER: { 3: r,  1: r}},
+        3:  {bezier.CHAMFER: { 0: r,  2: r}},
+        12: {bezier.CHAMFER: {13: r, 23: r}},
+        17: {bezier.CHAMFER: {18: r, 16: r}},
+        18: {bezier.CHAMFER: {19: r, 17: r}},
+        23: {bezier.CHAMFER: {12: r, 22: r}},
 
-        5:  {'inversion': True},
-        6:  {'inversion': True},
-        9:  {'inversion': True},
-        10: {'inversion': True}
+        5:  {bezier.INVERSION: True},
+        6:  {bezier.INVERSION: True},
+        9:  {bezier.INVERSION: True},
+        10: {bezier.INVERSION: True}
     }
-    edges = [
-        # Top
-        [0, 1, 2, 3, 0],
-        # Medium
-        [4, 5, 6, 7, 4], [8, 9, 10, 11, 8],
-        # Bottom
-        [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12],
-        [12, 14], [15, 17], [18, 20], [21, 23],
-        [14, 21], [15, 20],
-        # Top sides
-        [0, 4], [0, 12], [1, 7], [1, 17],
-        [2, 8], [2, 18], [3, 11], [3, 23],
-        # Bottom sides
-        [4, 13], [5, 14], [6, 15], [7, 16],
-        [8, 19], [9, 20], [10, 21], [11, 22]
-    ]
     edge_attributes = {
-        ( 4,  5): {'inversion': True},
-        ( 5,  6): {'inversion': True},
-        ( 6,  7): {'inversion': True},
-        ( 8,  9): {'inversion': True},
-        ( 9, 10): {'inversion': True},
-        (10, 11): {'inversion': True},
-        ( 5, 14): {'inversion': True},
-        ( 6, 15): {'inversion': True},
-        ( 9, 20): {'inversion': True},
-        (10, 21): {'inversion': True}
+        ( 4,  5): {bezier.INVERSION: True},
+        ( 5,  6): {bezier.INVERSION: True},
+        ( 6,  7): {bezier.INVERSION: True},
+        ( 8,  9): {bezier.INVERSION: True},
+        ( 9, 10): {bezier.INVERSION: True},
+        (10, 11): {bezier.INVERSION: True},
+        ( 5, 14): {bezier.INVERSION: True},
+        ( 6, 15): {bezier.INVERSION: True},
+        ( 9, 20): {bezier.INVERSION: True},
+        (10, 21): {bezier.INVERSION: True}
     }
     faces = [
         # Top
@@ -875,7 +1038,7 @@ def make_carved_box(size, niche_size, chamfer, roundness, edge_resolution, line_
 
     body = bezier.BezierObject(
         vertices=vertices,
-        edges=edges,
+        edges=[],
         faces=faces,
         chamfer=chamfer,
         sharpness=math.pi * (5.0 / 6.0),
@@ -900,8 +1063,6 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
     r = roundness * math.sqrt(0.5)
     # pylint: enable=invalid-name
 
-    band_offset_xy = band_size * math.sqrt(0.5)
-    band_offset_z = band_offset
     mark_patches = None
 
     def top_face_functor(points, controls, resolution, inversion):
@@ -932,14 +1093,14 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         np.array([     x, -y + r, z]),
 
         # Offset 8
-        np.array([     x + band_offset_xy,  y - r + band_offset_xy, band_offset_z]),
-        np.array([ x - r + band_offset_xy,      y + band_offset_xy, band_offset_z]),
-        np.array([-x + r - band_offset_xy,      y + band_offset_xy, band_offset_z]),
-        np.array([    -x - band_offset_xy,  y - r + band_offset_xy, band_offset_z]),
-        np.array([    -x - band_offset_xy, -y + r - band_offset_xy, band_offset_z]),
-        np.array([-x + r - band_offset_xy,     -y - band_offset_xy, band_offset_z]),
-        np.array([ x - r + band_offset_xy,     -y - band_offset_xy, band_offset_z]),
-        np.array([     x + band_offset_xy, -y + r - band_offset_xy, band_offset_z]),
+        np.array([     x + band_size,  y - r + band_size, band_offset]),
+        np.array([ x - r + band_size,      y + band_size, band_offset]),
+        np.array([-x + r - band_size,      y + band_size, band_offset]),
+        np.array([    -x - band_size,  y - r + band_size, band_offset]),
+        np.array([    -x - band_size, -y + r - band_size, band_offset]),
+        np.array([-x + r - band_size,     -y - band_size, band_offset]),
+        np.array([ x - r + band_size,     -y - band_size, band_offset]),
+        np.array([     x + band_size, -y + r - band_size, band_offset]),
 
         # Offset 16
         np.array([     x,  y - r, -z]),
@@ -950,20 +1111,6 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         np.array([-x + r,     -y, -z]),
         np.array([ x - r,     -y, -z]),
         np.array([     x, -y + r, -z])
-    ]
-    edges = [
-        # Top
-        [0, 1, 2, 3, 4, 5, 6, 7, 0],
-        [0, 3], [4, 7],
-        # Middle
-        [8, 9, 10, 11, 12, 13, 14, 15, 8],
-        # Bottom
-        [16, 17, 18, 19, 20, 21, 22, 23, 16],
-        [16, 19], [20, 23],
-        # Sides, upper half
-        [0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15],
-        # Sides, lower half
-        [8, 16], [9, 17], [10, 18], [11, 19], [12, 20], [13, 21], [14, 22], [15, 23]
     ]
     faces = [
         # Top
@@ -993,21 +1140,22 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
         [22, 23, 15, 14],
         [23, 16, 8, 15]
     ]
+    face_attributes = {}
+
+    # Override top face generation
+    if mark_radius is not None and mark_radius:
+        face_attributes[(0, 3, 4, 7)] = {bezier.FUNCTOR: top_face_functor}
 
     body = bezier.BezierObject(
         vertices=vertices,
-        edges=edges,
+        edges=[],
         faces=faces,
         chamfer=chamfer,
         sharpness=math.pi * (5.0 / 6.0),
         edge_resolution=edge_resolution,
-        line_resolution=line_resolution
+        line_resolution=line_resolution,
+        face_attributes=face_attributes
     )
-
-    # Override top face generation
-    if mark_radius is not None:
-        element = body.find_face([0, 3, 4, 7])
-        element.functor = top_face_functor
 
     body_patches = body.build()
     if mark_patches is not None:
@@ -1016,17 +1164,18 @@ def make_rounded_box(size, roundness, chamfer, edge_resolution, line_resolution,
 
 
 def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_resolution,
-                    band_size=None, band_offset=0.0):
+                    band_size=None, band_offset=0.0, footing_size=None, footing_offset=np.zeros(3),
+                    plane_resolution=None):
     if band_size is None:
         raise ValueError() # TODO
+    if plane_resolution is None:
+        plane_resolution = line_resolution
 
     x, y, z = np.array(size) / 2.0 # pylint: disable=invalid-name
     z_mean = z - slope_height
     y_slope = y - slope_height / math.tan(slope)
 
-    band_offset_xy = band_size * math.sqrt(0.5)
-    band_offset_z = band_offset
-    offset = band_offset_xy - z_mean * (band_offset_xy / z)
+    offset = band_size - (z_mean - band_offset) * (band_size / (z - band_offset))
     x_mean = x + offset
     y_mean = y + offset
 
@@ -1038,10 +1187,10 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
         np.array([ x, -y, -z]),
 
         # Offset 4
-        np.array([ x + band_offset_xy,  y + band_offset_xy, band_offset_z]),
-        np.array([-x - band_offset_xy,  y + band_offset_xy, band_offset_z]),
-        np.array([-x - band_offset_xy, -y - band_offset_xy, band_offset_z]),
-        np.array([ x + band_offset_xy, -y - band_offset_xy, band_offset_z]),
+        np.array([ x + band_size,  y + band_size, band_offset]),
+        np.array([-x - band_size,  y + band_size, band_offset]),
+        np.array([-x - band_size, -y - band_size, band_offset]),
+        np.array([ x + band_size, -y - band_size, band_offset]),
 
         # Offset 8
         np.array([ x_mean, y_mean, z_mean]),
@@ -1053,17 +1202,43 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
         np.array([-x, -y, z]),
         np.array([ x, -y, z])
     ]
-    edges = [
-        [0, 1, 2, 3, 0],
-        [4, 5, 6, 7, 4],
-        [8, 9],
-        [10, 11, 12, 13, 10],
-        [2, 6, 12], [3, 7, 13],
-        [1, 5, 9, 11], [0, 4, 8, 10],
-        [9, 12], [8, 13]
-    ]
-    faces = [
-        [3, 2, 1, 0],
+
+    body_faces = []
+    footing_faces = []
+    edge_attributes = {}
+    face_attributes = {}
+
+    if footing_size is not None:
+        use_footing = True
+
+        xn, xp = -footing_size[0] / 2.0, footing_size[0] / 2.0
+        yn, yp = -footing_size[1] / 2.0, footing_size[1] / 2.0
+
+        top_start = len(vertices)
+        vertices.extend([
+            np.array([xp + footing_offset[0], yp + footing_offset[1], -z]),
+            np.array([xn + footing_offset[0], yp + footing_offset[1], -z]),
+            np.array([xn + footing_offset[0], yn + footing_offset[1], -z]),
+            np.array([xp + footing_offset[0], yn + footing_offset[1], -z])
+        ])
+
+        footing_faces.append(list(range(top_start + 3, top_start - 1, -1)))
+        for i in range(4):
+            edge_attributes[(i, top_start + i)] = {
+                bezier.RESOLUTION: plane_resolution
+            }
+            edge_attributes[tuple(sorted((top_start + i, top_start + (i + 1) % 4)))] = {
+                bezier.RESOLUTION: plane_resolution
+            }
+
+            indices = [i, top_start + i, top_start + (i + 1) % 4, (i + 1) % 4]
+            body_faces.append(indices)
+            face_attributes[tuple(sorted(indices))] = {bezier.FUNCTOR: asymmetric_face_functor}
+    else:
+        use_footing = False
+        body_faces.append([3, 2, 1, 0])
+
+    body_faces.extend([
         [0, 1, 5, 4],
         [1, 2, 6, 5],
         [2, 3, 7, 6],
@@ -1074,19 +1249,37 @@ def make_sloped_box(size, chamfer, slope, slope_height, edge_resolution, line_re
         [10, 11, 12, 13],
         [9, 12, 11], [10, 13, 8],
         [5, 6, 12, 9], [8, 13, 7, 4]
-    ]
+    ])
 
-    body = bezier.BezierObject(
+    body_patch = bezier.BezierObject(
         vertices=vertices,
-        edges=edges,
-        faces=faces,
+        edges=[],
+        faces=body_faces,
         chamfer=chamfer,
         sharpness=math.pi * (5.0 / 6.0),
         edge_resolution=edge_resolution,
-        line_resolution=line_resolution
+        line_resolution=line_resolution,
+        edge_attributes=edge_attributes,
+        face_attributes=face_attributes
     )
-    return bezier.patch_to_mesh(body.build())
 
+    if use_footing:
+        vertex_attributes = {i: {bezier.DISCARD: True} for i in range(top_start)}
+        footing_patch = bezier.BezierObject(
+            vertices=vertices,
+            edges=bezier.unpack_faces(body_faces),
+            faces=footing_faces,
+            chamfer=chamfer,
+            edge_resolution=edge_resolution,
+            line_resolution=line_resolution,
+            vertex_attributes=vertex_attributes,
+            edge_attributes=edge_attributes,
+            face_attributes=face_attributes
+        )
+        return (bezier.patch_to_mesh(body_patch.build()),
+            bezier.patch_to_mesh(footing_patch.build()))
+
+    return bezier.patch_to_mesh(body_patch.build())
 
 def make_rounded_rect(size, roundness, segments, segments_line=1):
     # pylint: disable=invalid-name
@@ -1222,44 +1415,44 @@ def make_bent_fork_pin_mesh(width, height, length, thickness, top_roundness, bot
     ]
     vertex_attributes = {
         # Bottom Bezier corner
-        4:  {'bezier': { 8: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
-        5:  {'bezier': { 9: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
-        6:  {'bezier': {10: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
-        7:  {'bezier': {11: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
-        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
-        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
-        10: {'bezier': { 6: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
-        11: {'bezier': { 7: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
+        4:  {bezier.TENSION: { 8: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
+        5:  {bezier.TENSION: { 9: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
+        6:  {bezier.TENSION: {10: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
+        7:  {bezier.TENSION: {11: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
+        8:  {bezier.TENSION: { 4: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
+        9:  {bezier.TENSION: { 5: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
+        10: {bezier.TENSION: { 6: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
+        11: {bezier.TENSION: { 7: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
 
         # Top right Bezier corner
-        16: {'bezier': {24: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
-        17: {'bezier': {25: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
-        18: {'bezier': {26: np.array([0.0, 0.0,       r_top[1] * weight])}},
-        19: {'bezier': {27: np.array([0.0, 0.0,       r_top[1] * weight])}},
-        24: {'bezier': {16: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
-        25: {'bezier': {17: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
-        26: {'bezier': {18: np.array([      r_top[0] * weight, 0.0, 0.0])}},
-        27: {'bezier': {19: np.array([      r_top[0] * weight, 0.0, 0.0])}},
+        16: {bezier.TENSION: {24: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
+        17: {bezier.TENSION: {25: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
+        18: {bezier.TENSION: {26: np.array([0.0, 0.0,       r_top[1] * weight])}},
+        19: {bezier.TENSION: {27: np.array([0.0, 0.0,       r_top[1] * weight])}},
+        24: {bezier.TENSION: {16: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
+        25: {bezier.TENSION: {17: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
+        26: {bezier.TENSION: {18: np.array([      r_top[0] * weight, 0.0, 0.0])}},
+        27: {bezier.TENSION: {19: np.array([      r_top[0] * weight, 0.0, 0.0])}},
 
         # # Top left Bezier corner
-        20: {'bezier': {28: np.array([0.0, 0.0,       r_top[1] * weight])}},
-        21: {'bezier': {29: np.array([0.0, 0.0,       r_top[1] * weight])}},
-        22: {'bezier': {30: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
-        23: {'bezier': {31: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
-        28: {'bezier': {20: np.array([      r_top[0] * weight, 0.0, 0.0])}},
-        29: {'bezier': {21: np.array([      r_top[0] * weight, 0.0, 0.0])}},
-        30: {'bezier': {22: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
-        31: {'bezier': {23: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
+        20: {bezier.TENSION: {28: np.array([0.0, 0.0,       r_top[1] * weight])}},
+        21: {bezier.TENSION: {29: np.array([0.0, 0.0,       r_top[1] * weight])}},
+        22: {bezier.TENSION: {30: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
+        23: {bezier.TENSION: {31: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
+        28: {bezier.TENSION: {20: np.array([      r_top[0] * weight, 0.0, 0.0])}},
+        29: {bezier.TENSION: {21: np.array([      r_top[0] * weight, 0.0, 0.0])}},
+        30: {bezier.TENSION: {22: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
+        31: {bezier.TENSION: {23: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
 
         # Unconnected end
-        32: {'discard': True},
-        33: {'discard': True},
-        34: {'discard': True},
-        35: {'discard': True},
-        36: {'discard': True},
-        37: {'discard': True},
-        38: {'discard': True},
-        39: {'discard': True}
+        32: {bezier.DISCARD: True},
+        33: {bezier.DISCARD: True},
+        34: {bezier.DISCARD: True},
+        35: {bezier.DISCARD: True},
+        36: {bezier.DISCARD: True},
+        37: {bezier.DISCARD: True},
+        38: {bezier.DISCARD: True},
+        39: {bezier.DISCARD: True}
     }
     edges = [
         # Bottom
@@ -1286,26 +1479,26 @@ def make_bent_fork_pin_mesh(width, height, length, thickness, top_roundness, bot
     ]
     edge_attributes = {
         # Bottom corner
-        (4, 8):  {'resolution': slope_resolution},
-        (5, 9):  {'resolution': slope_resolution},
-        (6, 10): {'resolution': slope_resolution},
-        (7, 11): {'resolution': slope_resolution},
+        ( 4,  8): {bezier.RESOLUTION: slope_resolution},
+        ( 5,  9): {bezier.RESOLUTION: slope_resolution},
+        ( 6, 10): {bezier.RESOLUTION: slope_resolution},
+        ( 7, 11): {bezier.RESOLUTION: slope_resolution},
 
         # Bottom part of cutout
-        (12, 13): {'inversion': True},
-        (14, 15): {'inversion': True},
+        (12, 13): {bezier.INVERSION: True},
+        (14, 15): {bezier.INVERSION: True},
 
         # Top right corner
-        (16, 24): {'resolution': edge_resolution},
-        (17, 25): {'resolution': edge_resolution},
-        (18, 26): {'resolution': edge_resolution},
-        (19, 27): {'resolution': edge_resolution},
+        (16, 24): {bezier.RESOLUTION: edge_resolution},
+        (17, 25): {bezier.RESOLUTION: edge_resolution},
+        (18, 26): {bezier.RESOLUTION: edge_resolution},
+        (19, 27): {bezier.RESOLUTION: edge_resolution},
 
         # Top left corner
-        (20, 28): {'resolution': edge_resolution},
-        (21, 29): {'resolution': edge_resolution},
-        (22, 30): {'resolution': edge_resolution},
-        (23, 31): {'resolution': edge_resolution}
+        (20, 28): {bezier.RESOLUTION: edge_resolution},
+        (21, 29): {bezier.RESOLUTION: edge_resolution},
+        (22, 30): {bezier.RESOLUTION: edge_resolution},
+        (23, 31): {bezier.RESOLUTION: edge_resolution}
     }
     faces = [
         # Bottom side
@@ -1406,30 +1599,30 @@ def make_bent_pin_mesh(width, height, length, thickness, top_roundness, bottom_r
     ]
     vertex_attributes = {
         # Bottom Bezier corner
-        4:  {'bezier': { 8: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
-        5:  {'bezier': { 9: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
-        6:  {'bezier': {10: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
-        7:  {'bezier': {11: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
-        8:  {'bezier': { 4: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
-        9:  {'bezier': { 5: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
-        10: {'bezier': { 6: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
-        11: {'bezier': { 7: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
+        4:  {bezier.TENSION: { 8: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
+        5:  {bezier.TENSION: { 9: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
+        6:  {bezier.TENSION: {10: np.array([      r_bot[0] * weight, 0.0, 0.0])}},
+        7:  {bezier.TENSION: {11: np.array([(r_bot[0] - t) * weight, 0.0, 0.0])}},
+        8:  {bezier.TENSION: { 4: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
+        9:  {bezier.TENSION: { 5: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
+        10: {bezier.TENSION: { 6: np.array([0.0, 0.0,       -r_bot[1] * weight])}},
+        11: {bezier.TENSION: { 7: np.array([0.0, 0.0, -(r_bot[1] - t) * weight])}},
 
         # Top Bezier corner
-        12: {'bezier': {16: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
-        13: {'bezier': {17: np.array([0.0, 0.0,       r_top[1] * weight])}},
-        14: {'bezier': {18: np.array([0.0, 0.0,       r_top[1] * weight])}},
-        15: {'bezier': {19: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
-        16: {'bezier': {12: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
-        17: {'bezier': {13: np.array([      r_top[0] * weight, 0.0, 0.0])}},
-        18: {'bezier': {14: np.array([      r_top[0] * weight, 0.0, 0.0])}},
-        19: {'bezier': {15: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
+        12: {bezier.TENSION: {16: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
+        13: {bezier.TENSION: {17: np.array([0.0, 0.0,       r_top[1] * weight])}},
+        14: {bezier.TENSION: {18: np.array([0.0, 0.0,       r_top[1] * weight])}},
+        15: {bezier.TENSION: {19: np.array([0.0, 0.0, (r_top[1] - t) * weight])}},
+        16: {bezier.TENSION: {12: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
+        17: {bezier.TENSION: {13: np.array([      r_top[0] * weight, 0.0, 0.0])}},
+        18: {bezier.TENSION: {14: np.array([      r_top[0] * weight, 0.0, 0.0])}},
+        19: {bezier.TENSION: {15: np.array([(r_top[0] - t) * weight, 0.0, 0.0])}},
 
         # Unconnected end
-        20: {'discard': True},
-        21: {'discard': True},
-        22: {'discard': True},
-        23: {'discard': True}
+        20: {bezier.DISCARD: True},
+        21: {bezier.DISCARD: True},
+        22: {bezier.DISCARD: True},
+        23: {bezier.DISCARD: True}
     }
     edges = [
         # Bottom
@@ -1454,16 +1647,16 @@ def make_bent_pin_mesh(width, height, length, thickness, top_roundness, bottom_r
     ]
     edge_attributes = {
         # Bottom corner
-        (4, 8):  {'resolution': slope_resolution},
-        (5, 9):  {'resolution': slope_resolution},
-        (6, 10): {'resolution': slope_resolution},
-        (7, 11): {'resolution': slope_resolution},
+        ( 4,  8): {bezier.RESOLUTION: slope_resolution},
+        ( 5,  9): {bezier.RESOLUTION: slope_resolution},
+        ( 6, 10): {bezier.RESOLUTION: slope_resolution},
+        ( 7, 11): {bezier.RESOLUTION: slope_resolution},
 
         # Top corner
-        (12, 16): {'resolution': slope_resolution},
-        (13, 17): {'resolution': slope_resolution},
-        (14, 18): {'resolution': slope_resolution},
-        (15, 19): {'resolution': slope_resolution}
+        (12, 16): {bezier.RESOLUTION: slope_resolution},
+        (13, 17): {bezier.RESOLUTION: slope_resolution},
+        (14, 18): {bezier.RESOLUTION: slope_resolution},
+        (15, 19): {bezier.RESOLUTION: slope_resolution}
     }
     faces = [
         # Bottom side
@@ -1492,31 +1685,49 @@ def make_bent_pin_mesh(width, height, length, thickness, top_roundness, bottom_r
     return bezier.patch_to_mesh(body.build())
 
 
-def make_flat_pin_mesh(pin_shape_size, pin_length, end_slope, edge_resolution, line_resolution):
+def make_flat_pin_mesh(pin_shape_size, pin_height, pin_length, end_slope,
+                       edge_resolution, line_resolution, slope_resolution):
     chamfer = min(pin_shape_size) / 10.0
     t_half = pin_shape_size[1] / 2.0
     width = pin_shape_size[0] / 2.0
+    weight = pin_shape_size[1] / 3.0
 
     x_pos = []
     x_pos.append(pin_length)
+    x_pos.append(pin_shape_size[1])
     x_pos.append(0.0)
     x_pos.append(-pin_length)
 
-    xz_off = [np.array([0.0, t_half])] * 3
-    xz_off[1] = t_half * np.array([-math.sin(end_slope), 1.0])
+    z_pos = []
+    z_pos.append(t_half)
+    z_pos.append(t_half)
+    z_pos.append(pin_height)
+    z_pos.append(pin_height)
+
+    xz_off = [np.array([0.0, t_half])] * 4
+    xz_off[2] = t_half * np.array([-math.sin(end_slope), math.cos(end_slope)])
 
     vertices = []
     for i, pos in enumerate(x_pos):
-        vertices.append(np.array([pos - xz_off[i][0],  width, t_half - xz_off[i][1]]))
-        vertices.append(np.array([pos + xz_off[i][0],  width, t_half + xz_off[i][1]]))
-        vertices.append(np.array([pos + xz_off[i][0], -width, t_half + xz_off[i][1]]))
-        vertices.append(np.array([pos - xz_off[i][0], -width, t_half - xz_off[i][1]]))
+        vertices.append(np.array([pos - xz_off[i][0],  width, z_pos[i] - xz_off[i][1]]))
+        vertices.append(np.array([pos + xz_off[i][0],  width, z_pos[i] + xz_off[i][1]]))
+        vertices.append(np.array([pos + xz_off[i][0], -width, z_pos[i] + xz_off[i][1]]))
+        vertices.append(np.array([pos - xz_off[i][0], -width, z_pos[i] - xz_off[i][1]]))
 
     vertex_attributes = {
-         8: {'discard': True},
-         9: {'discard': True},
-        10: {'discard': True},
-        11: {'discard': True}
+        4:  {bezier.TENSION: { 8: np.array([-weight, 0.0, 0.0])}},
+        5:  {bezier.TENSION: { 9: np.array([-weight, 0.0, 0.0])}},
+        6:  {bezier.TENSION: {10: np.array([-weight, 0.0, 0.0])}},
+        7:  {bezier.TENSION: {11: np.array([-weight, 0.0, 0.0])}},
+        8:  {bezier.TENSION: { 4: np.array([ weight, 0.0, 0.0])}},
+        9:  {bezier.TENSION: { 5: np.array([ weight, 0.0, 0.0])}},
+        10: {bezier.TENSION: { 6: np.array([ weight, 0.0, 0.0])}},
+        11: {bezier.TENSION: { 7: np.array([ weight, 0.0, 0.0])}},
+
+        12: {bezier.DISCARD: True},
+        13: {bezier.DISCARD: True},
+        14: {bezier.DISCARD: True},
+        15: {bezier.DISCARD: True}
     }
 
     edges = []
@@ -1524,6 +1735,13 @@ def make_flat_pin_mesh(pin_shape_size, pin_length, end_slope, edge_resolution, l
         edges.append(list(range(i * 4, (i + 1) * 4)) + [i * 4])
         if i > 0:
             edges.extend([(i - 1) * 4 + j, i * 4 + j] for j in range(4))
+
+    edge_attributes = {
+        (4,  8): {bezier.RESOLUTION: slope_resolution},
+        (5,  9): {bezier.RESOLUTION: slope_resolution},
+        (6, 10): {bezier.RESOLUTION: slope_resolution},
+        (7, 11): {bezier.RESOLUTION: slope_resolution}
+    }
 
     faces = [[0, 1, 2, 3]]
     for i in range(len(x_pos) - 2):
@@ -1540,7 +1758,8 @@ def make_flat_pin_mesh(pin_shape_size, pin_length, end_slope, edge_resolution, l
         sharpness=math.pi * (2.0 / 3.0),
         edge_resolution=edge_resolution,
         line_resolution=line_resolution,
-        vertex_attributes=vertex_attributes
+        vertex_attributes=vertex_attributes,
+        edge_attributes=edge_attributes
     )
     return bezier.patch_to_mesh(body.build())
 
@@ -1624,28 +1843,28 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
     top_end_inner = np.array([cross[0] - vertices[17][0], 0.0, cross[2] - vertices[17][2]])
 
     vertex_attributes = {
-         4: {'bezier': { 8: bot_beg_outer * weight}},
-         5: {'bezier': { 9: bot_beg_inner * weight}},
-         6: {'bezier': {10: bot_beg_inner * weight}},
-         7: {'bezier': {11: bot_beg_outer * weight}},
-         8: {'bezier': { 4: bot_end_outer * weight}},
-         9: {'bezier': { 5: bot_end_inner * weight}},
-        10: {'bezier': { 6: bot_end_inner * weight}},
-        11: {'bezier': { 7: bot_end_outer * weight}},
+        4:  {bezier.TENSION: { 8: bot_beg_outer * weight}},
+        5:  {bezier.TENSION: { 9: bot_beg_inner * weight}},
+        6:  {bezier.TENSION: {10: bot_beg_inner * weight}},
+        7:  {bezier.TENSION: {11: bot_beg_outer * weight}},
+        8:  {bezier.TENSION: { 4: bot_end_outer * weight}},
+        9:  {bezier.TENSION: { 5: bot_end_inner * weight}},
+        10: {bezier.TENSION: { 6: bot_end_inner * weight}},
+        11: {bezier.TENSION: { 7: bot_end_outer * weight}},
 
-        12: {'bezier': {16: top_beg_outer * weight}},
-        13: {'bezier': {17: top_beg_inner * weight}},
-        14: {'bezier': {18: top_beg_inner * weight}},
-        15: {'bezier': {19: top_beg_outer * weight}},
-        16: {'bezier': {12: top_end_outer * weight}},
-        17: {'bezier': {13: top_end_inner * weight}},
-        18: {'bezier': {14: top_end_inner * weight}},
-        19: {'bezier': {15: top_end_outer * weight}},
+        12: {bezier.TENSION: {16: top_beg_outer * weight}},
+        13: {bezier.TENSION: {17: top_beg_inner * weight}},
+        14: {bezier.TENSION: {18: top_beg_inner * weight}},
+        15: {bezier.TENSION: {19: top_beg_outer * weight}},
+        16: {bezier.TENSION: {12: top_end_outer * weight}},
+        17: {bezier.TENSION: {13: top_end_inner * weight}},
+        18: {bezier.TENSION: {14: top_end_inner * weight}},
+        19: {bezier.TENSION: {15: top_end_outer * weight}},
 
-        24: {'discard': True},
-        25: {'discard': True},
-        26: {'discard': True},
-        27: {'discard': True}
+        24: {bezier.DISCARD: True},
+        25: {bezier.DISCARD: True},
+        26: {bezier.DISCARD: True},
+        27: {bezier.DISCARD: True}
     }
 
     edges = []
@@ -1655,15 +1874,15 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
             edges.extend([(i - 1) * 4 + j, i * 4 + j] for j in range(4))
 
     edge_attributes = {
-        ( 4,  8): {'resolution': slope_resolution},
-        ( 5,  9): {'resolution': slope_resolution},
-        ( 6, 10): {'resolution': slope_resolution},
-        ( 7, 11): {'resolution': slope_resolution},
+        ( 4,  8): {bezier.RESOLUTION: slope_resolution},
+        ( 5,  9): {bezier.RESOLUTION: slope_resolution},
+        ( 6, 10): {bezier.RESOLUTION: slope_resolution},
+        ( 7, 11): {bezier.RESOLUTION: slope_resolution},
 
-        (12, 16): {'resolution': slope_resolution},
-        (13, 17): {'resolution': slope_resolution},
-        (14, 18): {'resolution': slope_resolution},
-        (15, 19): {'resolution': slope_resolution}
+        (12, 16): {bezier.RESOLUTION: slope_resolution},
+        (13, 17): {bezier.RESOLUTION: slope_resolution},
+        (14, 18): {bezier.RESOLUTION: slope_resolution},
+        (15, 19): {bezier.RESOLUTION: slope_resolution}
     }
 
     faces = [[0, 1, 2, 3]]
@@ -1683,6 +1902,54 @@ def make_pin_mesh(pin_shape_size, pin_height, pin_length, pin_slope, end_slope,
         line_resolution=line_resolution,
         vertex_attributes=vertex_attributes,
         edge_attributes=edge_attributes
+    )
+    return bezier.patch_to_mesh(body.build())
+
+
+def make_pin_stub(pin_shape_size, pin_length, pin_offset, end_slope,
+                  edge_resolution, line_resolution):
+    chamfer = min(pin_shape_size) / 10.0
+    t_half = pin_shape_size[1] / 2.0
+    width = pin_shape_size[0] / 2.0
+
+    x_pos = []
+    x_pos.append(pin_length)
+    x_pos.append(0.0)
+    x_pos.append(-pin_length)
+
+    xz_off = [np.array([0.0, t_half])] * 3
+    xz_off[1] = t_half * np.array([-math.sin(end_slope), math.cos(end_slope)])
+
+    vertices = []
+    for i, pos in enumerate(x_pos):
+        vertices.append(np.array([pos - xz_off[i][0],  width, pin_offset - xz_off[i][1]]))
+        vertices.append(np.array([pos + xz_off[i][0],  width, pin_offset + xz_off[i][1]]))
+        vertices.append(np.array([pos + xz_off[i][0], -width, pin_offset + xz_off[i][1]]))
+        vertices.append(np.array([pos - xz_off[i][0], -width, pin_offset - xz_off[i][1]]))
+    vertex_attributes = {i: {bezier.DISCARD: True} for i in range(8, 12)}
+
+    edges = []
+    for i in range(len(x_pos)):
+        edges.append(list(range(i * 4, (i + 1) * 4)) + [i * 4])
+        if i > 0:
+            edges.extend([(i - 1) * 4 + j, i * 4 + j] for j in range(4))
+
+    faces = [[0, 1, 2, 3]]
+    for i in range(len(x_pos) - 2):
+        faces.append([i * 4 + 1, i * 4 + 0, (i + 1) * 4 + 0, (i + 1) * 4 + 1])
+        faces.append([i * 4 + 2, i * 4 + 1, (i + 1) * 4 + 1, (i + 1) * 4 + 2])
+        faces.append([i * 4 + 3, i * 4 + 2, (i + 1) * 4 + 2, (i + 1) * 4 + 3])
+        faces.append([i * 4 + 0, i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 0])
+
+    body = bezier.BezierObject(
+        vertices=vertices,
+        edges=edges,
+        faces=faces,
+        chamfer=chamfer,
+        sharpness=math.pi * (2.0 / 3.0),
+        edge_resolution=edge_resolution,
+        line_resolution=line_resolution,
+        vertex_attributes=vertex_attributes
     )
     return bezier.patch_to_mesh(body.build())
 

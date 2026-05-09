@@ -279,15 +279,17 @@ class DPAK(exporter.Footprint):
         except KeyError:
             pass
 
+        side_bound = max([pad.position[0] + pad.size[0] / 2.0 for pad in self.pads])
+        side_bound += self.gap + self.thickness / 2.0
+        side_bound = max(self.body_size[0] / 2.0, side_bound)
+
         lower_bound = min([pad.position[1] - pad.size[1] / 2.0 for pad in self.pads])
         lower_bound -= self.gap + self.thickness / 2.0
         lower_bound = min(-self.body_size[1] / 2.0, lower_bound)
         upper_bound = self.body_size[1] / 2.0
 
-        # XXX
-        # https://www.infineon.com/cms/en/product/packages/PG-TO252/PG-TO252-3-11/
-        self.border_size = np.array([self.body_size[0], upper_bound - lower_bound])
-        self.border_center = np.array([0.0, lower_bound + upper_bound])
+        self.border_size = np.array([side_bound * 2.0, upper_bound - lower_bound])
+        self.border_center = np.array([0.0, (upper_bound + lower_bound) / 2.0])
 
     def calc_pad_position_x(self, number):
         if number >= self.count:
@@ -505,38 +507,35 @@ class SOT(exporter.Footprint):
 class BentLeadsCapacitor(Chip):
     pass
 
-
 class BentLeadsDiode(Chip):
     pass
-
-
-class ChipCapacitor(Chip):
-    pass
-
-
-class ChipInductor(Chip):
-    pass
-
-
-class ChipOpenDrumInductor(Chip):
-    pass
-
-
-class ChipShieldedInductor(Chip):
-    pass
-
-
-class ChipResistor(Chip):
-    pass
-
-
-class ChipShunt(Chip):
-    pass
-
 
 class CDRH(Chip):
     pass
 
+class ChipCapacitor(Chip):
+    pass
+
+class ChipInductor(Chip):
+    pass
+
+class ChipLED(Chip):
+    pass
+
+class ChipOpenDrumInductor(Chip):
+    pass
+
+class ChipShieldedInductor(Chip):
+    pass
+
+class ChipResistor(Chip):
+    pass
+
+class ChipShunt(Chip):
+    pass
+
+class CrystalMetalCapSMD2(Chip):
+    pass
 
 class SOD(Chip):
     pass
@@ -550,10 +549,12 @@ types = [
     ChipArray,
     ChipCapacitor,
     ChipInductor,
+    ChipLED,
     ChipOpenDrumInductor,
     ChipResistor,
     ChipShieldedInductor,
     ChipShunt,
+    CrystalMetalCapSMD2,
     DPAK,
     MELF,
     SOD,

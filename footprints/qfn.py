@@ -65,7 +65,7 @@ class QFN(exporter.Footprint):
         first_pin_offset = (np.asarray(self.count, dtype=np.float32) - 1.0) * self.pitch / 2.0
 
         # Body outline
-        top_corner_from_body = self.body_size[0:2] / 2.0
+        top_corner_from_body = self.body_size[:2] / 2.0
         top_corner_from_pins = np.array([
             first_pin_offset[0] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap,
             first_pin_offset[1] + (self.pad_size[0] + self.thickness) / 2.0 + self.gap
@@ -131,7 +131,7 @@ class QFN(exporter.Footprint):
             columns, rows = descriptor['pins']['count'] // 2, 0
 
         pin_count = (columns + rows) * 2
-        size_str = [primitives.round1f(x) for x in descriptor['body']['size'][0:2]]
+        size_str = [primitives.round1f(x) for x in descriptor['body']['size'][:2]]
         height_str = primitives.round2f(descriptor['body']['size'][2])
         pitch_str = primitives.round2f(descriptor['pins']['pitch'])
         return '{:d} leads, body {:s}x{:s}x{:s} mm, pitch {:s} mm'.format(
@@ -141,12 +141,10 @@ class QFN(exporter.Footprint):
 class DFN(QFN):
     pass
 
-
 class LGA(QFN):
     def __init__(self, spec, descriptor):
         super().__init__(spec=spec, descriptor=descriptor)
         self.title = f'LGA-{sum(self.count) * 2}'
-
 
 class OptoPLCC(QFN):
     def __init__(self, spec, descriptor):
@@ -154,4 +152,9 @@ class OptoPLCC(QFN):
         self.title = f'PLCC-{sum(self.count) * 2}'
 
 
-types = [QFN, DFN, LGA, OptoPLCC]
+types = [
+    DFN,
+    LGA,
+    OptoPLCC,
+    QFN
+]

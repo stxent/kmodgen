@@ -68,7 +68,7 @@ class CrystalSMD(exporter.Footprint):
         if 'description' in descriptor:
             return descriptor['description']
 
-        body_size = [primitives.round1f(x) for x in descriptor['body']['size'][0:2]]
+        body_size = [primitives.round1f(x) for x in descriptor['body']['size'][:2]]
         return 'Quartz crystal SMD {:s}x{:s} mm'.format(*body_size)
 
 
@@ -115,4 +115,12 @@ class CrystalTH(exporter.Footprint):
         return descriptor['description'] if 'description' in descriptor else ''
 
 
-types = [CrystalSMD, CrystalTH]
+class CrystalMetalCapSMD4(CrystalSMD):
+    pass
+
+
+types = [
+    CrystalSMD,
+    CrystalMetalCapSMD4,
+    CrystalTH
+]
