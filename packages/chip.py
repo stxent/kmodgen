@@ -1023,6 +1023,10 @@ class ChipLED:
             body_parts[2].appearance().material = materials['LED.Mark']
         meshes.extend(body_parts)
 
+        # Fix polarity mark position
+        for mesh in meshes:
+            mesh.rotate((0.0, 0.0, 1.0), math.pi)
+
         return meshes
 
 
@@ -1659,11 +1663,11 @@ class BentLeadsChip:
     def detach_body_strip(mesh, size, chamfer, strip_width, epsilon=1e-6):
         detach_region = (
             (
-                size[0] / 2.0 - chamfer - strip_width - epsilon,
-                -size[1] / 2.0 + chamfer - epsilon,
+                -(size[0] / 2.0 - chamfer - strip_width - epsilon),
+                -(size[1] / 2.0 - chamfer + epsilon),
                 size[2] - epsilon
             ), (
-                size[0] / 2.0 - chamfer + epsilon,
+                -(size[0] / 2.0 - chamfer + epsilon),
                 size[1] / 2.0 - chamfer + epsilon,
                 size[2] + epsilon
             )
@@ -1680,7 +1684,7 @@ class BentLeadsChip:
         )
 
         transform = model.Transform()
-        transform.translate(np.array([size[0] / 2.0 - chamfer - strip_width, 0.0, 0.0]))
+        transform.translate(np.array([-(size[0] / 2.0 - chamfer - strip_width), 0.0, 0.0]))
 
         result = model.AttributedMesh(name='Body', regions=[region])
         result.append(mesh)

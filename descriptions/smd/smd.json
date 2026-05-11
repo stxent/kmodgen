@@ -10,9 +10,6 @@
     "ChipShunt.Alloy": "Bronze",
     "ChipShunt.Lead": "Lead"
   },
-  "templates": [
-    "smd_led.x3d"
-  ],
   "parts": [
     {
       "package": {"type": "ChipCapacitor", "spec": "thin"},
